@@ -1,0 +1,100 @@
+name: TradeChain CI/CD
+
+on:
+  push:
+    branches: [ develop, feature/* ]
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  setup:
+    name: Install Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22.x
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install Dependencies
+        run: pnpm install
+
+  lint-frontend:
+    name: Lint Frontend
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22.x
+      - run: npm install -g pnpm
+      - run: pnpm install
+      - name: Run Linter
+        run: pnpm --filter frontend lint
+
+  build-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    needs: lint-frontend
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22.x
+      - run: npm install -g pnpm
+      - run: pnpm install
+      - name: Build
+        run: pnpm --filter frontend build
+
+  backend-lint:
+    name: Lint Backend
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22.x
+      - run: npm install -g pnpm
+      - run: pnpm install
+      - name: Lint Backend
+        run: pnpm --filter backend lint
+
+  contracts-build:
+    name: Compile Smart Contracts
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22.x
+      - run: npm install -g pnpm
+      - run: pnpm install
+      - name: Compile Contracts
+        run: pnpm hardhat compile
+
+  deploy-staging:
+    name: Deploy Staging
+    runs-on: ubuntu-latest
+    needs: [build-frontend, backend-lint, contracts-build]
+    if: github.ref == 'refs/heads/develop'
+    steps:
+      - name: Deploy Frontend
+        run: |
+          echo "jalankan perintah vercel / rsync"
+
+      - name: Deploy Backend
+        run: |
+          echo "jalankan perintah ssh/pm2/docker"
