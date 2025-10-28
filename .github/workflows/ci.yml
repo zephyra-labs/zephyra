@@ -1,10 +1,10 @@
-name: TradeChain CI/CD
+name: Zephyra CI/CD
 
 on:
   push:
-    branches: [ develop, feature/* ]
+    branches: [ dev, main ]
   pull_request:
-    branches: [ develop ]
+    branches: [ dev ]
 
 jobs:
   setup:
@@ -89,7 +89,7 @@ jobs:
     name: Deploy Staging
     runs-on: ubuntu-latest
     needs: [build-frontend, backend-lint, contracts-build]
-    if: github.ref == 'refs/heads/develop'
+    if: github.ref == 'refs/heads/dev'
     steps:
       - name: Deploy Frontend
         run: |
@@ -98,3 +98,17 @@ jobs:
       - name: Deploy Backend
         run: |
           echo "jalankan perintah ssh/pm2/docker"
+
+  deploy-production:
+    name: Deploy Production
+    runs-on: ubuntu-latest
+    needs: [build-frontend, backend-lint, contracts-build]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Deploy Frontend
+        run: |
+          echo "jalankan perintah vercel / rsync untuk production"
+
+      - name: Deploy Backend
+        run: |
+          echo "jalankan perintah ssh/pm2/docker untuk production"

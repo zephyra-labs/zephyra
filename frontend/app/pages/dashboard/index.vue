@@ -19,7 +19,6 @@ const animateTotals = () => {
 
 onMounted(async () => {
   await fetchUserDashboard()
-  console.log(userDashboard.value)
   animateTotals()
 })
 </script>

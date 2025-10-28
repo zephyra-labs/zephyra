@@ -113,7 +113,6 @@ export function useKYC() {
     account,
     status,
   }: UpdateKycArgs) => {
-    console.log('updateKyc', { tokenId, payload, action, txHash, executor, account, status })
     const data = await request<{ data: KYC }>(`/kyc/${tokenId}`, {
       method: 'PATCH',
       body: JSON.stringify({ ...payload, action, executor, account, txHash, status }),

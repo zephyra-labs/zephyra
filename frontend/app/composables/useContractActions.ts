@@ -52,13 +52,6 @@ export function useContractActions() {
     if (!account.value) throw new Error('Wallet not connected')
     return account.value as `0x${string}`
   }
-  
-  /** Extract on-chain info from receipt */
-  const extractOnChainInfo = (receipt: any) => ({
-    status: String(receipt.status),
-    blockNumber: Number(receipt.blockNumber),
-    confirmations: Number(receipt.confirmations ?? 0),
-  })
 
   /** Post log ke contractLogs + activityLogs */
   const postLog = async (data: ContractLogPayload, receipt?: any, tags?: string[]) => {

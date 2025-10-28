@@ -1,43 +1,52 @@
-# Trade-Chain
+# 🪽 Zephyra
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: Zephyra Labs](https://img.shields.io/badge/License-Zephyra_Labs-yellow.svg)](LICENSE)
 ![pnpm](https://img.shields.io/badge/Build-pnpm-blue)
 ![Hardhat](https://img.shields.io/badge/SmartContracts-Hardhat-orange)
 ![Foundry](https://img.shields.io/badge/Tests-Foundry-green)
 ![Nuxt](https://img.shields.io/badge/Frontend-Nuxt_4-00DC82)
 ![Firestore](https://img.shields.io/badge/Database-Firestore-FFCA28)
 
-**Trade-Chain** adalah platform berbasis blockchain untuk mendukung proses perdagangan ekspor-impor.  
-Proyek ini memanfaatkan smart contract, NFT, dan integrasi backend–frontend untuk menciptakan alur perdagangan yang aman, transparan, dan terdokumentasi dengan baik.
+**Zephyra** is a blockchain-based trade infrastructure designed to support secure, transparent, and verifiable export–import operations.  
+It integrates smart contracts, NFTs, and full-stack components to ensure authenticity, trust, and traceability across all trade participants.
 
 ---
 
-## ✨ Fitur Utama
-- **Verifikasi Dokumen**  
-  Dokumen yang diverifikasi akan diikat ke blockchain untuk menjamin keaslian dan integritas.
-- **Penerbitan NFT**  
-  Setiap entitas (importir dan eksportir) akan memiliki NFT sebagai bukti verifikasi identitas/dokumen.
-- **Kontrak Perdagangan**  
-  Smart contract perdagangan hanya dapat dibuat apabila kedua pihak (importir dan eksportir) telah memiliki NFT verifikasi.
+## ✨ Key Features
+
+- **Document Verification**  
+  Verifies trade documents and anchors them on-chain for immutability.
+
+- **NFT Identity Proof**  
+  Each verified exporter/importer receives an NFT as digital identity proof.
+
+- **Trade Contracts**  
+  Enables verified parties to establish secure, on-chain trade contracts.
 
 ---
 
-## 📂 Struktur Proyek
-- `contracts/` → Smart contract Solidity (Hardhat, Foundry)  
-- `backend/` → Backend service (Express + Firestore)  
-- `frontend/` → Frontend aplikasi (Nuxt 4)  
-- `scripts/` → Script deployment kontrak (TypeScript + tsx)  
-- `test/` → Unit dan integration test  
-- `ignition/` → Modul deployment dengan Hardhat Ignition  
+## 📂 Project Structure
+
+```
+
+zephyra/
+├── contracts/     # Smart contracts (Solidity + Hardhat + Foundry)
+├── backend/       # Express backend with Firestore
+├── frontend/      # Nuxt 4 frontend application
+├── scripts/       # Deployment scripts (TypeScript + tsx)
+├── test/          # Unit & integration tests
+└── ignition/      # Hardhat Ignition deployment modules
+
+```
 
 ---
 
-## ⚡️ Setup & Instalasi
+## ⚡ Setup & Installation
 
-### 1. Clone Repo
+### 1. Clone the Repository
 ```bash
-git clone https://github.com/Ajax-Z01/trade-chain.git
-cd trade-chain
+git clone https://github.com/zephyra-labs/zephyra.git
+cd zephyra
 ```
 
 ### 2. Install Dependencies
@@ -46,91 +55,83 @@ cd trade-chain
 pnpm install
 ```
 
-### 3. Konfigurasi Environment
+### 3. Compile Smart Contracts
 
-Buat file `.env` untuk frontend dan backend.
-Contoh konfigurasi frontend (`frontend/.env`):
-
+```bash
+npx hardhat compile
 ```
+
+### 4. Configure Environment Variables
+
+Create `.env` files for both the **frontend** and **backend**.
+
+**Frontend (`frontend/.env`):**
+
+```bash
 API_BASE=http://localhost:3000
 ```
 
-Contoh konfigurasi backend (`backend/.env`):
-
-```
-FIRESTORE_PROJECT_ID=...
-FIRESTORE_PRIVATE_KEY=...
-FIRESTORE_CLIENT_EMAIL=...
-```
-
----
-
-## 🚀 Menjalankan Proyek
-
-1. **Start Local Blockchain Node**
-
-   ```bash
-   npx hardhat node
-   ```
-
-2. **Deploy Smart Contracts**
-
-   ```bash
-   npx tsx scripts/deployRegistry.ts
-   npx tsx scripts/deployFactory.ts
-   ```
-
-3. **Start Backend (Express + Firestore)**
-
-   ```bash
-   cd backend
-   pnpm dev
-   ```
-
-4. **Start Frontend (Nuxt 4)**
-
-   ```bash
-   cd frontend
-   pnpm dev
-   ```
-
----
-
-## 🧪 Testing
-
-Proyek ini menggunakan **Foundry**, **Hardhat**, dan **Viem**.
-Contoh menjalankan test Hardhat:
+**Backend (`backend/.env`):**
 
 ```bash
-npx hardhat test
+FIRESTORE_PROJECT_ID=your_project_id
+FIRESTORE_PRIVATE_KEY=your_private_key
+FIRESTORE_CLIENT_EMAIL=your_service_account_email
+JWT_SECRET=your_backend_secret
 ```
 
-Contoh menjalankan test Foundry:
+---
+
+## 🚀 Running the Project
+
+### 1. Start Local Blockchain Node
 
 ```bash
-forge test
+npx hardhat node
+```
+
+### 2. Deploy Smart Contracts
+
+```bash
+npx tsx scripts/deploy.ts
+```
+
+### 3. Start the Backend (Express + Firestore)
+
+```bash
+cd backend
+pnpm dev
+```
+
+### 4. Start the Frontend (Nuxt 4)
+
+```bash
+cd frontend
+pnpm dev
 ```
 
 ---
 
-## 📖 Teknologi Utama
+## 🧠 Core Technologies
 
-* [Hardhat](https://hardhat.org/) – Ethereum development environment
-* [Foundry](https://book.getfoundry.sh/) – Smart contract testing framework
-* [Viem](https://viem.sh/) – TypeScript interface untuk Ethereum
-* [Nuxt 4](https://nuxt.com/) – Frontend framework
-* [Express](https://expressjs.com/) – Backend service
-* [Firestore](https://firebase.google.com/docs/firestore) – Database
-
----
-
-## 📌 Catatan
-
-* Saat ini proyek berjalan sepenuhnya **lokal**, kecuali backend yang tetap membutuhkan koneksi ke **Firestore**.
-* Kontribusi belum dibuka karena proyek masih dalam tahap awal pengembangan.
+| Layer           | Stack                             |
+| --------------- | --------------------------------- |
+| Smart Contracts | Solidity, Hardhat, Foundry, Viem  |
+| Backend         | Express.js, TypeScript, Firestore |
+| Frontend        | Nuxt 4, Tailwind CSS              |
+| Dev Tools       | pnpm, tsx, Hardhat Ignition       |
 
 ---
 
-## 📜 Lisensi
+## 📌 Notes
 
-MIT License © 2025 [Ajax-Z01](https://github.com/Ajax-Z01)
+* Zephyra currently runs **locally**, except for Firestore which requires internet access.
+* The project is still in its **development phase** — contributions will open after the pilot release.
+
+---
+
+## 📜 License
+
+**© 2025 Zephyra Labs**
+All rights reserved.
+Unauthorized use, modification, or redistribution of this software is strictly prohibited.
