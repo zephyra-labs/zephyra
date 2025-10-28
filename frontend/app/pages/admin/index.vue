@@ -21,7 +21,6 @@ const animateTotals = () => {
 
 onMounted(async () => {
   await fetchAdminDashboard()
-  console.log(adminDashboard.value)
   animateTotals()
 })
 </script>

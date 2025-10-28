@@ -51,8 +51,9 @@ const counts = computed(() => ({
 </script>
 
 <template>
-  <div class="p-6 max-w-5xl mx-auto space-y-6">
-    <h1 class="text-3xl font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-2">Wallet Logs</h1>
+  <div class="p-4 md:p-6 max-w-5xl mx-auto space-y-6">
+
+    <h1 class="text-3xl md:text-4xl font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-2">Wallet Logs</h1>
 
     <!-- Controls: Filter + Search -->
     <div class="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
@@ -82,13 +83,13 @@ const counts = computed(() => ({
         </button>
       </div>
 
-      <div class="relative w-full sm:w-64">
+      <div class="relative w-full sm:w-64 mt-2 sm:mt-0">
         <Search class="absolute w-4 h-4 left-2 top-2.5 text-gray-400 dark:text-gray-300" />
         <input
           v-model="searchQuery"
           type="text"
           placeholder="Search by account..."
-          class="pl-8 pr-3 py-1 border rounded-lg text-sm w-full focus:ring focus:ring-indigo-200 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
+          class="pl-8 pr-3 py-1 border rounded-lg text-sm w-full focus:ring focus:ring-indigo-200 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100"
         />
       </div>
     </div>
@@ -104,8 +105,8 @@ const counts = computed(() => ({
       <p class="text-sm">No wallet logs found.</p>
     </div>
 
-    <!-- Logs Table -->
-    <div v-else class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl shadow p-4">
+    <!-- Logs Desktop Table -->
+    <div class="hidden md:block overflow-x-auto bg-white dark:bg-gray-900 rounded-xl shadow p-4">
       <table class="min-w-full table-auto border-collapse">
         <thead class="bg-gray-50 dark:bg-gray-800 sticky top-0 z-10">
           <tr>
@@ -118,11 +119,7 @@ const counts = computed(() => ({
           <tr
             v-for="(log, i) in filteredLogs.slice(0, visibleLogs)"
             :key="i"
-            :class="[
-              'transition hover:bg-indigo-50 dark:hover:bg-indigo-900',
-              i % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800',
-              isRecent(log.timestamp) ? 'bg-indigo-50 dark:bg-indigo-900 border-l-4 border-indigo-400' : ''
-            ]"
+            :class="[i%2===0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800', isRecent(log.timestamp) ? 'border-l-4 border-indigo-400' : '', 'transition hover:bg-indigo-50 dark:hover:bg-indigo-900']"
           >
             <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-300">{{ formatDate(log.timestamp) }}</td>
             <td class="px-4 py-2 text-sm font-mono truncate max-w-xs">{{ log.account }}</td>
@@ -139,8 +136,6 @@ const counts = computed(() => ({
           </tr>
         </tbody>
       </table>
-
-      <!-- Load more button -->
       <div v-if="visibleLogs < filteredLogs.length" class="flex justify-center mt-4">
         <button
           class="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition"
@@ -150,6 +145,35 @@ const counts = computed(() => ({
         </button>
       </div>
     </div>
+
+    <!-- Mobile Card View -->
+    <div class="md:hidden flex flex-col gap-4">
+      <div v-for="(log, i) in filteredLogs.slice(0, visibleLogs)" :key="i" class="p-4 rounded-lg shadow bg-white dark:bg-gray-900 transition hover:shadow-md">
+        <div class="flex justify-between items-start">
+          <div class="flex-1">
+            <p class="text-xs text-gray-500 dark:text-gray-400">{{ formatDate(log.timestamp) }}</p>
+            <p class="text-sm font-mono truncate">{{ log.account }}</p>
+            <span
+              class="inline-flex items-center gap-1 px-2 py-0.5 mt-1 text-xs font-medium rounded-full"
+              :class="log.action==='connect' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' : 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100'"
+            >
+              <CheckCircle v-if="log.action==='connect'" class="w-3 h-3" />
+              <XCircle v-else class="w-3 h-3" />
+              {{ log.action }}
+            </span>
+          </div>
+        </div>
+      </div>
+      <div v-if="visibleLogs < filteredLogs.length" class="flex justify-center mt-2">
+        <button
+          class="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition"
+          @click="loadMore"
+        >
+          Load More
+        </button>
+      </div>
+    </div>
+
   </div>
 </template>
 

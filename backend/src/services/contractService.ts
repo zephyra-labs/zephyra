@@ -13,7 +13,7 @@ export class ContractService {
     dto.validate()
 
     const logEntry: ContractLogEntry = dto.toLogEntry()
-    let newState = dto.toState()
+    const newState = dto.toState()
 
     // fallback roles jika DTO tidak lengkap
     if (!dto.exporter || !dto.importer || !dto.logistics) {

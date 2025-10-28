@@ -55,7 +55,6 @@ const {
 onMounted(async () => {
   await fetchApprovedMinters()
   await fetchDocuments()
-  console.log('Approved Minters:', approvedMintersDoc.value)
 })
 
 // --- Watch current contract and account ---

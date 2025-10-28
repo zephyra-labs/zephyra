@@ -45,7 +45,6 @@ export function useContractLogs() {
   const getContractState = (contract: string): ContractState => {
     if (!contractStates[contract]) {
       contractStates[contract] = initialContractState()
-      console.log('[getContractState] Initialized state for', contract)
     }
     return contractStates[contract]
   }
@@ -55,7 +54,7 @@ export function useContractLogs() {
     const history = backendLogs.value[contract] ?? state.history ?? []
 
     if (!history.length) {
-      console.log('[updateStateFromLogs] No history for', contract)
+      console.warn('[updateStateFromLogs] No history for', contract)
       return
     }
 
@@ -74,13 +73,10 @@ export function useContractLogs() {
     state.insurance = lastLog.extra?.insurance ?? state.insurance
     state.inspector = lastLog.extra?.inspector ?? state.inspector
     state.lastUpdated = lastLog.timestamp ?? state.lastUpdated
-
-    console.log('[updateStateFromLogs] Updated state for', contract, state)
   }
 
   const fetchContracts = async () => {
     loading.value = true
-    console.log('[fetchContracts] Start fetching...')
     try {
       const res = await request<ContractListResponse>('/contract')
       const chainContracts = res.data.chainContracts ?? []
@@ -96,8 +92,6 @@ export function useContractLogs() {
         backendLogs.value[addr].push(log)
         updateStateFromLogs(addr)
       })
-
-      console.log('[fetchContracts] Done. Contract states:', Object.keys(contractStates))
     } catch (err) {
       console.error('[fetchContracts] Failed:', err)
     } finally {
@@ -110,7 +104,6 @@ export function useContractLogs() {
     if (state.loading || state.finished) return
 
     state.loading = true
-    console.log('[fetchContractLogs] Fetching logs for', contract)
     try {
       const res = await request<ContractDetailsResponse>(`/contract/${contract}/details`)
       const backend: ContractLogEntry[] = res.data.history ?? []
@@ -127,7 +120,6 @@ export function useContractLogs() {
   }
 
   const addContractLog = async (contract: string, log: ContractLogPayload) => {
-    console.log('[addContractLog] Posting log:', { contract, action: log.action, extra: log.extra })
     try {
       const payload: ContractLogPayload = { ...log, contractAddress: contract }
       const res = await request<{ success: boolean; log: ContractLogEntry }>('/contract/log', {
@@ -150,7 +142,6 @@ export function useContractLogs() {
   const toggleContract = async (contract: string) => {
     const state = getContractState(contract)
     state.isOpen = !state.isOpen
-    console.log('[toggleContract]', contract, 'isOpen =', state.isOpen)
 
     if (state.isOpen && state.history.length === 0) {
       await fetchContractLogs(contract)
@@ -158,7 +149,6 @@ export function useContractLogs() {
   }
 
   const refreshContractLogs = async (contract: string) => {
-    console.log('[refreshContractLogs]', contract)
     backendLogs.value[contract] = []
     const state = getContractState(contract)
     state.history = []
