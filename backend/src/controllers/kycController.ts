@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { KYCService } from "../services/kycService.js";
 import multer from "multer";
+import { success, failure } from "../utils/responseHelper.js";
 
 const upload = multer({ limits: { fileSize: 10 * 1024 * 1024 } });
 
@@ -13,10 +14,10 @@ export const createKYC = [
       const { tokenId, owner, fileHash, metadataUrl, name, description, status, action, executor, txHash } = body;
 
       if (!owner || !fileHash || !metadataUrl) {
-        return res.status(400).json({ success: false, message: "Missing required KYC fields" });
+        return failure(res, "Missing required KYC fields", 400);
       }
-      if (!action) return res.status(400).json({ success: false, message: "Missing action field" });
-      if (!executor) return res.status(400).json({ success: false, message: "Missing executor field" });
+      if (!action) return failure(res, "Missing action field", 400);
+      if (!executor) return failure(res, "Missing executor field", 400);
 
       const created = await KYCService.createKYC(
         { tokenId, owner, fileHash, metadataUrl, name, description, status, file: req.file },
@@ -24,9 +25,9 @@ export const createKYC = [
         txHash
       );
 
-      return res.status(201).json({ success: true, data: created });
+      return success(res, created, 201);
     } catch (err: any) {
-      return res.status(400).json({ success: false, message: err.message });
+      return failure(res, err.message, 400);
     }
   },
 ];
@@ -38,13 +39,13 @@ export const updateKYC = async (req: Request, res: Response) => {
     const tokenId = req.params.tokenId;
     const { action, executor, txHash, ...updateData } = body;
 
-    if (!action) return res.status(400).json({ success: false, message: "Missing action field" });
-    if (!executor) return res.status(400).json({ success: false, message: "Missing executor field" });
+    if (!action) return failure(res, "Missing action field", 400);
+    if (!executor) return failure(res, "Missing executor field", 400);
 
     const updated = await KYCService.updateKYC(tokenId, updateData, action, txHash, executor);
-    return res.json({ success: true, data: updated });
+    return success(res, updated);
   } catch (err: any) {
-    return res.status(500).json({ success: false, message: err.message });
+    return failure(res, err.message, 500);
   }
 };
 
@@ -55,13 +56,13 @@ export const deleteKYC = async (req: Request, res: Response) => {
     const tokenId = req.params.tokenId;
     const { action, executor, txHash } = body;
 
-    if (!action) return res.status(400).json({ success: false, message: "Missing action field" });
-    if (!executor) return res.status(400).json({ success: false, message: "Missing executor field" });
+    if (!action) return failure(res, "Missing action field", 400);
+    if (!executor) return failure(res, "Missing executor field", 400);
 
     await KYCService.deleteKYC(tokenId, action, txHash, executor);
-    return res.json({ success: true, message: "KYC deleted successfully" });
+    return success(res, { message: "KYC deleted successfully" });
   } catch (err: any) {
-    return res.status(500).json({ success: false, message: err.message });
+    return failure(res, err.message, 500);
   }
 };
 
@@ -69,9 +70,9 @@ export const deleteKYC = async (req: Request, res: Response) => {
 export const getAllKYCs = async (_req: Request, res: Response) => {
   try {
     const kycs = await KYCService.getAllKYC();
-    return res.json({ success: true, data: kycs });
+    return success(res, kycs);
   } catch (err: any) {
-    return res.status(500).json({ success: false, message: err.message });
+    return failure(res, err.message, 500);
   }
 };
 
@@ -79,10 +80,10 @@ export const getAllKYCs = async (_req: Request, res: Response) => {
 export const getKYCById = async (req: Request, res: Response) => {
   try {
     const kyc = await KYCService.getKYCById(req.params.tokenId);
-    if (!kyc) return res.status(404).json({ success: false, message: "KYC not found" });
-    return res.json({ success: true, data: kyc });
+    if (!kyc) return failure(res, "KYC not found", 404);
+    return success(res, kyc);
   } catch (err: any) {
-    return res.status(500).json({ success: false, message: err.message });
+    return failure(res, err.message, 500);
   }
 };
 
@@ -90,9 +91,9 @@ export const getKYCById = async (req: Request, res: Response) => {
 export const getKYCsByOwner = async (req: Request, res: Response) => {
   try {
     const kycs = await KYCService.getKYCByOwner(req.params.owner);
-    return res.json({ success: true, data: kycs });
+    return success(res, kycs);
   } catch (err: any) {
-    return res.status(500).json({ success: false, message: err.message });
+    return failure(res, err.message, 500);
   }
 };
 
@@ -100,10 +101,10 @@ export const getKYCsByOwner = async (req: Request, res: Response) => {
 export const getKYCLogs = async (req: Request, res: Response) => {
   try {
     const kyc = await KYCService.getKYCById(req.params.tokenId);
-    if (!kyc) return res.status(404).json({ success: false, message: "No logs found" });
-    return res.json({ success: true, data: kyc.history ?? [] });
+    if (!kyc) return failure(res, "No logs found", 404);
+    return success(res, kyc.history ?? []);
   } catch (err: any) {
-    return res.status(500).json({ success: false, message: err.message });
+    return failure(res, err.message, 500);
   }
 };
 
@@ -114,9 +115,7 @@ export const updateKYCInternal = async (req: Request, res: Response) => {
     const body = req.body || {};
     const { status, reviewedBy, signature, txHash, remarks } = body;
 
-    if (!status) {
-      return res.status(400).json({ success: false, message: "Missing status field" });
-    }
+    if (!status) return failure(res, "Missing status field", 400);
 
     const updated = await KYCService.updateKYCInternal(tokenId, {
       status,
@@ -126,8 +125,8 @@ export const updateKYCInternal = async (req: Request, res: Response) => {
       remarks,
     });
 
-    return res.json({ success: true, data: updated });
+    return success(res, updated);
   } catch (err: any) {
-    return res.status(500).json({ success: false, message: err.message });
+    return failure(res, err.message, 500);
   }
 };

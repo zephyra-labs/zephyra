@@ -9,52 +9,68 @@ export class ContractService {
    * Tambah log baru ke contract dan update state-nya
    */
   static async addContractLog(data: Partial<ContractLogDTO>): Promise<ContractLogEntry> {
-    const dto = new ContractLogDTO(data as any)
-    dto.validate()
+    const dto = new ContractLogDTO(data as any);
+    dto.validate();
 
-    const logEntry: ContractLogEntry = dto.toLogEntry()
-    const newState = dto.toState()
+    const logEntry: ContractLogEntry = dto.toLogEntry();
+    const newState = dto.toState();
 
     // fallback roles jika DTO tidak lengkap
     if (!dto.exporter || !dto.importer || !dto.logistics) {
-      const roles = await getContractRoles(dto.contractAddress)
-      newState.exporter = newState.exporter ?? roles.exporter
-      newState.importer = newState.importer ?? roles.importer
-      newState.logistics = newState.logistics ?? roles.logistics
+      const roles = await getContractRoles(dto.contractAddress);
+      newState.exporter = newState.exporter ?? roles.exporter;
+      newState.importer = newState.importer ?? roles.importer;
+      newState.logistics = newState.logistics ?? roles.logistics ?? [];
     }
 
-    // --- Ambil dokumen contract dari DB ---
-    const doc = await ContractModel.getContractById(dto.contractAddress)
+    // Ambil kontrak dari DB
+    const doc = await ContractModel.getContractById(dto.contractAddress);
 
+    // State awal atau merge
+    let mergedState: any;
     if (!doc) {
-      // Dokumen belum ada → deploy pertama
-      const initialState = {
+      // Deploy pertama
+      mergedState = {
         exporter: logEntry.extra?.exporter ?? newState.exporter,
         importer: logEntry.extra?.importer ?? newState.importer,
-        logistics: logEntry.extra?.logistics ?? newState.logistics,
+        logistics: newState.logistics ?? [],
         status: logEntry.action,
         currentStage: "1",
         lastUpdated: Date.now(),
-      }
-
-      await ContractModel.addContractLog(logEntry, dto.contractAddress, initialState)
+      };
     } else {
-      // Dokumen sudah ada → merge state dari log terbaru
-      const mergedState = {
+      // Merge state lama + log baru
+      mergedState = {
         ...doc.state,
-        ...newState,
         exporter: logEntry.extra?.exporter ?? newState.exporter ?? doc.state.exporter,
         importer: logEntry.extra?.importer ?? newState.importer ?? doc.state.importer,
-        logistics: logEntry.extra?.logistics ?? newState.logistics ?? doc.state.logistics,
+        logistics: [...(doc.state.logistics ?? [])],
         status: logEntry.action,
         currentStage: logEntry.extra?.stage ?? doc.state.currentStage ?? "1",
         lastUpdated: Date.now(),
-      }
+      };
 
-      await ContractModel.addContractLog(logEntry, dto.contractAddress, mergedState)
+      // Handle add/remove logistics
+      if (logEntry.action === "addLogistic" && logEntry.extra?.logistic) {
+        if (!mergedState.logistics.includes(logEntry.extra.logistic)) {
+          mergedState.logistics.push(logEntry.extra.logistic);
+        } else {
+          throw new Error(`Logistic ${logEntry.extra.logistic} already added`);
+        }
+      }
+      if (logEntry.action === "removeLogistic" && logEntry.extra?.logistic) {
+        if (mergedState.logistics.includes(logEntry.extra.logistic)) {
+          mergedState.logistics = mergedState.logistics.filter((l: string) => l !== logEntry.extra.logistic);
+        } else {
+          throw new Error(`Logistic ${logEntry.extra.logistic} not found`);
+        }
+      }
     }
 
-    // --- Notifikasi ke admin & participants ---
+    // Simpan log + update state
+    await ContractModel.addContractLog(logEntry, dto.contractAddress, mergedState);
+
+    // --- Notifikasi ---
     const payload = {
       type: "agreement",
       title: `Contract Action: ${dto.action}`,
@@ -65,17 +81,18 @@ export class ContractService {
         action: dto.action,
         txHash: dto.txHash,
       },
-    }
+    };
 
-    await notifyWithAdmins(dto.account, payload)
+    await notifyWithAdmins(dto.account, payload);
 
-    const participants = [newState.exporter, newState.importer, newState.logistics].filter(Boolean) as string[]
+    const participants = [mergedState.exporter, mergedState.importer, ...(mergedState.logistics ?? [])].filter(Boolean);
     if (participants.length) {
-      await notifyUsers(participants, payload, dto.account)
+      await notifyUsers(participants, payload, dto.account);
     }
 
-    return logEntry
+    return logEntry;
   }
+
 
   /**
    * Ambil semua contract

@@ -1,72 +1,74 @@
-import { Request, Response } from 'express';
-import admin from 'firebase-admin';
-import WalletLogDTO from '../dtos/walletDTO.js';
-import { createWalletLog } from '../models/walletModel.js';
+import { Request, Response } from 'express'
+import admin from 'firebase-admin'
+import WalletLogDTO from '../dtos/walletDTO.js'
+import { createWalletLog } from '../models/walletModel.js'
 import { db } from '../config/firebase.js'
+import { success, failure, handleError } from '../utils/responseHelper.js'
 
-const collection = db.collection('walletLogs');
+const collection = db.collection('walletLogs')
 
-// POST /wallet/log-login
+// --- POST /wallet/log-login ---
 export const logWalletLogin = async (req: Request, res: Response) => {
   try {
-    const { account } = req.body;
-    if (!account) return res.status(400).json({ error: 'Missing account' });
+    const { account } = req.body
+    if (!account) return failure(res, 'Missing account', 400)
 
-    const dto = new WalletLogDTO({ account, action: 'connect' });
-    dto.validate();
+    const dto = new WalletLogDTO({ account, action: 'connect' })
+    dto.validate()
 
-    await createWalletLog(dto);
-    res.json({ success: true, log: dto.toJSON() });
+    await createWalletLog(dto)
+    return success(res, dto.toJSON(), 201)
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    return handleError(res, err, 'Failed to log wallet login')
   }
-};
+}
 
-// POST /wallet/log-disconnect
+// --- POST /wallet/log-disconnect ---
 export const logWalletDisconnect = async (req: Request, res: Response) => {
   try {
-    const { account } = req.body;
-    if (!account) return res.status(400).json({ error: 'Missing account' });
+    const { account } = req.body
+    if (!account) return failure(res, 'Missing account', 400)
 
-    const dto = new WalletLogDTO({ account, action: 'disconnect' });
-    dto.validate();
+    const dto = new WalletLogDTO({ account, action: 'disconnect' })
+    dto.validate()
 
-    await createWalletLog(dto);
+    await createWalletLog(dto)
 
     // --- Hapus cookie ---
-    res.setHeader('Set-Cookie', 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure');
+    res.setHeader(
+      'Set-Cookie',
+      'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure'
+    )
 
-    res.json({ success: true, log: dto.toJSON() });
+    return success(res, dto.toJSON(), 201)
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    return handleError(res, err, 'Failed to log wallet disconnect')
   }
-};
+}
 
-// GET /wallet/logs
-export const getAllWalletLogs = async (req: Request, res: Response) => {
+// --- GET /wallet/logs ---
+export const getAllWalletLogs = async (_req: Request, res: Response) => {
   try {
-    const snapshot = await collection.get();
+    const snapshot = await collection.get()
+    if (snapshot.empty) return failure(res, 'No wallet logs found', 404)
 
-    if (snapshot.empty) return res.status(404).json({ error: 'No wallet logs found' });
-
-    const logs = snapshot.docs.map((doc: admin.firestore.QueryDocumentSnapshot) => doc.data());
-    res.json(logs);
+    const logs = snapshot.docs.map((doc: admin.firestore.QueryDocumentSnapshot) => doc.data())
+    return success(res, logs)
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    return handleError(res, err, 'Failed to fetch wallet logs')
   }
-};
+}
 
-// GET /wallet/:account/logs
+// --- GET /wallet/:account/logs ---
 export const getWalletLogs = async (req: Request, res: Response) => {
   try {
-    const { account } = req.params;
-    const snapshot = await collection.where('account', '==', account).get();
+    const { account } = req.params
+    const snapshot = await collection.where('account', '==', account).get()
+    if (snapshot.empty) return failure(res, 'No logs for this account', 404)
 
-    if (snapshot.empty) return res.status(404).json({ error: 'No logs for this account' });
-
-    const logs = snapshot.docs.map((doc: admin.firestore.QueryDocumentSnapshot) => doc.data());
-    res.json(logs);
+    const logs = snapshot.docs.map((doc: admin.firestore.QueryDocumentSnapshot) => doc.data())
+    return success(res, logs)
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    return handleError(res, err, 'Failed to fetch wallet logs for account')
   }
-};
+}

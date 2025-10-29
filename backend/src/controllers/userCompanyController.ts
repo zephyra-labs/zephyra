@@ -2,6 +2,7 @@ import { Request, Response } from "express"
 import { UserCompanyService } from "../services/userCompanyService.js"
 import { CompanyService } from "../services/companyService.js"
 import type { CreateUserCompanyDTO, UpdateUserCompanyDTO } from "../types/UserCompany.js"
+import { success, failure, handleError } from "../utils/responseHelper.js"
 
 export class UserCompanyController {
   // --- Create new relation ---
@@ -9,9 +10,9 @@ export class UserCompanyController {
     try {
       const data = req.body as CreateUserCompanyDTO
       const relation = await UserCompanyService.createUserCompany(data)
-      return res.status(201).json({ success: true, data: relation })
-    } catch (error: any) {
-      return res.status(400).json({ success: false, message: error.message })
+      return success(res, relation, 201)
+    } catch (err) {
+      return handleError(res, err, "Failed to create user-company relation", 400)
     }
   }
 
@@ -26,9 +27,9 @@ export class UserCompanyController {
       const companyId = (req.query.companyId as string) || undefined
 
       const result = await UserCompanyService.getAllFiltered({ page, limit, search, role, status, companyId })
-      return res.status(200).json({ success: true, ...result })
-    } catch (error: any) {
-      return res.status(500).json({ success: false, message: error.message })
+      return success(res, result)
+    } catch (err) {
+      return handleError(res, err, "Failed to fetch user-company relations")
     }
   }
 
@@ -37,10 +38,10 @@ export class UserCompanyController {
     try {
       const { id } = req.params
       const relation = await UserCompanyService.getById(id)
-      if (!relation) return res.status(404).json({ success: false, message: "Relation not found" })
-      return res.status(200).json({ success: true, data: relation })
-    } catch (error: any) {
-      return res.status(500).json({ success: false, message: error.message })
+      if (!relation) return failure(res, "Relation not found", 404)
+      return success(res, relation)
+    } catch (err) {
+      return handleError(res, err, "Failed to fetch relation")
     }
   }
 
@@ -49,9 +50,9 @@ export class UserCompanyController {
     try {
       const { address } = req.params
       const relations = await UserCompanyService.getByUser(address)
-      return res.status(200).json({ success: true, data: relations })
-    } catch (error: any) {
-      return res.status(500).json({ success: false, message: error.message })
+      return success(res, relations)
+    } catch (err) {
+      return handleError(res, err, "Failed to fetch user relations")
     }
   }
 
@@ -60,9 +61,9 @@ export class UserCompanyController {
     try {
       const { companyId } = req.params
       const relations = await UserCompanyService.getByCompany(companyId)
-      return res.status(200).json({ success: true, data: relations })
-    } catch (error: any) {
-      return res.status(500).json({ success: false, message: error.message })
+      return success(res, relations)
+    } catch (err) {
+      return handleError(res, err, "Failed to fetch company relations")
     }
   }
 
@@ -72,9 +73,9 @@ export class UserCompanyController {
       const { id } = req.params
       const data = req.body as UpdateUserCompanyDTO
       const updated = await UserCompanyService.updateUserCompany(id, data)
-      return res.status(200).json({ success: true, data: updated })
-    } catch (error: any) {
-      return res.status(400).json({ success: false, message: error.message })
+      return success(res, updated)
+    } catch (err) {
+      return handleError(res, err, "Failed to update relation", 400)
     }
   }
 
@@ -83,9 +84,9 @@ export class UserCompanyController {
     try {
       const { id } = req.params
       await UserCompanyService.deleteUserCompany(id)
-      return res.status(200).json({ success: true, message: "Relation deleted" })
-    } catch (error: any) {
-      return res.status(400).json({ success: false, message: error.message })
+      return success(res, { message: "Relation deleted successfully" })
+    } catch (err) {
+      return handleError(res, err, "Failed to delete relation", 400)
     }
   }
 
@@ -93,18 +94,18 @@ export class UserCompanyController {
   static async getMyCompany(req: Request, res: Response) {
     try {
       const userAddress = (req as any).user?.address
-      if (!userAddress) return res.status(401).json({ success: false, message: "Unauthorized" })
+      if (!userAddress) return failure(res, "Unauthorized", 401)
 
       const relations = await UserCompanyService.getByUser(userAddress)
       const relation = relations[0]
-      if (!relation) return res.status(404).json({ success: false, message: "No company relation found" })
+      if (!relation) return failure(res, "No company relation found", 404)
 
       const company = await CompanyService.getCompanyById(relation.companyId)
-      if (!company) return res.status(404).json({ success: false, message: "Company not found" })
+      if (!company) return failure(res, "Company not found", 404)
 
-      return res.status(200).json({ success: true, data: company })
-    } catch (error: any) {
-      return res.status(500).json({ success: false, message: error.message })
+      return success(res, company)
+    } catch (err) {
+      return handleError(res, err, "Failed to fetch user's company")
     }
   }
 
@@ -112,17 +113,17 @@ export class UserCompanyController {
   static async updateMyCompany(req: Request, res: Response) {
     try {
       const userAddress = (req as any).user?.address
-      if (!userAddress) return res.status(401).json({ success: false, message: "Unauthorized" })
+      if (!userAddress) return failure(res, "Unauthorized", 401)
 
       const relations = await UserCompanyService.getByUser(userAddress)
       const relation = relations.find(r => r.userAddress === userAddress)
-      if (!relation) return res.status(404).json({ success: false, message: "User is not linked to any company" })
-      if (relation.role !== "owner") return res.status(403).json({ success: false, message: "Only company owner can update company data" })
+      if (!relation) return failure(res, "User is not linked to any company", 404)
+      if (relation.role !== "owner") return failure(res, "Only company owner can update company data", 403)
 
       const updatedCompany = await CompanyService.updateCompany(relation.companyId, req.body, userAddress)
-      return res.status(200).json({ success: true, data: updatedCompany })
-    } catch (error: any) {
-      return res.status(500).json({ success: false, message: error.message })
+      return success(res, updatedCompany)
+    } catch (err) {
+      return handleError(res, err, "Failed to update company")
     }
   }
 }

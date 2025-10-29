@@ -1,6 +1,7 @@
 import { Request, Response } from "express"
 import DocumentDTO from "../dtos/documentDTO.js"
 import { DocumentService } from "../services/documentService.js"
+import { success, failure, handleError } from "../utils/responseHelper.js"
 
 // --- POST /contract/:addr/docs ---
 export const attachDocument = async (req: Request, res: Response) => {
@@ -20,11 +21,10 @@ export const attachDocument = async (req: Request, res: Response) => {
       txHash,
     } = req.body
 
-    if (!tokenId || !owner || !fileHash || !uri || !docType) {
-      return res.status(400).json({ success: false, message: "Missing required fields" })
-    }
-    if (!action) return res.status(400).json({ success: false, message: "Missing action field" })
-    if (!signer) return res.status(400).json({ success: false, message: "Missing signer/account field" })
+    if (!tokenId || !owner || !fileHash || !uri || !docType)
+      return failure(res, "Missing required fields")
+    if (!action) return failure(res, "Missing action field")
+    if (!signer) return failure(res, "Missing signer/account field")
 
     const dto = new DocumentDTO({
       tokenId,
@@ -42,10 +42,9 @@ export const attachDocument = async (req: Request, res: Response) => {
     })
 
     const document = await DocumentService.createDocument(dto.toFirestore(), signer, action, txHash)
-    return res.status(201).json({ success: true, data: document })
-  } catch (err: any) {
-    console.error(err)
-    return res.status(500).json({ success: false, message: err.message })
+    return success(res, document, 201)
+  } catch (err) {
+    return handleError(res, err, "Failed to attach document")
   }
 }
 
@@ -53,10 +52,9 @@ export const attachDocument = async (req: Request, res: Response) => {
 export const getAllDocuments = async (_req: Request, res: Response) => {
   try {
     const docs = await DocumentService.getAllDocuments()
-    return res.json({ success: true, data: docs })
-  } catch (err: any) {
-    console.error(err)
-    return res.status(500).json({ success: false, message: err.message })
+    return success(res, docs)
+  } catch (err) {
+    return handleError(res, err, "Failed to fetch documents")
   }
 }
 
@@ -65,11 +63,10 @@ export const getDocument = async (req: Request, res: Response) => {
   try {
     const { tokenId } = req.params
     const doc = await DocumentService.getDocumentById(+tokenId)
-    if (!doc) return res.status(404).json({ success: false, message: "Document not found" })
-    return res.json({ success: true, data: doc })
-  } catch (err: any) {
-    console.error(err)
-    return res.status(500).json({ success: false, message: err.message })
+    if (!doc) return failure(res, "Document not found", 404)
+    return success(res, doc)
+  } catch (err) {
+    return handleError(res, err, "Failed to fetch document")
   }
 }
 
@@ -78,10 +75,9 @@ export const getDocumentsByOwner = async (req: Request, res: Response) => {
   try {
     const { owner } = req.params
     const docs = await DocumentService.getDocumentsByOwner(owner)
-    return res.json({ success: true, data: docs })
-  } catch (err: any) {
-    console.error(err)
-    return res.status(500).json({ success: false, message: err.message })
+    return success(res, docs)
+  } catch (err) {
+    return handleError(res, err, "Failed to fetch documents by owner")
   }
 }
 
@@ -90,10 +86,9 @@ export const getDocumentsByContract = async (req: Request, res: Response) => {
   try {
     const { addr } = req.params
     const docs = await DocumentService.getDocumentsByContract(addr)
-    return res.json({ success: true, data: docs })
-  } catch (err: any) {
-    console.error(err)
-    return res.status(500).json({ success: false, message: err.message })
+    return success(res, docs)
+  } catch (err) {
+    return handleError(res, err, "Failed to fetch documents by contract")
   }
 }
 
@@ -102,14 +97,13 @@ export const getDocumentLogs = async (req: Request, res: Response) => {
   try {
     const { tokenId } = req.params
     const doc = await DocumentService.getDocumentById(+tokenId)
-    if (!doc) return res.status(404).json({ success: false, message: "Document not found" })
+    if (!doc) return failure(res, "Document not found", 404)
 
     const logs = doc.history || []
-    if (!logs.length) return res.status(404).json({ success: false, message: "No logs found" })
-    return res.json({ success: true, data: logs })
-  } catch (err: any) {
-    console.error(err)
-    return res.status(500).json({ success: false, message: err.message })
+    if (!logs.length) return failure(res, "No logs found", 404)
+    return success(res, logs)
+  } catch (err) {
+    return handleError(res, err, "Failed to fetch document logs")
   }
 }
 
@@ -119,14 +113,13 @@ export const updateDocument = async (req: Request, res: Response) => {
     const { tokenId } = req.params
     const { action, txHash, account, ...updateData } = req.body
 
-    if (!action) return res.status(400).json({ success: false, message: "Missing action field" })
-    if (!account) return res.status(400).json({ success: false, message: "Missing account field" })
+    if (!action) return failure(res, "Missing action field")
+    if (!account) return failure(res, "Missing account field")
 
     const updated = await DocumentService.updateDocument(+tokenId, updateData, account, action, txHash)
-    return res.json({ success: true, data: updated })
-  } catch (err: any) {
-    console.error(err)
-    return res.status(500).json({ success: false, message: err.message })
+    return success(res, updated)
+  } catch (err) {
+    return handleError(res, err, "Failed to update document")
   }
 }
 
@@ -136,14 +129,13 @@ export const deleteDocument = async (req: Request, res: Response) => {
     const { tokenId } = req.params
     const { action, txHash, account } = req.body
 
-    if (!action) return res.status(400).json({ success: false, message: "Missing action field" })
-    if (!account) return res.status(400).json({ success: false, message: "Missing account field" })
+    if (!action) return failure(res, "Missing action field")
+    if (!account) return failure(res, "Missing account field")
 
-    const success = await DocumentService.deleteDocument(+tokenId, account, action, txHash)
-    if (!success) return res.status(404).json({ success: false, message: "Document not found" })
-    return res.json({ success: true, message: "Document deleted successfully" })
-  } catch (err: any) {
-    console.error(err)
-    return res.status(500).json({ success: false, message: err.message })
+    const deleted = await DocumentService.deleteDocument(+tokenId, account, action, txHash)
+    if (!deleted) return failure(res, "Document not found", 404)
+    return success(res, { message: "Document deleted successfully" })
+  } catch (err) {
+    return handleError(res, err, "Failed to delete document")
   }
 }

@@ -1,47 +1,36 @@
 import type { Request, Response } from "express"
 import { DashboardService } from "../services/dashboardService.js"
+import { success, failure, handleError } from "../utils/responseHelper.js"
 
 export class DashboardController {
   /**
-   * Get global admin dashboard
-   * (aggregated overview of users, contracts, and documents)
+   * GET /dashboard (Admin)
+   * Aggregated overview of users, contracts, and documents
    */
-  static async getDashboard(req: Request, res: Response): Promise<Response> {
+  static async getDashboard(_req: Request, res: Response): Promise<Response> {
     try {
       const dashboard = await DashboardService.getDashboard()
-      return res.status(200).json({
-        success: true,
-        data: dashboard.toResponse(),
-      })
-    } catch (error) {
-      console.error("Error fetching admin dashboard:", error)
-      const message = error instanceof Error ? error.message : "Internal server error"
-      return res.status(500).json({ success: false, message })
+      return success(res, dashboard.toResponse())
+    } catch (err) {
+      return handleError(res, err, "Failed to fetch admin dashboard")
     }
   }
 
   /**
-   * Get dashboard data for the authenticated user
+   * GET /dashboard/user
+   * Dashboard data for the authenticated user
    */
   static async getUserDashboard(req: Request, res: Response): Promise<Response> {
     try {
       const userAddress = (req as any).user?.address
       if (!userAddress) {
-        return res.status(401).json({
-          success: false,
-          message: "Unauthorized: missing user address",
-        })
+        return failure(res, "Unauthorized: missing user address", 401)
       }
 
       const dashboard = await DashboardService.getUserDashboard(userAddress)
-      return res.status(200).json({
-        success: true,
-        data: dashboard.toResponse(),
-      })
-    } catch (error) {
-      console.error("Error fetching user dashboard:", error)
-      const message = error instanceof Error ? error.message : "Internal server error"
-      return res.status(500).json({ success: false, message })
+      return success(res, dashboard.toResponse())
+    } catch (err) {
+      return handleError(res, err, "Failed to fetch user dashboard")
     }
   }
 }

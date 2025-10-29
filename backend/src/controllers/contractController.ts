@@ -4,6 +4,7 @@ import { Chain } from "../config/chain.js"
 import { ContractService } from "../services/contractService.js"
 import ContractLogDTO from "../dtos/contractDTO.js"
 import type { AuthRequest } from "../middlewares/authMiddleware.js"
+import { success, failure, handleError } from "../utils/responseHelper.js"
 
 // --- Public client untuk query blockchain ---
 const publicClient = createPublicClient({
@@ -40,16 +41,19 @@ export class ContractController {
   static async fetchDeployedContracts(_req: Request, res: Response) {
     try {
       const contracts = await ContractService.getAllContracts()
-      return res.json({ success: true, data: contracts })
+      return success(res, contracts)
     } catch (err) {
-      console.error("[ContractController.fetchDeployedContracts]", err)
-      return res.status(500).json({ success: false, error: (err as Error).message })
+      return handleError(res, err, "Failed to fetch deployed contracts")
     }
   }
 
   /**
    * POST /contracts/log
    * Tambahkan log baru + update state contract
+   * 
+   * Optional fields for logistics management:
+   * - extra.addLogistics: string[] → daftar address logistics baru yang akan ditambahkan
+   * - extra.removeLogistics: string[] → daftar address logistics yang akan dihapus
    */
   static async logContractAction(req: Request, res: Response) {
     try {
@@ -71,9 +75,7 @@ export class ContractController {
       } = req.body as Partial<ContractLogDTO>
 
       if (!contractAddress || !action || !txHash || !account) {
-        return res
-          .status(400)
-          .json({ success: false, error: "Missing required fields (contractAddress, action, txHash, account)" })
+        return failure(res, "Missing required fields (contractAddress, action, txHash, account)")
       }
 
       // Verifikasi transaksi blockchain bila diminta
@@ -106,10 +108,9 @@ export class ContractController {
 
       // Simpan log + update state
       const saved = await ContractService.addContractLog(dto)
-      return res.json({ success: true, log: saved })
+      return success(res, saved, 201)
     } catch (err) {
-      console.error("[ContractController.logContractAction]", err)
-      return res.status(500).json({ success: false, error: (err as Error).message })
+      return handleError(res, err, "Failed to log contract action")
     }
   }
 
@@ -121,13 +122,10 @@ export class ContractController {
     try {
       const { address } = req.params
       const contract = await ContractService.getContractById(address)
-      if (!contract) {
-        return res.status(404).json({ success: false, error: "Contract not found" })
-      }
-      return res.json({ success: true, data: contract })
+      if (!contract) return failure(res, "Contract not found", 404)
+      return success(res, contract)
     } catch (err) {
-      console.error("[ContractController.getContractDetails]", err)
-      return res.status(500).json({ success: false, error: (err as Error).message })
+      return handleError(res, err, "Failed to fetch contract details")
     }
   }
 
@@ -139,13 +137,10 @@ export class ContractController {
     try {
       const { address } = req.params
       const result = await ContractService.getContractStepStatus(address)
-      if (!result) {
-        return res.status(404).json({ success: false, error: "Contract not found" })
-      }
-      return res.json({ success: true, data: result })
+      if (!result) return failure(res, "Contract not found", 404)
+      return success(res, result)
     } catch (err) {
-      console.error("[ContractController.getContractStep]", err)
-      return res.status(500).json({ success: false, error: (err as Error).message })
+      return handleError(res, err, "Failed to fetch contract step")
     }
   }
 
@@ -156,15 +151,12 @@ export class ContractController {
   static async getUserContracts(req: AuthRequest, res: Response) {
     try {
       const user = req.user
-      if (!user) {
-        return res.status(401).json({ success: false, error: "Unauthorized" })
-      }
+      if (!user) return failure(res, "Unauthorized", 401)
 
       const contracts = await ContractService.getContractsByUser(user.address)
-      return res.json({ success: true, data: contracts })
+      return success(res, contracts)
     } catch (err) {
-      console.error("[ContractController.getUserContracts]", err)
-      return res.status(500).json({ success: false, error: (err as Error).message })
+      return handleError(res, err, "Failed to fetch user contracts")
     }
   }
 }
