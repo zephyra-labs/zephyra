@@ -1,13 +1,35 @@
-import { Router } from 'express';
-import { createActivity, getActivities, getActivityByAccountController } from '../controllers/activityController.js';
+import { Router } from 'express'
+import {
+  createActivity,
+  getActivities,
+  getActivityByAccountController,
+} from '../controllers/activityController.js'
 import { authMiddleware } from "../middlewares/authMiddleware.js"
 
-const router = Router();
+const router = Router()
 
-router.post('/', authMiddleware, createActivity);
+/**
+ * --- Activity Routes ---
+ * Manage user activity logs and records.
+ * All routes require authentication.
+ */
 
-router.get('/', authMiddleware, getActivities);
+/**
+ * POST /activities
+ * Create a new activity log
+ */
+router.post('/', authMiddleware, createActivity)
 
-router.get('/:account', authMiddleware, getActivityByAccountController);
+/**
+ * GET /activities
+ * Get all activities (may be filtered by query params)
+ */
+router.get('/', authMiddleware, getActivities)
 
-export default router;
+/**
+ * GET /activities/:account
+ * Get activities by account address
+ */
+router.get('/:account', authMiddleware, getActivityByAccountController)
+
+export default router

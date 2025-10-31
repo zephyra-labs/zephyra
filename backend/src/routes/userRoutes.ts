@@ -11,27 +11,53 @@ import {
 import { authMiddleware } from "../middlewares/authMiddleware.js"
 import { adminMiddleware } from "../middlewares/adminMiddleware.js"
 
-const router = Router()
+const router = Router();
 
-// --- Wallet Connect / Auto-register ---
-router.post("/wallet-connect", walletConnectHandler)
+/**
+ * --- User Routes ---
+ * Wallet connection, user profile management, admin user management
+ */
 
-// --- Get Current User ---
-router.get("/me", authMiddleware, getCurrentUserHandler)
+/**
+ * POST /users/wallet-connect
+ * Wallet connect / auto-register user
+ */
+router.post("/wallet-connect", walletConnectHandler);
 
-// --- Get All Users ---
-router.get("/", authMiddleware, getAllUsersHandler)
+/**
+ * GET /users/me
+ * Get current authenticated user's profile
+ */
+router.get("/me", authMiddleware, getCurrentUserHandler);
 
-// --- Get Single User ---
-router.get("/:address", authMiddleware, getUserHandler)
+/**
+ * GET /users
+ * Get all users (requires authentication)
+ */
+router.get("/", authMiddleware, getAllUsersHandler);
 
-// --- Update Current User ---
-router.patch("/update/me", authMiddleware, updateMeHandler)
+/**
+ * GET /users/:address
+ * Get single user by wallet address
+ */
+router.get("/:address", authMiddleware, getUserHandler);
 
-// --- Update User (Admin only) ---
-router.patch("/:address", authMiddleware, adminMiddleware, updateUserHandler)
+/**
+ * PATCH /users/update/me
+ * Update current authenticated user's profile
+ */
+router.patch("/update/me", authMiddleware, updateMeHandler);
 
-// --- Delete User (Admin only) ---
-router.delete("/:address", authMiddleware, adminMiddleware, deleteUserHandler)
+/**
+ * PATCH /users/:address
+ * Update user (admin only)
+ */
+router.patch("/:address", authMiddleware, adminMiddleware, updateUserHandler);
 
-export default router
+/**
+ * DELETE /users/:address
+ * Delete user (admin only)
+ */
+router.delete("/:address", authMiddleware, adminMiddleware, deleteUserHandler);
+
+export default router;

@@ -1,5 +1,4 @@
-import express from "express"
-import { Router } from "express"
+import express, { Router } from "express"
 import {
   createKYC,
   getAllKYCs,
@@ -15,9 +14,19 @@ import { internalAuthMiddleware } from "../middlewares/internalAuthMiddleware.js
 
 const router = Router()
 
-// -------------------- Internal Routes --------------------
+/**
+ * --- KYC Routes ---
+ * Manage user KYC creation, updates, logs, and internal status updates
+ */
 
-// Internal: Update KYC status
+/**
+ * -------------------- Internal Routes --------------------
+ */
+
+/**
+ * PATCH /kyc/internal/:tokenId/status
+ * Internal use only — update KYC verification status (used by backend services)
+ */
 router.patch(
   "/internal/:tokenId/status",
   internalAuthMiddleware,
@@ -25,27 +34,50 @@ router.patch(
   updateKYCInternal
 )
 
-// -------------------- Public Routes --------------------
+/**
+ * -------------------- Public Routes --------------------
+ */
 
-// Create new KYC (with file)
+/**
+ * POST /kyc
+ * Create a new KYC record (supports file upload)
+ */
 router.post("/", authMiddleware, createKYC)
 
-// Update KYC (JSON body)
+/**
+ * PATCH /kyc/:tokenId
+ * Update an existing KYC (JSON body only)
+ */
 router.patch("/:tokenId", authMiddleware, express.json(), updateKYC)
 
-// Delete KYC
+/**
+ * DELETE /kyc/:tokenId
+ * Delete a specific KYC record
+ */
 router.delete("/:tokenId", authMiddleware, express.json(), deleteKYC)
 
-// Get all KYCs
+/**
+ * GET /kyc
+ * Get all KYC records (admin or authorized access)
+ */
 router.get("/", authMiddleware, getAllKYCs)
 
-// Get KYC by tokenId
+/**
+ * GET /kyc/:tokenId
+ * Get KYC record by token ID
+ */
 router.get("/:tokenId", authMiddleware, getKYCById)
 
-// Get KYCs by owner
+/**
+ * GET /kyc/owner/:owner
+ * Get all KYC records belonging to a specific owner address
+ */
 router.get("/owner/:owner", authMiddleware, getKYCsByOwner)
 
-// Get KYC Logs
+/**
+ * GET /kyc/:tokenId/logs
+ * Get full activity logs for a specific KYC token
+ */
 router.get("/:tokenId/logs", authMiddleware, getKYCLogs)
 
 export default router

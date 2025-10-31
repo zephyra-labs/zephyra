@@ -1,23 +1,44 @@
-import { Router } from 'express';
-import * as companyController from '../controllers/companyController.js';
+import { Router } from 'express'
+import * as companyController from '../controllers/companyController.js'
 import { authMiddleware } from "../middlewares/authMiddleware.js"
 import { adminMiddleware } from "../middlewares/adminMiddleware.js"
 
-const router = Router();
+const router = Router()
 
-// Create a new company
-router.post('/', authMiddleware, adminMiddleware, companyController.createCompany);
+/**
+ * --- Company Routes ---
+ * Manage companies in the system.
+ * Admin-only routes are protected with adminMiddleware.
+ */
 
-// Get all companies
-router.get('/', authMiddleware, companyController.getCompanies);
+/**
+ * POST /companies
+ * Create a new company (Admin only)
+ */
+router.post('/', authMiddleware, adminMiddleware, companyController.createCompany)
 
-// Get a company by ID
-router.get('/:id', authMiddleware, companyController.getCompanyById);
+/**
+ * GET /companies
+ * Retrieve all companies
+ */
+router.get('/', authMiddleware, companyController.getCompanies)
 
-// Update a company by ID
-router.put('/:id', authMiddleware, adminMiddleware, companyController.updateCompany);
+/**
+ * GET /companies/:id
+ * Retrieve a single company by ID
+ */
+router.get('/:id', authMiddleware, companyController.getCompanyById)
 
-// Delete a company by ID
-router.delete('/:id', authMiddleware, adminMiddleware, companyController.deleteCompany);
+/**
+ * PUT /companies/:id
+ * Update a company by ID (Admin only)
+ */
+router.put('/:id', authMiddleware, adminMiddleware, companyController.updateCompany)
 
-export default router;
+/**
+ * DELETE /companies/:id
+ * Delete a company by ID (Admin only)
+ */
+router.delete('/:id', authMiddleware, adminMiddleware, companyController.deleteCompany)
+
+export default router

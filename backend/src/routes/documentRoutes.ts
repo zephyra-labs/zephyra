@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router } from "express"
 import {
   attachDocument,
   getDocument,
@@ -8,33 +8,63 @@ import {
   updateDocument,
   deleteDocument,
   getAllDocuments,
-} from "../controllers/documentController.js";
-import { authMiddleware } from "../middlewares/authMiddleware.js";
+} from "../controllers/documentController.js"
+import { authMiddleware } from "../middlewares/authMiddleware.js"
 
-const router = Router();
+const router = Router()
 
-// --- POST /contract/:addr/docs
-router.post("/contract/:addr/docs", authMiddleware, attachDocument);
+/**
+ * --- Document Routes ---
+ * Manage trade-related and KYC-linked document records.
+ * Includes CRUD operations, logs, and document associations by contract or owner.
+ */
 
-// --- GET /documents
-router.get("/", authMiddleware, getAllDocuments);
+/**
+ * POST /contract/:addr/docs
+ * Attach a new document to a specific contract address.
+ */
+router.post("/contract/:addr/docs", authMiddleware, attachDocument)
 
-// --- GET documents by owner
-router.get("/owner/:owner", authMiddleware, getDocumentsByOwner);
+/**
+ * GET /documents
+ * Retrieve all documents (admin or authorized users).
+ */
+router.get("/", authMiddleware, getAllDocuments)
 
-// --- GET documents by contract
-router.get("/contract/:addr", authMiddleware, getDocumentsByContract);
+/**
+ * GET /documents/owner/:owner
+ * Retrieve all documents belonging to a specific wallet address.
+ */
+router.get("/owner/:owner", authMiddleware, getDocumentsByOwner)
 
-// --- GET single document by tokenId
-router.get("/:tokenId", authMiddleware, getDocument);
+/**
+ * GET /documents/contract/:addr
+ * Retrieve all documents linked to a specific contract address.
+ */
+router.get("/contract/:addr", authMiddleware, getDocumentsByContract)
 
-// --- GET document logs by tokenId
-router.get("/:tokenId/logs", authMiddleware, getDocumentLogs);
+/**
+ * GET /documents/:tokenId
+ * Retrieve a single document by its token ID.
+ */
+router.get("/:tokenId", authMiddleware, getDocument)
 
-// --- PATCH /documents/:tokenId
-router.patch("/:tokenId", authMiddleware, updateDocument);
+/**
+ * GET /documents/:tokenId/logs
+ * Retrieve full activity logs for a specific document.
+ */
+router.get("/:tokenId/logs", authMiddleware, getDocumentLogs)
 
-// --- DELETE /documents/:tokenId
-router.delete("/:tokenId", authMiddleware, deleteDocument);
+/**
+ * PATCH /documents/:tokenId
+ * Update document metadata or information.
+ */
+router.patch("/:tokenId", authMiddleware, updateDocument)
 
-export default router;
+/**
+ * DELETE /documents/:tokenId
+ * Delete a document by token ID.
+ */
+router.delete("/:tokenId", authMiddleware, deleteDocument)
+
+export default router

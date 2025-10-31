@@ -3,24 +3,47 @@ import { NotificationController } from "../controllers/notificationController.js
 import { authMiddleware } from "../middlewares/authMiddleware.js"
 import { internalAuthMiddleware } from "../middlewares/internalAuthMiddleware.js"
 
-const router = Router()
+const router = Router();
 
-// --- Get All Notifications ---
-router.get("/", authMiddleware, NotificationController.getAll)
+/**
+ * --- Notification Routes ---
+ * Manage user notifications (read, list, delete) and internal notification creation
+ */
 
-// --- Get Notifications by User ---
-router.get("/user/:userId", authMiddleware, NotificationController.getByUser)
+/**
+ * GET /notifications
+ * Get all notifications (admin or authorized user)
+ */
+router.get("/", authMiddleware, NotificationController.getAll);
 
-// --- Get Notification by Id ---
-router.get("/:id", authMiddleware, NotificationController.getById)
+/**
+ * GET /notifications/user/:userId
+ * Get all notifications belonging to a specific user
+ */
+router.get("/user/:userId", authMiddleware, NotificationController.getByUser);
 
-// --- Mark Notification as Read ---
-router.patch("/:id/read", authMiddleware, NotificationController.markAsRead)
+/**
+ * GET /notifications/:id
+ * Get a single notification by its ID
+ */
+router.get("/:id", authMiddleware, NotificationController.getById);
 
-// --- Delete Notification ---
-router.delete("/:id", authMiddleware, NotificationController.delete)
+/**
+ * PATCH /notifications/:id/read
+ * Mark a notification as read
+ */
+router.patch("/:id/read", authMiddleware, NotificationController.markAsRead);
 
-// --- Internal: Create Notification ---
-router.post("/internal", internalAuthMiddleware, NotificationController.createInternal)
+/**
+ * DELETE /notifications/:id
+ * Delete a specific notification
+ */
+router.delete("/:id", authMiddleware, NotificationController.delete);
 
-export default router
+/**
+ * POST /notifications/internal
+ * Internal route: Create notification (used by system services)
+ */
+router.post("/internal", internalAuthMiddleware, NotificationController.createInternal);
+
+export default router;
