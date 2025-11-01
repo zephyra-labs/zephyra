@@ -1,7 +1,12 @@
-import { Router } from "express"
-import { NotificationController } from "../controllers/notificationController.js"
-import { authMiddleware } from "../middlewares/authMiddleware.js"
-import { internalAuthMiddleware } from "../middlewares/internalAuthMiddleware.js"
+/**
+ * @file notificationRoutes.ts
+ * @description Routes for managing user notifications and internal notification creation
+ */
+
+import { Router } from "express";
+import { NotificationController } from "../controllers/notificationController.js";
+import { authMiddleware } from "../middlewares/authMiddleware.js";
+import { internalAuthMiddleware } from "../middlewares/internalAuthMiddleware.js";
 
 const router = Router();
 
@@ -11,38 +16,62 @@ const router = Router();
  */
 
 /**
- * GET /notifications
- * Get all notifications (admin or authorized user)
+ * Get all notifications
+ * @route GET /notifications
+ * @group Notification
+ * @security BearerAuth
+ * @returns {Array<object>} 200 - List of all notifications
  */
 router.get("/", authMiddleware, NotificationController.getAll);
 
 /**
- * GET /notifications/user/:userId
- * Get all notifications belonging to a specific user
+ * Get notifications for a specific user
+ * @route GET /notifications/user/:userId
+ * @group Notification
+ * @security BearerAuth
+ * @param {string} userId.path.required - User ID
+ * @returns {Array<object>} 200 - List of notifications for the user
  */
 router.get("/user/:userId", authMiddleware, NotificationController.getByUser);
 
 /**
- * GET /notifications/:id
- * Get a single notification by its ID
+ * Get a single notification by ID
+ * @route GET /notifications/:id
+ * @group Notification
+ * @security BearerAuth
+ * @param {string} id.path.required - Notification ID
+ * @returns {object} 200 - Notification data
+ * @returns {Error} 404 - Notification not found
  */
 router.get("/:id", authMiddleware, NotificationController.getById);
 
 /**
- * PATCH /notifications/:id/read
  * Mark a notification as read
+ * @route PATCH /notifications/:id/read
+ * @group Notification
+ * @security BearerAuth
+ * @param {string} id.path.required - Notification ID
+ * @returns {object} 200 - Updated notification with read status
  */
 router.patch("/:id/read", authMiddleware, NotificationController.markAsRead);
 
 /**
- * DELETE /notifications/:id
  * Delete a specific notification
+ * @route DELETE /notifications/:id
+ * @group Notification
+ * @security BearerAuth
+ * @param {string} id.path.required - Notification ID
+ * @returns {object} 200 - Success message
  */
 router.delete("/:id", authMiddleware, NotificationController.delete);
 
 /**
- * POST /notifications/internal
  * Internal route: Create notification (used by system services)
+ * @route POST /notifications/internal
+ * @group Notification
+ * @security InternalBearerAuth
+ * @param {object} body - Notification payload
+ * @returns {object} 201 - Created notification
  */
 router.post("/internal", internalAuthMiddleware, NotificationController.createInternal);
 

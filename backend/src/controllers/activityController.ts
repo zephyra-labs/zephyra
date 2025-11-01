@@ -1,9 +1,20 @@
+/**
+ * @file activityController.ts
+ * @description Express controller for managing user activity logs.
+ * Supports creating, listing, and fetching activities by account.
+ */
+
 import type { Request, Response } from 'express'
 import { addActivityLog, getAllActivities, getActivityByAccount } from '../models/activityModel.js'
 import { success, failure, handleError } from '../utils/responseHelper.js'
 
 /**
- * POST /activity
+ * Create a new activity log entry.
+ *
+ * @route POST /activity
+ * @param {Request} req - Express request object, expects `account` in body.
+ * @param {Response} res - Express response object.
+ * @returns {Promise<Response>} JSON response with created activity or error.
  */
 export const createActivity = async (req: Request, res: Response) => {
   try {
@@ -20,8 +31,16 @@ export const createActivity = async (req: Request, res: Response) => {
 }
 
 /**
- * GET /activity
- * Optional query: ?account=0x123&txHash=0xabc&limit=20&startAfterTimestamp=1670000000000
+ * Get activity logs with optional filtering.
+ *
+ * @route GET /activity
+ * @param {Request} req - Express request object, supports query parameters:
+ *   - account: filter by account
+ *   - txHash: filter by transaction hash
+ *   - limit: number of items to fetch
+ *   - startAfterTimestamp: pagination start
+ * @param {Response} res - Express response object.
+ * @returns {Promise<Response>} JSON response with filtered activity logs.
  */
 export const getActivities = async (req: Request, res: Response) => {
   try {
@@ -51,7 +70,14 @@ export const getActivities = async (req: Request, res: Response) => {
 }
 
 /**
- * GET /activity/:account
+ * Get activity logs for a specific account.
+ *
+ * @route GET /activity/:account
+ * @param {Request} req - Express request object, expects `account` param, optional query:
+ *   - limit: number of items to fetch
+ *   - startAfterTimestamp: pagination start
+ * @param {Response} res - Express response object.
+ * @returns {Promise<Response>} JSON response with activity logs for the account.
  */
 export const getActivityByAccountController = async (req: Request, res: Response) => {
   try {

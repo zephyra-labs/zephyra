@@ -1,44 +1,61 @@
-import { Router } from 'express'
-import * as companyController from '../controllers/companyController.js'
-import { authMiddleware } from "../middlewares/authMiddleware.js"
-import { adminMiddleware } from "../middlewares/adminMiddleware.js"
-
-const router = Router()
-
 /**
- * --- Company Routes ---
- * Manage companies in the system.
- * Admin-only routes are protected with adminMiddleware.
+ * @file companyRoutes.ts
+ * @description Routes for managing companies in the system. Admin-only actions are protected.
  */
 
-/**
- * POST /companies
- * Create a new company (Admin only)
- */
-router.post('/', authMiddleware, adminMiddleware, companyController.createCompany)
+import { Router } from 'express';
+import * as companyController from '../controllers/companyController.js';
+import { authMiddleware } from "../middlewares/authMiddleware.js";
+import { adminMiddleware } from "../middlewares/adminMiddleware.js";
+
+const router = Router();
 
 /**
- * GET /companies
- * Retrieve all companies
+ * Create a new company
+ * @route POST /companies
+ * @group Companies
+ * @security BearerAuth
+ * @returns {object} 201 - Newly created company
  */
-router.get('/', authMiddleware, companyController.getCompanies)
+router.post('/', authMiddleware, adminMiddleware, companyController.createCompany);
 
 /**
- * GET /companies/:id
- * Retrieve a single company by ID
+ * Get all companies
+ * @route GET /companies
+ * @group Companies
+ * @security BearerAuth
+ * @returns {Array.<object>} 200 - List of companies
  */
-router.get('/:id', authMiddleware, companyController.getCompanyById)
+router.get('/', authMiddleware, companyController.getCompanies);
 
 /**
- * PUT /companies/:id
- * Update a company by ID (Admin only)
+ * Get a company by ID
+ * @route GET /companies/{id}
+ * @group Companies
+ * @param {string} id.path.required - Company ID
+ * @security BearerAuth
+ * @returns {object} 200 - Company details
  */
-router.put('/:id', authMiddleware, adminMiddleware, companyController.updateCompany)
+router.get('/:id', authMiddleware, companyController.getCompanyById);
 
 /**
- * DELETE /companies/:id
- * Delete a company by ID (Admin only)
+ * Update a company by ID
+ * @route PUT /companies/{id}
+ * @group Companies
+ * @param {string} id.path.required - Company ID
+ * @security BearerAuth
+ * @returns {object} 200 - Updated company details
  */
-router.delete('/:id', authMiddleware, adminMiddleware, companyController.deleteCompany)
+router.put('/:id', authMiddleware, adminMiddleware, companyController.updateCompany);
 
-export default router
+/**
+ * Delete a company by ID
+ * @route DELETE /companies/{id}
+ * @group Companies
+ * @param {string} id.path.required - Company ID
+ * @security BearerAuth
+ * @returns {object} 200 - Success message
+ */
+router.delete('/:id', authMiddleware, adminMiddleware, companyController.deleteCompany);
+
+export default router;

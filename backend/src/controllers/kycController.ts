@@ -1,11 +1,27 @@
+/**
+ * @file kycController.ts
+ * @description Express controller for KYC operations.
+ * Handles creation, update, deletion, retrieval, and internal status updates.
+ */
+
 import type { Request, Response } from "express";
 import { KYCService } from "../services/kycService.js";
 import multer from "multer";
 import { success, failure } from "../utils/responseHelper.js";
 
-const upload = multer({ limits: { fileSize: 10 * 1024 * 1024 } });
+const upload = multer({ limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB limit
 
 // --- Create KYC ---
+/**
+ * Handles the creation of a new KYC record.
+ * Accepts multipart form-data for file upload.
+ *
+ * @route POST /kyc
+ * @middleware multer.single("file")
+ * @param {Request} req - Express request object.
+ * @param {Response} res - Express response object.
+ * @returns {Promise<void>} JSON response with created KYC or error.
+ */
 export const createKYC = [
   upload.single("file"),
   async (req: Request, res: Response) => {
@@ -33,6 +49,14 @@ export const createKYC = [
 ];
 
 // --- Update KYC ---
+/**
+ * Updates an existing KYC record.
+ *
+ * @route PUT /kyc/:tokenId
+ * @param {Request} req - Express request object.
+ * @param {Response} res - Express response object.
+ * @returns {Promise<void>} JSON response with updated KYC or error.
+ */
 export const updateKYC = async (req: Request, res: Response) => {
   try {
     const body = req.body || {};
@@ -50,6 +74,14 @@ export const updateKYC = async (req: Request, res: Response) => {
 };
 
 // --- Delete KYC ---
+/**
+ * Deletes a KYC record by tokenId.
+ *
+ * @route DELETE /kyc/:tokenId
+ * @param {Request} req - Express request object.
+ * @param {Response} res - Express response object.
+ * @returns {Promise<void>} JSON response with deletion status or error.
+ */
 export const deleteKYC = async (req: Request, res: Response) => {
   try {
     const body = req.body || {};
@@ -67,6 +99,14 @@ export const deleteKYC = async (req: Request, res: Response) => {
 };
 
 // --- Get all KYCs ---
+/**
+ * Retrieves all KYC records.
+ *
+ * @route GET /kyc
+ * @param {Request} _req - Express request object.
+ * @param {Response} res - Express response object.
+ * @returns {Promise<void>} JSON response with all KYCs or error.
+ */
 export const getAllKYCs = async (_req: Request, res: Response) => {
   try {
     const kycs = await KYCService.getAllKYC();
@@ -77,6 +117,14 @@ export const getAllKYCs = async (_req: Request, res: Response) => {
 };
 
 // --- Get KYC by tokenId ---
+/**
+ * Retrieves a KYC record by its tokenId.
+ *
+ * @route GET /kyc/:tokenId
+ * @param {Request} req - Express request object.
+ * @param {Response} res - Express response object.
+ * @returns {Promise<void>} JSON response with KYC or error.
+ */
 export const getKYCById = async (req: Request, res: Response) => {
   try {
     const kyc = await KYCService.getKYCById(req.params.tokenId);
@@ -88,6 +136,14 @@ export const getKYCById = async (req: Request, res: Response) => {
 };
 
 // --- Get KYCs by owner ---
+/**
+ * Retrieves all KYC records for a specific owner.
+ *
+ * @route GET /kyc/owner/:owner
+ * @param {Request} req - Express request object.
+ * @param {Response} res - Express response object.
+ * @returns {Promise<void>} JSON response with KYCs for owner or error.
+ */
 export const getKYCsByOwner = async (req: Request, res: Response) => {
   try {
     const kycs = await KYCService.getKYCByOwner(req.params.owner);
@@ -98,6 +154,14 @@ export const getKYCsByOwner = async (req: Request, res: Response) => {
 };
 
 // --- Get KYC Logs ---
+/**
+ * Retrieves history/logs of a specific KYC record.
+ *
+ * @route GET /kyc/:tokenId/logs
+ * @param {Request} req - Express request object.
+ * @param {Response} res - Express response object.
+ * @returns {Promise<void>} JSON response with KYC logs or error.
+ */
 export const getKYCLogs = async (req: Request, res: Response) => {
   try {
     const kyc = await KYCService.getKYCById(req.params.tokenId);
@@ -109,6 +173,14 @@ export const getKYCLogs = async (req: Request, res: Response) => {
 };
 
 // --- Internal: Update KYC status ---
+/**
+ * Updates KYC status internally (used by system or admin operations).
+ *
+ * @route PATCH /kyc/internal/:tokenId
+ * @param {Request} req - Express request object.
+ * @param {Response} res - Express response object.
+ * @returns {Promise<void>} JSON response with updated KYC or error.
+ */
 export const updateKYCInternal = async (req: Request, res: Response) => {
   try {
     const tokenId = req.params.tokenId;

@@ -1,24 +1,69 @@
+/**
+ * @file CompanyDTO.ts
+ * @description Data Transfer Object for Company entity.
+ */
+
 import type { Company } from '../types/Company.js';
 
+/**
+ * DTO for company data
+ */
 export default class CompanyDTO {
+  /** Unique ID (optional for new records) */
   id?: string;
+
+  /** Company name */
   name!: string;
+
+  /** Street address */
   address!: string;
+
+  /** City */
   city!: string;
+
+  /** State or province */
   stateOrProvince!: string;
+
+  /** Postal code */
   postalCode!: string;
+
+  /** Country */
   country!: string;
+
+  /** Email */
   email!: string;
+
+  /** Optional phone number */
   phone?: string;
+
+  /** Optional tax ID */
   taxId?: string;
+
+  /** Optional registration number */
   registrationNumber?: string;
+
+  /** Optional business type */
   businessType?: string;
+
+  /** Optional website URL */
   website?: string;
+
+  /** Optional wallet address */
   walletAddress?: string;
+
+  /** Verified status */
   verified: boolean = false;
+
+  /** Creation timestamp */
   createdAt?: number;
+
+  /** Last update timestamp */
   updatedAt?: number;
 
+  /**
+   * Constructor for CompanyDTO
+   * @param data Partial company data with required fields for new company
+   */
   constructor(
     data: Partial<Company> & { 
       name: string; 
@@ -33,6 +78,9 @@ export default class CompanyDTO {
     if (data.verified !== undefined) this.verified = data.verified;
   }
 
+  /**
+   * Validate required fields
+   */
   validate() {
     if (!this.name) throw new Error('name required');
     if (!this.address) throw new Error('address required');
@@ -43,6 +91,10 @@ export default class CompanyDTO {
     if (!this.email) throw new Error('email required');
   }
 
+  /**
+   * Transform DTO into a JSON object suitable for Firestore or API response
+   * @returns {Omit<Company, 'id'>} Company object without ID
+   */
   toJSON(): Omit<Company, 'id'> {
     return {
       name: this.name,

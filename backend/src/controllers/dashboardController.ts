@@ -1,11 +1,21 @@
+/**
+ * @file dashboardController.ts
+ * @description Express controller for dashboard endpoints.
+ * Provides aggregated admin dashboard and user-specific dashboard data.
+ */
+
 import type { Request, Response } from "express"
 import { DashboardService } from "../services/dashboardService.js"
 import { success, failure, handleError } from "../utils/responseHelper.js"
 
 export class DashboardController {
   /**
-   * GET /dashboard (Admin)
-   * Aggregated overview of users, contracts, and documents
+   * Retrieves aggregated dashboard overview for admin.
+   *
+   * @route GET /dashboard
+   * @param {Request} _req - Express request object.
+   * @param {Response} res - Express response object.
+   * @returns {Promise<Response>} JSON response with dashboard data or error.
    */
   static async getDashboard(_req: Request, res: Response): Promise<Response> {
     try {
@@ -17,8 +27,12 @@ export class DashboardController {
   }
 
   /**
-   * GET /dashboard/user
-   * Dashboard data for the authenticated user
+   * Retrieves dashboard data for the authenticated user.
+   *
+   * @route GET /dashboard/user
+   * @param {Request} req - Express request object (requires authenticated user).
+   * @param {Response} res - Express response object.
+   * @returns {Promise<Response>} JSON response with user dashboard data or error.
    */
   static async getUserDashboard(req: Request, res: Response): Promise<Response> {
     try {

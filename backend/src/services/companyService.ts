@@ -1,10 +1,22 @@
+/**
+ * @file companyService.ts
+ * @description Business logic for managing companies: create, update, delete, get, and default creation for new users.
+ */
+
 import { CompanyModel } from "../models/companyModel.js";
 import CompanyDTO from "../dtos/companyDTO.js";
 import type { Company } from "../types/Company.js";
 import { notifyWithAdmins } from "../utils/notificationHelper.js";
 
 export class CompanyService {
-  // --- Create company (manual/admin) ---
+  /**
+   * Create a new company (manual/admin creation).
+   *
+   * @async
+   * @param {Partial<Company>} data - Partial company data.
+   * @param {string} executor - User creating the company.
+   * @returns {Promise<Company>} The newly created company.
+   */
   static async createCompany(data: Partial<Company>, executor: string): Promise<Company> {
     const safeData: Partial<Company> & Required<Pick<Company, 'name' | 'address' | 'city' | 'stateOrProvince' | 'postalCode' | 'country' | 'email'>> = {
       name: data.name || `Company of ${executor}`,
@@ -33,13 +45,22 @@ export class CompanyService {
     return company;
   }
 
-  // --- Update company (manual/admin) ---
+  /**
+   * Update an existing company (manual/admin update).
+   *
+   * @async
+   * @param {string} id - Company ID.
+   * @param {Partial<Company>} data - Data to update.
+   * @param {string} executor - User performing the update.
+   * @returns {Promise<Company>} Updated company.
+   * @throws {Error} If company not found or update fails.
+   */
   static async updateCompany(id: string, data: Partial<Company>, executor: string): Promise<Company> {
     const existing = await CompanyModel.getById(id);
     if (!existing) throw new Error("Company not found");
 
     const merged = Object.assign({}, existing, data);
-    const safeData: Partial<Company> & Required<Pick<Company, 'name' | 'address' | 'city' | 'stateOrProvince' | 'postalCode' | 'country' | 'email'>> = merged as Partial<Company> & Required<Pick<Company, 'name' | 'address' | 'city' | 'stateOrProvince' | 'postalCode' | 'country' | 'email'>>;
+    const safeData: Partial<Company> & Required<Pick<Company, 'name' | 'address' | 'city' | 'stateOrProvince' | 'postalCode' | 'country' | 'email'>> = merged as any;
 
     const dto = new CompanyDTO(safeData);
     dto.validate();
@@ -58,7 +79,15 @@ export class CompanyService {
     return updated;
   }
 
-  // --- Delete company ---
+  /**
+   * Delete a company.
+   *
+   * @async
+   * @param {string} id - Company ID to delete.
+   * @param {string} executor - User performing the deletion.
+   * @returns {Promise<boolean>} True if deletion successful.
+   * @throws {Error} If company not found.
+   */
   static async deleteCompany(id: string, executor: string): Promise<boolean> {
     const existing = await CompanyModel.getById(id);
     if (!existing) throw new Error("Company not found");
@@ -75,17 +104,34 @@ export class CompanyService {
     return true;
   }
 
-  // --- Get all companies ---
+  /**
+   * Get all companies.
+   *
+   * @async
+   * @returns {Promise<Company[]>} List of companies.
+   */
   static async getAllCompanies(): Promise<Company[]> {
     return CompanyModel.getAll();
   }
 
-  // --- Get company by ID ---
+  /**
+   * Get company by ID.
+   *
+   * @async
+   * @param {string} id - Company ID.
+   * @returns {Promise<Company | null>} Company data or null if not found.
+   */
   static async getCompanyById(id: string): Promise<Company | null> {
     return CompanyModel.getById(id);
   }
 
-  // --- Auto-create default company for new user ---
+  /**
+   * Auto-create a default company for a new user.
+   *
+   * @async
+   * @param {string} address - User wallet address.
+   * @returns {Promise<Company>} The created default company.
+   */
   static async createDefaultForUser(address: string): Promise<Company> {
     const data: Omit<Company, 'id'> = {
       name: `Company of ${address}`,

@@ -1,4 +1,9 @@
-import express, { Router } from "express"
+/**
+ * @file kycRoutes.ts
+ * @description Routes for managing KYC records: creation, updates, deletion, logs, and internal status updates
+ */
+
+import express, { Router } from "express";
 import {
   createKYC,
   getAllKYCs,
@@ -8,76 +13,105 @@ import {
   deleteKYC,
   getKYCLogs,
   updateKYCInternal,
-} from "../controllers/kycController.js"
-import { authMiddleware } from "../middlewares/authMiddleware.js"
-import { internalAuthMiddleware } from "../middlewares/internalAuthMiddleware.js"
+} from "../controllers/kycController.js";
+import { authMiddleware } from "../middlewares/authMiddleware.js";
+import { internalAuthMiddleware } from "../middlewares/internalAuthMiddleware.js";
 
-const router = Router()
-
-/**
- * --- KYC Routes ---
- * Manage user KYC creation, updates, logs, and internal status updates
- */
+const router = Router();
 
 /**
  * -------------------- Internal Routes --------------------
  */
 
 /**
- * PATCH /kyc/internal/:tokenId/status
- * Internal use only — update KYC verification status (used by backend services)
+ * Internal: Update KYC status
+ * @route PATCH /kyc/internal/:tokenId/status
+ * @group KYC
+ * @security InternalBearerAuth
+ * @param {string} tokenId.path.required - KYC token ID
+ * @param {object} body - Status update payload
+ * @returns {object} 200 - Updated KYC record
  */
 router.patch(
   "/internal/:tokenId/status",
   internalAuthMiddleware,
   express.json(),
   updateKYCInternal
-)
+);
 
 /**
  * -------------------- Public Routes --------------------
  */
 
 /**
- * POST /kyc
- * Create a new KYC record (supports file upload)
+ * Create a new KYC record
+ * @route POST /kyc
+ * @group KYC
+ * @security BearerAuth
+ * @param {multipart/form-data} file - KYC document file
+ * @param {string} body - Other KYC fields (owner, fileHash, metadataUrl, etc.)
+ * @returns {object} 201 - Created KYC record
  */
-router.post("/", authMiddleware, createKYC)
+router.post("/", authMiddleware, createKYC);
 
 /**
- * PATCH /kyc/:tokenId
- * Update an existing KYC (JSON body only)
+ * Update an existing KYC record
+ * @route PATCH /kyc/:tokenId
+ * @group KYC
+ * @security BearerAuth
+ * @param {string} tokenId.path.required - KYC token ID
+ * @param {object} body - Fields to update
+ * @returns {object} 200 - Updated KYC record
  */
-router.patch("/:tokenId", authMiddleware, express.json(), updateKYC)
+router.patch("/:tokenId", authMiddleware, express.json(), updateKYC);
 
 /**
- * DELETE /kyc/:tokenId
  * Delete a specific KYC record
+ * @route DELETE /kyc/:tokenId
+ * @group KYC
+ * @security BearerAuth
+ * @param {string} tokenId.path.required - KYC token ID
+ * @returns {object} 200 - Success message
  */
-router.delete("/:tokenId", authMiddleware, express.json(), deleteKYC)
+router.delete("/:tokenId", authMiddleware, express.json(), deleteKYC);
 
 /**
- * GET /kyc
- * Get all KYC records (admin or authorized access)
+ * Get all KYC records
+ * @route GET /kyc
+ * @group KYC
+ * @security BearerAuth
+ * @returns {Array<object>} 200 - List of all KYC records
  */
-router.get("/", authMiddleware, getAllKYCs)
+router.get("/", authMiddleware, getAllKYCs);
 
 /**
- * GET /kyc/:tokenId
  * Get KYC record by token ID
+ * @route GET /kyc/:tokenId
+ * @group KYC
+ * @security BearerAuth
+ * @param {string} tokenId.path.required - KYC token ID
+ * @returns {object} 200 - KYC record
  */
-router.get("/:tokenId", authMiddleware, getKYCById)
+router.get("/:tokenId", authMiddleware, getKYCById);
 
 /**
- * GET /kyc/owner/:owner
- * Get all KYC records belonging to a specific owner address
+ * Get all KYC records for a specific owner
+ * @route GET /kyc/owner/:owner
+ * @group KYC
+ * @security BearerAuth
+ * @param {string} owner.path.required - Owner wallet address
+ * @returns {Array<object>} 200 - List of KYC records
  */
-router.get("/owner/:owner", authMiddleware, getKYCsByOwner)
+router.get("/owner/:owner", authMiddleware, getKYCsByOwner);
 
 /**
- * GET /kyc/:tokenId/logs
- * Get full activity logs for a specific KYC token
+ * Get KYC activity logs
+ * @route GET /kyc/:tokenId/logs
+ * @group KYC
+ * @security BearerAuth
+ * @param {string} tokenId.path.required - KYC token ID
+ * @returns {Array<object>} 200 - List of KYC activity logs
  */
-router.get("/:tokenId/logs", authMiddleware, getKYCLogs)
+router.get("/:tokenId/logs", authMiddleware, getKYCLogs);
 
-export default router
+export default router;

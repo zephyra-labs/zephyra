@@ -1,13 +1,28 @@
+/** 
+ * @file userService.ts
+ * @description Service layer for User entity handling business logic, user creation, updates, and wallet connections.
+ */
+
 import jwt from 'jsonwebtoken';
-import { UserModel } from "../models/UserModel.js";
+import { UserModel } from "../models/userModel.js";
 import { notifyWithAdmins } from "../utils/notificationHelper.js";
-import UserDTO, { CreateUserDTO, UpdateUserDTO } from "../dtos/UserDTO.js";
+import UserDTO, { CreateUserDTO, UpdateUserDTO } from "../dtos/userDTO.js";
 import type { User } from "../types/User.js";
 import { UserCompanyService } from './userCompanyService.js';
 import { CompanyService } from './companyService.js';
 
 export class UserService {
-  // --- Wallet connect / auto-register ---
+  /**
+   * Handles wallet connection.  
+   * - Auto-registers user if not exists.  
+   * - Updates last login timestamp if exists.  
+   * - Creates default company and user-company relation for new users.  
+   * - Returns JWT for session authentication.
+   *
+   * @param {Partial<User> & { address: string }} data - User wallet data.
+   * @returns {Promise<{ user: User; token: string }>} Created or existing user and JWT token.
+   * @throws {Error} If wallet address is missing or database operation fails.
+   */
   static async walletConnect(data: Partial<User> & { address: string }) {
     if (!data.address) throw new Error("Address is required");
 
@@ -58,7 +73,13 @@ export class UserService {
     return { user, token };
   }
 
-  // --- Create new user ---
+  /**
+   * Creates a new user manually by admin or system.
+   *
+   * @param {Partial<User> & { address: string }} data - User data to create.
+   * @returns {Promise<User>} Newly created user.
+   * @throws {Error} If address is missing or creation fails.
+   */
   static async createUser(data: Partial<User> & { address: string }): Promise<User> {
     if (!data.address) throw new Error("Address is required");
     const dto = new CreateUserDTO(data);
@@ -74,7 +95,15 @@ export class UserService {
     return user;
   }
 
-  // --- Update user by admin ---
+  /**
+   * Updates a user (admin privilege).  
+   * Can modify metadata, role, and KYC status.
+   *
+   * @param {string} address - Wallet address of the user.
+   * @param {Partial<User> & { kycStatus?: 'pending' | 'approved' | 'rejected' }} data - Update payload.
+   * @returns {Promise<User | null>} Updated user object, or null if not found.
+   * @throws {Error} If user not found or update fails.
+   */
   static async updateUser(
     address: string,
     data: Partial<User> & { kycStatus?: 'pending' | 'approved' | 'rejected' }
@@ -107,7 +136,14 @@ export class UserService {
     return updated;
   }
 
-  // --- Update current user's profile ---
+  /**
+   * Updates the currently authenticated user's profile metadata.
+   *
+   * @param {string} address - Wallet address of the current user.
+   * @param {Partial<User['metadata']>} metadata - Partial metadata fields to update.
+   * @returns {Promise<User | null>} Updated user or null if not found.
+   * @throws {Error} If user not found.
+   */
   static async updateMe(address: string, metadata: Partial<User['metadata']>): Promise<User | null> {
     const current = await UserModel.getByAddress(address);
     if (!current) throw new Error("User not found");
@@ -120,12 +156,26 @@ export class UserService {
     return updated;
   }
 
-  // --- Update only KYC status ---
+  /**
+   * Updates only the user's KYC status.  
+   * Used by admin during verification review.
+   *
+   * @param {string} address - Wallet address of the user.
+   * @param {'pending' | 'approved' | 'rejected'} status - New KYC status.
+   * @returns {Promise<User | null>} Updated user or null if not found.
+   */
   static async updateKYCStatus(address: string, status: 'pending' | 'approved' | 'rejected') {
     return this.updateUser(address, { kycStatus: status });
   }
 
-  // --- Delete user ---
+  /**
+   * Deletes a user permanently from the system.  
+   * Also triggers admin notification.
+   *
+   * @param {string} address - Wallet address of the user to delete.
+   * @returns {Promise<boolean>} True if deleted successfully.
+   * @throws {Error} If user not found or deletion fails.
+   */
   static async deleteUser(address: string): Promise<boolean> {
     const user = await UserModel.getByAddress(address);
     if (!user) throw new Error("User not found");
@@ -142,12 +192,21 @@ export class UserService {
     return deleted;
   }
 
-  // --- Get user by address ---
+  /**
+   * Retrieves a single user by wallet address.
+   *
+   * @param {string} address - Wallet address.
+   * @returns {Promise<User | null>} User object or null if not found.
+   */
   static async getUser(address: string): Promise<User | null> {
     return UserModel.getByAddress(address);
   }
 
-  // --- Get all users ---
+  /**
+   * Retrieves all users in the system.
+   *
+   * @returns {Promise<User[]>} List of all users.
+   */
   static async getAllUsers(): Promise<User[]> {
     return UserModel.getAll();
   }

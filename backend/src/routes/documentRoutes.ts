@@ -1,4 +1,10 @@
-import { Router } from "express"
+/**
+ * @file documentRoutes.ts
+ * @description Routes for managing trade-related and KYC-linked documents.
+ * Supports CRUD operations, logs, and document associations by contract or owner.
+ */
+
+import { Router } from "express";
 import {
   attachDocument,
   getDocument,
@@ -8,63 +14,90 @@ import {
   updateDocument,
   deleteDocument,
   getAllDocuments,
-} from "../controllers/documentController.js"
-import { authMiddleware } from "../middlewares/authMiddleware.js"
+} from "../controllers/documentController.js";
+import { authMiddleware } from "../middlewares/authMiddleware.js";
 
-const router = Router()
-
-/**
- * --- Document Routes ---
- * Manage trade-related and KYC-linked document records.
- * Includes CRUD operations, logs, and document associations by contract or owner.
- */
+const router = Router();
 
 /**
- * POST /contract/:addr/docs
- * Attach a new document to a specific contract address.
+ * Attach a new document to a specific contract
+ * @route POST /contract/:addr/docs
+ * @group Document
+ * @security BearerAuth
+ * @param {string} addr.path.required - Contract address
+ * @param {object} body.required - Document payload
+ * @returns {object} 201 - Created document
  */
-router.post("/contract/:addr/docs", authMiddleware, attachDocument)
+router.post("/contract/:addr/docs", authMiddleware, attachDocument);
 
 /**
- * GET /documents
- * Retrieve all documents (admin or authorized users).
+ * Get all documents
+ * @route GET /documents
+ * @group Document
+ * @security BearerAuth
+ * @returns {Array<object>} 200 - List of documents
  */
-router.get("/", authMiddleware, getAllDocuments)
+router.get("/", authMiddleware, getAllDocuments);
 
 /**
- * GET /documents/owner/:owner
- * Retrieve all documents belonging to a specific wallet address.
+ * Get all documents for a specific owner
+ * @route GET /documents/owner/:owner
+ * @group Document
+ * @security BearerAuth
+ * @param {string} owner.path.required - Owner wallet address
+ * @returns {Array<object>} 200 - List of documents
  */
-router.get("/owner/:owner", authMiddleware, getDocumentsByOwner)
+router.get("/owner/:owner", authMiddleware, getDocumentsByOwner);
 
 /**
- * GET /documents/contract/:addr
- * Retrieve all documents linked to a specific contract address.
+ * Get all documents linked to a specific contract
+ * @route GET /documents/contract/:addr
+ * @group Document
+ * @security BearerAuth
+ * @param {string} addr.path.required - Contract address
+ * @returns {Array<object>} 200 - List of documents
  */
-router.get("/contract/:addr", authMiddleware, getDocumentsByContract)
+router.get("/contract/:addr", authMiddleware, getDocumentsByContract);
 
 /**
- * GET /documents/:tokenId
- * Retrieve a single document by its token ID.
+ * Get a document by token ID
+ * @route GET /documents/:tokenId
+ * @group Document
+ * @security BearerAuth
+ * @param {number} tokenId.path.required - Document token ID
+ * @returns {object} 200 - Document details
  */
-router.get("/:tokenId", authMiddleware, getDocument)
+router.get("/:tokenId", authMiddleware, getDocument);
 
 /**
- * GET /documents/:tokenId/logs
- * Retrieve full activity logs for a specific document.
+ * Get activity logs for a specific document
+ * @route GET /documents/:tokenId/logs
+ * @group Document
+ * @security BearerAuth
+ * @param {number} tokenId.path.required - Document token ID
+ * @returns {Array<object>} 200 - List of document logs
  */
-router.get("/:tokenId/logs", authMiddleware, getDocumentLogs)
+router.get("/:tokenId/logs", authMiddleware, getDocumentLogs);
 
 /**
- * PATCH /documents/:tokenId
- * Update document metadata or information.
+ * Update document metadata
+ * @route PATCH /documents/:tokenId
+ * @group Document
+ * @security BearerAuth
+ * @param {number} tokenId.path.required - Document token ID
+ * @param {object} body.required - Fields to update
+ * @returns {object} 200 - Updated document
  */
-router.patch("/:tokenId", authMiddleware, updateDocument)
+router.patch("/:tokenId", authMiddleware, updateDocument);
 
 /**
- * DELETE /documents/:tokenId
- * Delete a document by token ID.
+ * Delete a document
+ * @route DELETE /documents/:tokenId
+ * @group Document
+ * @security BearerAuth
+ * @param {number} tokenId.path.required - Document token ID
+ * @returns {object} 200 - Success message
  */
-router.delete("/:tokenId", authMiddleware, deleteDocument)
+router.delete("/:tokenId", authMiddleware, deleteDocument);
 
-export default router
+export default router;

@@ -1,12 +1,24 @@
-import { ContractModel } from "../models/contractModel.js"
-import ContractLogDTO from "../dtos/contractDTO.js"
-import { notifyUsers, notifyWithAdmins } from "../utils/notificationHelper.js"
-import { getContractRoles } from "../utils/getContractRoles.js"
-import type { ContractLogEntry } from "../types/Contract.js"
+/**
+ * @file contractService.ts
+ * @description Business logic for managing contracts, contract logs, participants, and notifications.
+ */
+
+import { ContractModel } from "../models/contractModel.js";
+import ContractLogDTO from "../dtos/contractDTO.js";
+import { notifyUsers, notifyWithAdmins } from "../utils/notificationHelper.js";
+import { getContractRoles } from "../utils/getContractRoles.js";
+import type { ContractLogEntry } from "../types/Contract.js";
 
 export class ContractService {
   /**
-   * Tambah log baru ke contract dan update state-nya
+   * Add a new log to a contract and update its state.
+   * Handles first deployment or merges with existing state.
+   * Supports adding/removing logistics.
+   *
+   * @async
+   * @param {Partial<ContractLogDTO>} data - Data to create contract log.
+   * @returns {Promise<ContractLogEntry>} Newly created log entry.
+   * @throws {Error} If DTO validation fails or logistic already added/removed.
    */
   static async addContractLog(data: Partial<ContractLogDTO>): Promise<ContractLogEntry> {
     const dto = new ContractLogDTO(data as any);
@@ -72,7 +84,7 @@ export class ContractService {
 
     // --- Notifikasi ---
     const payload = {
-      type: "agreement",
+      type: "agreement" as const,
       title: `Contract Action: ${dto.action}`,
       message: `Contract ${dto.contractAddress} has a new action "${dto.action}" by ${dto.account}.`,
       txHash: dto.txHash,
@@ -93,83 +105,95 @@ export class ContractService {
     return logEntry;
   }
 
-
   /**
-   * Ambil semua contract
+   * Get all contracts.
+   *
+   * @async
+   * @returns {Promise<any[]>} List of all contracts.
    */
   static async getAllContracts() {
-    return ContractModel.getAllContracts()
+    return ContractModel.getAllContracts();
   }
 
   /**
-   * Ambil contract berdasarkan address
+   * Get a contract by its address.
+   *
+   * @async
+   * @param {string} address - Contract address.
+   * @returns {Promise<any | null>} Contract data or null if not found.
    */
   static async getContractById(address: string) {
-    return ContractModel.getContractById(address)
+    return ContractModel.getContractById(address);
   }
 
   /**
-   * Ambil semua contract yang terkait dengan user tertentu
+   * Get all contracts related to a specific user (based on role: exporter, importer, logistics).
+   *
+   * @async
+   * @param {string} address - User wallet address.
+   * @returns {Promise<any[]>} List of contracts with role assigned.
    */
   static async getContractsByUser(address: string) {
-    const contracts = await ContractModel.getContractsByUser(address)
-    const result = []
+    const contracts = await ContractModel.getContractsByUser(address);
+    const result = [];
 
     for (const c of contracts) {
-      const roles = c.state ?? (await getContractRoles(c.contractAddress))
-      if (roles.exporter === address) result.push({ ...c, role: "Exporter" })
-      else if (roles.importer === address) result.push({ ...c, role: "Importer" })
-      else if (roles.logistics === address) result.push({ ...c, role: "Logistics" })
+      const roles = c.state ?? (await getContractRoles(c.contractAddress));
+      if (roles.exporter === address) result.push({ ...c, role: "Exporter" });
+      else if (roles.importer === address) result.push({ ...c, role: "Importer" });
+      else if (roles.logistics === address) result.push({ ...c, role: "Logistics" });
     }
 
-    return result
+    return result;
   }
 
   /**
-   * Ambil status tahapan dari contract
+   * Get the status of each step in the contract lifecycle.
+   *
+   * @async
+   * @param {string} contractAddress - Contract address.
+   * @returns {Promise<{ stepStatus: Record<string, boolean>; lastAction: ContractLogEntry | null } | null>}
+   *   Object containing step status and last action, or null if contract not found.
    */
   static async getContractStepStatus(contractAddress: string) {
-    const contract = await ContractModel.getContractById(contractAddress)
-    if (!contract) return null
+    const contract = await ContractModel.getContractById(contractAddress);
+    if (!contract) return null;
 
-    const history: ContractLogEntry[] = contract.history ?? []
+    const history: ContractLogEntry[] = contract.history ?? [];
 
-    const stepStatus: Record<
-      "deploy" | "deposit" | "approveImporter" | "approveExporter" | "finalize",
-      boolean
-    > = {
+    const stepStatus: Record<"deploy" | "deposit" | "approveImporter" | "approveExporter" | "finalize", boolean> = {
       deploy: false,
       deposit: false,
       approveImporter: false,
       approveExporter: false,
       finalize: false,
-    }
+    };
 
     history.forEach((log) => {
       switch (log.action) {
         case "deploy":
-          stepStatus.deploy = true
-          break
+          stepStatus.deploy = true;
+          break;
         case "deposit":
-          stepStatus.deposit = true
-          break
+          stepStatus.deposit = true;
+          break;
         case "approveImporter":
         case "approve_importer":
-          stepStatus.approveImporter = true
-          break
+          stepStatus.approveImporter = true;
+          break;
         case "approveExporter":
         case "approve_exporter":
-          stepStatus.approveExporter = true
-          break
+          stepStatus.approveExporter = true;
+          break;
         case "finalize":
-          stepStatus.finalize = true
-          break
+          stepStatus.finalize = true;
+          break;
       }
-    })
+    });
 
     return {
       stepStatus,
       lastAction: history[history.length - 1] ?? null,
-    }
+    };
   }
 }

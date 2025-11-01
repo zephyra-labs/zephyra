@@ -16,10 +16,14 @@ export class CreateWalletLogDTO {
   action!: WalletAction;
 
   /** Optional metadata (e.g., IP, device info) */
-  meta?: Record<string, any>;
+  meta: Record<string, any>;
 
+  /**
+   * @param {Partial<CreateWalletLogDTO>} data Partial data to initialize DTO
+   */
   constructor(data: Partial<CreateWalletLogDTO>) {
     Object.assign(this, data);
+    this.meta = data.meta || {};
   }
 
   /**
@@ -45,7 +49,7 @@ export class CreateWalletLogDTO {
       account: this.account,
       action: this.action,
       timestamp: Date.now(),
-      meta: this.meta || {},
+      meta: this.meta,
     };
   }
 }

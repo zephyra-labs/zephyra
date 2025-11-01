@@ -19,55 +19,78 @@ import { adminMiddleware } from "../middlewares/adminMiddleware.js";
 const router = Router();
 
 /**
+ * Record a wallet login event for a user
  * @route POST /wallet/log-login
- * @description Record a wallet login event for a user.
- * @access Authenticated users
+ * @group Wallet
+ * @security BearerAuth
+ * @returns {object} 200 - Wallet log created
+ * @returns {Error} 400 - Invalid request
  */
 router.post("/log-login", authMiddleware, logWalletLogin);
 
 /**
+ * Record a wallet disconnect event for a user
  * @route POST /wallet/log-disconnect
- * @description Record a wallet disconnect event for a user.
- * @access Authenticated users
+ * @group Wallet
+ * @security BearerAuth
+ * @returns {object} 200 - Wallet log created
+ * @returns {Error} 400 - Invalid request
  */
 router.post("/log-disconnect", authMiddleware, logWalletDisconnect);
 
 /**
+ * Retrieve all wallet logs
  * @route GET /wallet/logs
- * @description Retrieve all wallet logs.
+ * @group Wallet
+ * @security BearerAuth
  * @access Admin only
+ * @returns {Array<object>} 200 - List of wallet logs
  */
 router.get("/logs", authMiddleware, adminMiddleware, getAllWalletLogs);
 
 /**
+ * Retrieve wallet logs for a specific account
  * @route GET /wallet/:account/logs
- * @description Retrieve wallet logs for a specific account.
- * @param {string} account - Wallet address
- * @access Owner or Admin
+ * @group Wallet
+ * @security BearerAuth
+ * @param {string} account.path.required - Wallet address
+ * @returns {Array<object>} 200 - Wallet logs for the account
+ * @returns {Error} 404 - Account not found
  */
 router.get("/:account/logs", authMiddleware, getWalletLogs);
 
 /**
+ * Retrieve current wallet state for a specific account
  * @route GET /wallet/:account/state
- * @description Retrieve current wallet state for a specific account.
- * @param {string} account - Wallet address
- * @access Owner or Admin
+ * @group Wallet
+ * @security BearerAuth
+ * @param {string} account.path.required - Wallet address
+ * @returns {object} 200 - Wallet state
+ * @returns {Error} 404 - State not found
  */
 router.get("/:account/state", authMiddleware, getWalletState);
 
 /**
+ * Update wallet state for a specific account
  * @route PATCH /wallet/:account/state
- * @description Update wallet state for a specific account.
- * @param {string} account - Wallet address
- * @access Owner or Admin
+ * @group Wallet
+ * @security BearerAuth
+ * @param {string} account.path.required - Wallet address
+ * @param {object} body - Partial wallet state update
+ * @returns {object} 200 - Updated wallet state
+ * @returns {Error} 400 - Validation failed
  */
 router.patch("/:account/state", authMiddleware, updateWalletStateController);
 
 /**
+ * Purge all wallet data (logs + state) for a specific account
  * @route DELETE /wallet/:account
- * @description Purge all wallet data (logs + state) for a specific account.
- * @param {string} account - Wallet address
+ * @group Wallet
+ * @security BearerAuth
  * @access Admin only
+ * @param {string} account.path.required - Wallet address
+ * @returns {object} 200 - Success message
+ * @returns {Error} 404 - Account not found
  */
 router.delete("/:account", authMiddleware, adminMiddleware, deleteWalletController);
 

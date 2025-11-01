@@ -1,43 +1,60 @@
-import { Router } from "express"
-import { ContractController } from "../controllers/contractController.js"
-import { authMiddleware } from "../middlewares/authMiddleware.js"
-
-const router = Router()
-
 /**
- * --- Contract Routes ---
- * Manage deployed trade contracts, their logs, and on-chain progress.
- * Includes endpoints for user-specific and general contract queries.
+ * @file contractRoutes.ts
+ * @description Routes for managing deployed contracts, contract logs, and on-chain progress.
  */
 
-/**
- * GET /contracts/my
- * Retrieve all contracts owned by the authenticated user.
- */
-router.get("/my", authMiddleware, ContractController.getUserContracts)
+import { Router } from "express";
+import { ContractController } from "../controllers/contractController.js";
+import { authMiddleware } from "../middlewares/authMiddleware.js";
+
+const router = Router();
 
 /**
- * GET /contracts/:address/details
- * Retrieve detailed information about a specific contract.
+ * Get all contracts owned by the authenticated user
+ * @route GET /contracts/my
+ * @group Contracts
+ * @security BearerAuth
+ * @returns {object} 200 - List of contracts for the current user
  */
-router.get("/:address/details", authMiddleware, ContractController.getContractDetails)
+router.get("/my", authMiddleware, ContractController.getUserContracts);
 
 /**
- * GET /contracts/:address/step
- * Retrieve current lifecycle step/status of the specified contract.
+ * Get detailed information about a specific contract
+ * @route GET /contracts/{address}/details
+ * @group Contracts
+ * @param {string} address.path.required - Contract address
+ * @security BearerAuth
+ * @returns {object} 200 - Contract details
  */
-router.get("/:address/step", authMiddleware, ContractController.getContractStep)
+router.get("/:address/details", authMiddleware, ContractController.getContractDetails);
 
 /**
- * GET /contracts
- * Retrieve all deployed contracts available in the system.
+ * Get current lifecycle step/status of a specific contract
+ * @route GET /contracts/{address}/step
+ * @group Contracts
+ * @param {string} address.path.required - Contract address
+ * @security BearerAuth
+ * @returns {object} 200 - Contract step/status
  */
-router.get("/", authMiddleware, ContractController.fetchDeployedContracts)
+router.get("/:address/step", authMiddleware, ContractController.getContractStep);
 
 /**
- * POST /contracts/log
- * Add a new contract log and update its state.
+ * Get all deployed contracts in the system
+ * @route GET /contracts
+ * @group Contracts
+ * @security BearerAuth
+ * @returns {object} 200 - List of all deployed contracts
  */
-router.post("/log", authMiddleware, ContractController.logContractAction)
+router.get("/", authMiddleware, ContractController.fetchDeployedContracts);
 
-export default router
+/**
+ * Add a new contract log and update its state
+ * @route POST /contracts/log
+ * @group Contracts
+ * @param {object} body.body.required - Contract log data
+ * @security BearerAuth
+ * @returns {object} 201 - Newly created contract log
+ */
+router.post("/log", authMiddleware, ContractController.logContractAction);
+
+export default router;

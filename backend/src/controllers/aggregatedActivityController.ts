@@ -1,10 +1,21 @@
+/**
+ * @file aggregatedActivityController.ts
+ * @description Express controller for managing aggregated activity logs.
+ * Supports CRUD operations, tagging, and filtering for aggregated activities.
+ */
+
 import type { Request, Response } from 'express'
 import aggregatedActivityModel from '../models/aggregatedActivityModel.js'
 import type { AggregatedActivityLog } from '../types/AggregatedActivity.js'
 import { success, failure, handleError } from '../utils/responseHelper.js'
 
 /**
- * POST /aggregated-activity
+ * Create a new aggregated activity log.
+ *
+ * @route POST /aggregated-activity
+ * @param {Request} req - Express request object, expects `account` in body.
+ * @param {Response} res - Express response object.
+ * @returns {Promise<Response>} JSON response with created log or error.
  */
 export const addAggregatedActivity = async (req: Request, res: Response) => {
   try {
@@ -22,7 +33,12 @@ export const addAggregatedActivity = async (req: Request, res: Response) => {
 }
 
 /**
- * GET /aggregated-activity/:id
+ * Get an aggregated activity log by ID.
+ *
+ * @route GET /aggregated-activity/:id
+ * @param {Request} req - Express request object, expects `id` param.
+ * @param {Response} res - Express response object.
+ * @returns {Promise<Response>} JSON response with the log or 404 error.
  */
 export const getAggregatedActivityById = async (req: Request, res: Response) => {
   try {
@@ -39,9 +55,18 @@ export const getAggregatedActivityById = async (req: Request, res: Response) => 
 }
 
 /**
- * GET /aggregated-activity
- * Optional query:
- * ?account=0x123&txHash=0xabc&contractAddress=0xdef&tags=trade,settlement&limit=20&startAfterTimestamp=1670000000000
+ * Get aggregated activity logs with optional filtering.
+ *
+ * @route GET /aggregated-activity
+ * @param {Request} req - Express request object, supports query parameters:
+ *   - account: filter by account
+ *   - txHash: filter by transaction hash
+ *   - contractAddress: filter by contract address
+ *   - tags: comma-separated tags
+ *   - limit: number of items to fetch (default 20)
+ *   - startAfterTimestamp: pagination start
+ * @param {Response} res - Express response object.
+ * @returns {Promise<Response>} JSON response with filtered activity logs and pagination info.
  */
 export const getAggregatedActivities = async (req: Request, res: Response) => {
   try {
@@ -69,7 +94,12 @@ export const getAggregatedActivities = async (req: Request, res: Response) => {
 }
 
 /**
- * POST /aggregated-activity/:id/tag
+ * Add a tag to an aggregated activity log.
+ *
+ * @route POST /aggregated-activity/:id/tag
+ * @param {Request} req - Express request object, expects `id` param and `tag` in body.
+ * @param {Response} res - Express response object.
+ * @returns {Promise<Response>} JSON response confirming tag addition.
  */
 export const addAggregatedTag = async (req: Request, res: Response) => {
   try {
@@ -87,7 +117,12 @@ export const addAggregatedTag = async (req: Request, res: Response) => {
 }
 
 /**
- * DELETE /aggregated-activity/:id/tag?tag=example
+ * Remove a tag from an aggregated activity log.
+ *
+ * @route DELETE /aggregated-activity/:id/tag
+ * @param {Request} req - Express request object, expects `id` param and `tag` query.
+ * @param {Response} res - Express response object.
+ * @returns {Promise<Response>} JSON response confirming tag removal.
  */
 export const removeAggregatedTag = async (req: Request, res: Response) => {
   try {

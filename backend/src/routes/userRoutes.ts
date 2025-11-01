@@ -1,3 +1,9 @@
+/**
+ * @file userRoutes.ts
+ * @description Express router for user-related endpoints, including wallet connection,
+ * user profile management, and admin user management.
+ */
+
 import { Router } from "express"
 import {
   walletConnectHandler,
@@ -7,7 +13,7 @@ import {
   updateUserHandler,
   updateMeHandler,
   deleteUserHandler,
-} from "../controllers/UserController.js"
+} from "../controllers/userController.js"
 import { authMiddleware } from "../middlewares/authMiddleware.js"
 import { adminMiddleware } from "../middlewares/adminMiddleware.js"
 
@@ -19,44 +25,69 @@ const router = Router();
  */
 
 /**
- * POST /users/wallet-connect
  * Wallet connect / auto-register user
+ * @route POST /users/wallet-connect
+ * @group Users
+ * @returns {object} 200 - Success response with user data
  */
 router.post("/wallet-connect", walletConnectHandler);
 
 /**
- * GET /users/me
  * Get current authenticated user's profile
+ * @route GET /users/me
+ * @group Users
+ * @security BearerAuth
+ * @returns {object} 200 - User profile
  */
 router.get("/me", authMiddleware, getCurrentUserHandler);
 
 /**
- * GET /users
  * Get all users (requires authentication)
+ * @route GET /users
+ * @group Users
+ * @security BearerAuth
+ * @returns {Array<object>} 200 - List of users
  */
 router.get("/", authMiddleware, getAllUsersHandler);
 
 /**
- * GET /users/:address
  * Get single user by wallet address
+ * @route GET /users/:address
+ * @group Users
+ * @security BearerAuth
+ * @param {string} address.path.required - Wallet address
+ * @returns {object} 200 - User profile
  */
 router.get("/:address", authMiddleware, getUserHandler);
 
 /**
- * PATCH /users/update/me
  * Update current authenticated user's profile
+ * @route PATCH /users/update/me
+ * @group Users
+ * @security BearerAuth
+ * @param {object} body - Partial user data to update
+ * @returns {object} 200 - Updated user profile
  */
 router.patch("/update/me", authMiddleware, updateMeHandler);
 
 /**
- * PATCH /users/:address
  * Update user (admin only)
+ * @route PATCH /users/:address
+ * @group Admin Users
+ * @security BearerAuth
+ * @param {string} address.path.required - Wallet address of the user
+ * @param {object} body - Fields to update
+ * @returns {object} 200 - Updated user profile
  */
 router.patch("/:address", authMiddleware, adminMiddleware, updateUserHandler);
 
 /**
- * DELETE /users/:address
  * Delete user (admin only)
+ * @route DELETE /users/:address
+ * @group Admin Users
+ * @security BearerAuth
+ * @param {string} address.path.required - Wallet address of the user
+ * @returns {object} 200 - Success message
  */
 router.delete("/:address", authMiddleware, adminMiddleware, deleteUserHandler);
 

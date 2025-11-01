@@ -10,7 +10,6 @@ import { CreateWalletLogDTO, UpdateWalletStateDTO } from '../dtos/walletDTO.js';
 import { success, failure, handleError } from '../utils/responseHelper.js';
 
 /**
- * POST /wallet/log-login
  * Record a wallet login event for a user
  *
  * @param {Request} req - Express request object
@@ -34,7 +33,6 @@ export const logWalletLogin = async (req: Request, res: Response) => {
 };
 
 /**
- * POST /wallet/log-disconnect
  * Record a wallet disconnect event for a user
  *
  * @param {Request} req - Express request object
@@ -58,7 +56,6 @@ export const logWalletDisconnect = async (req: Request, res: Response) => {
 };
 
 /**
- * GET /wallet/logs
  * Retrieve all wallet logs
  *
  * @param {Request} _req - Express request object (unused)
@@ -76,7 +73,6 @@ export const getAllWalletLogs = async (_req: Request, res: Response) => {
 };
 
 /**
- * GET /wallet/:account/logs
  * Retrieve wallet logs for a specific account
  *
  * @param {Request} req - Express request object
@@ -98,7 +94,6 @@ export const getWalletLogs = async (req: Request, res: Response) => {
 };
 
 /**
- * GET /wallet/:account/state
  * Retrieve current wallet state for a specific account
  *
  * @param {Request} req - Express request object
@@ -122,7 +117,6 @@ export const getWalletState = async (req: Request, res: Response) => {
 };
 
 /**
- * PATCH /wallet/:account/state
  * Update wallet state for a specific account
  *
  * @param {Request} req - Express request object
@@ -151,7 +145,6 @@ export const updateWalletStateController = async (req: Request, res: Response) =
 };
 
 /**
- * DELETE /wallet/:account
  * Purge all wallet data (logs + state) for a specific account
  *
  * @param {Request} req - Express request object

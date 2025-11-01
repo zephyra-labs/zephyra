@@ -1,47 +1,89 @@
-import type { ContractLogEntry, ContractState } from '../types/Contract.js'
-import type { OnChainInfo } from '../types/Info.js'
+/**
+ * @file ContractLogDTO.ts
+ * @description DTO for contract log entries and partial contract state management.
+ */
 
+import type { ContractLogEntry, ContractState } from '../types/Contract.js';
+import type { OnChainInfo } from '../types/Info.js';
+
+/**
+ * Data Transfer Object for a contract log entry
+ */
 export default class ContractLogDTO {
-  contractAddress!: string
-  action!: string
-  txHash!: string
-  account!: string
+  /** Contract address */
+  contractAddress!: string;
 
-  exporter?: string
-  importer?: string
-  logistics?: string
-  insurance?: string
-  inspector?: string
-  requiredAmount?: string
-  status?: string
-  currentStage?: string
-  extra?: any
-  timestamp!: number
-  onChainInfo?: OnChainInfo
+  /** Action performed */
+  action!: string;
 
-  // --- Optional for controller / service use ---
-  verifyOnChain?: boolean
-  state?: Partial<ContractState>
+  /** Transaction hash */
+  txHash!: string;
 
+  /** Account performing the action */
+  account!: string;
+
+  /** Optional participants in the contract */
+  exporter?: string;
+  importer?: string;
+  logistics?: string;
+  insurance?: string;
+  inspector?: string;
+
+  /** Optional required amount for contract action */
+  requiredAmount?: string;
+
+  /** Optional status of the contract */
+  status?: string;
+
+  /** Optional current stage */
+  currentStage?: string;
+
+  /** Optional extra data */
+  extra?: any;
+
+  /** Timestamp of the log */
+  timestamp!: number;
+
+  /** Optional on-chain information */
+  onChainInfo?: OnChainInfo;
+
+  // --- Optional for controller/service usage ---
+  /** Flag to indicate on-chain verification */
+  verifyOnChain?: boolean;
+
+  /** Partial contract state */
+  state?: Partial<ContractState>;
+
+  /**
+   * Constructor for ContractLogDTO
+   * @param data Partial contract log entry data
+   */
   constructor(
     data: Partial<ContractLogEntry> & {
-      contractAddress: string
-      verifyOnChain?: boolean
-      state?: Partial<ContractState>
-      status?: string
-      currentStage?: string
+      contractAddress: string;
+      verifyOnChain?: boolean;
+      state?: Partial<ContractState>;
+      status?: string;
+      currentStage?: string;
     },
   ) {
-    Object.assign(this, data)
+    Object.assign(this, data);
   }
 
+  /**
+   * Validate required fields
+   */
   validate() {
-    if (!this.contractAddress) throw new Error('contractAddress required')
-    if (!this.action) throw new Error('action required')
-    if (!this.txHash) throw new Error('txHash required')
-    if (!this.account) throw new Error('account required')
+    if (!this.contractAddress) throw new Error('contractAddress required');
+    if (!this.action) throw new Error('action required');
+    if (!this.txHash) throw new Error('txHash required');
+    if (!this.account) throw new Error('account required');
   }
 
+  /**
+   * Transform DTO into a ContractLogEntry object for Firestore or processing
+   * @returns {ContractLogEntry} Contract log entry object
+   */
   toLogEntry(): ContractLogEntry {
     return {
       action: this.action,
@@ -56,9 +98,13 @@ export default class ContractLogDTO {
       extra: this.extra ?? null,
       timestamp: this.timestamp ?? Date.now(),
       onChainInfo: this.onChainInfo,
-    }
+    };
   }
 
+  /**
+   * Transform DTO into a partial ContractState
+   * @returns {Partial<ContractState>} Partial contract state
+   */
   toState(): Partial<ContractState> {
     return {
       exporter: this.exporter,
@@ -69,6 +115,6 @@ export default class ContractLogDTO {
       status: this.status ?? this.state?.status,
       currentStage: this.currentStage ?? this.state?.currentStage,
       lastUpdated: Date.now(),
-    }
+    };
   }
 }

@@ -1,3 +1,9 @@
+/**
+ * @file contractController.ts
+ * @description Express controller for managing contracts, contract logs, and user-specific contract data.
+ * Supports fetching deployed contracts, adding logs, retrieving contract details, and checking contract steps.
+ */
+
 import { Request, Response } from "express"
 import { createPublicClient, http } from "viem"
 import { Chain } from "../config/chain.js"
@@ -12,7 +18,12 @@ const publicClient = createPublicClient({
   transport: http(Chain.rpcUrls.default.http[0]),
 })
 
-// --- Helper: verifikasi transaksi on-chain ---
+/**
+ * Verifies a transaction on-chain using Viem public client.
+ *
+ * @param {string} txHash - Transaction hash to verify.
+ * @returns {Promise<{status: "success"|"failed"; blockNumber: number; confirmations: number} | undefined>}
+ */
 const verifyTransaction = async (txHash: string) => {
   try {
     const receipt = await publicClient.getTransactionReceipt({
@@ -32,11 +43,14 @@ const verifyTransaction = async (txHash: string) => {
   }
 }
 
-// --- Controller ---
 export class ContractController {
   /**
-   * GET /contracts
-   * Ambil semua kontrak yang sudah ter-deploy
+   * Fetch all deployed contracts.
+   *
+   * @route GET /contracts
+   * @param {Request} _req - Express request object.
+   * @param {Response} res - Express response object.
+   * @returns {Promise<Response>} JSON response with list of deployed contracts.
    */
   static async fetchDeployedContracts(_req: Request, res: Response) {
     try {
@@ -48,12 +62,16 @@ export class ContractController {
   }
 
   /**
-   * POST /contracts/log
-   * Tambahkan log baru + update state contract
-   * 
+   * Add a new log to a contract and update its state.
+   *
    * Optional fields for logistics management:
-   * - extra.addLogistics: string[] → daftar address logistics baru yang akan ditambahkan
-   * - extra.removeLogistics: string[] → daftar address logistics yang akan dihapus
+   * - extra.addLogistics: string[] → addresses to add
+   * - extra.removeLogistics: string[] → addresses to remove
+   *
+   * @route POST /contracts/log
+   * @param {Request} req - Express request object with log data in body.
+   * @param {Response} res - Express response object.
+   * @returns {Promise<Response>} JSON response with saved contract log.
    */
   static async logContractAction(req: Request, res: Response) {
     try {
@@ -78,13 +96,11 @@ export class ContractController {
         return failure(res, "Missing required fields (contractAddress, action, txHash, account)")
       }
 
-      // Verifikasi transaksi blockchain bila diminta
       let onChainInfo
       if (verifyOnChain) {
         onChainInfo = await verifyTransaction(txHash)
       }
 
-      // Buat DTO
       const dto = new ContractLogDTO({
         contractAddress,
         action,
@@ -105,8 +121,6 @@ export class ContractController {
       })
 
       dto.validate()
-
-      // Simpan log + update state
       const saved = await ContractService.addContractLog(dto)
       return success(res, saved, 201)
     } catch (err) {
@@ -115,8 +129,12 @@ export class ContractController {
   }
 
   /**
-   * GET /contracts/:address/details
-   * Ambil data lengkap satu kontrak
+   * Get detailed information of a specific contract.
+   *
+   * @route GET /contracts/:address/details
+   * @param {Request} req - Express request object with contract address param.
+   * @param {Response} res - Express response object.
+   * @returns {Promise<Response>} JSON response with contract details or error.
    */
   static async getContractDetails(req: Request, res: Response) {
     try {
@@ -130,8 +148,12 @@ export class ContractController {
   }
 
   /**
-   * GET /contracts/:address/step
-   * Ambil status tahapan kontrak (deploy, deposit, approve, finalize)
+   * Get the current step/status of a contract (e.g., deploy, deposit, approve, finalize).
+   *
+   * @route GET /contracts/:address/step
+   * @param {Request} req - Express request object with contract address param.
+   * @param {Response} res - Express response object.
+   * @returns {Promise<Response>} JSON response with contract step status or error.
    */
   static async getContractStep(req: Request, res: Response) {
     try {
@@ -145,8 +167,12 @@ export class ContractController {
   }
 
   /**
-   * GET /contracts/my
-   * Ambil semua kontrak milik user saat ini
+   * Get all contracts belonging to the authenticated user.
+   *
+   * @route GET /contracts/my
+   * @param {AuthRequest} req - Express request object with user info from auth middleware.
+   * @param {Response} res - Express response object.
+   * @returns {Promise<Response>} JSON response with user's contracts or error.
    */
   static async getUserContracts(req: AuthRequest, res: Response) {
     try {
