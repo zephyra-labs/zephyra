@@ -16,7 +16,7 @@ export class CreateWalletLogDTO {
   action!: WalletAction;
 
   /** Optional metadata (e.g., IP, device info) */
-  meta: Record<string, any>;
+  meta: Record<string, unknown>;
 
   /**
    * @param {Partial<CreateWalletLogDTO>} data Partial data to initialize DTO

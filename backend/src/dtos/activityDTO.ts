@@ -28,7 +28,7 @@ export default class ActivityLogDTO {
   contractAddress?: string;
 
   /** Optional extra data */
-  extra?: Record<string, any>;
+  extra?: Record<string, unknown>;
 
   /** Optional on-chain info */
   onChainInfo?: {

@@ -6,6 +6,7 @@
 import { Request, Response } from "express";
 import { UserCompanyService } from "../services/userCompanyService.js";
 import { CompanyService } from "../services/companyService.js";
+import type { AuthRequest } from "../middlewares/authMiddleware.js"
 import type { CreateUserCompanyDTO, UpdateUserCompanyDTO } from "../types/UserCompany.js";
 import { success, failure, handleError } from "../utils/responseHelper.js";
 
@@ -140,9 +141,9 @@ export class UserCompanyController {
    * @param {Response} res Express response object
    * @returns {Promise<Response>} Company details
    */
-  static async getMyCompany(req: Request, res: Response) {
+  static async getMyCompany(req: AuthRequest, res: Response) {
     try {
-      const userAddress = (req as any).user?.address;
+      const userAddress = req.user?.address;
       if (!userAddress) return failure(res, "Unauthorized", 401);
 
       const relations = await UserCompanyService.getByUser(userAddress);
@@ -164,9 +165,9 @@ export class UserCompanyController {
    * @param {Response} res Express response object
    * @returns {Promise<Response>} Updated company details
    */
-  static async updateMyCompany(req: Request, res: Response) {
+  static async updateMyCompany(req: AuthRequest, res: Response) {
     try {
-      const userAddress = (req as any).user?.address;
+      const userAddress = req.user?.address;
       if (!userAddress) return failure(res, "Unauthorized", 401);
 
       const relations = await UserCompanyService.getByUser(userAddress);

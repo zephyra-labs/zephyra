@@ -10,8 +10,9 @@ export type UserRole = 'admin' | 'user';
 
 /**
  * Metadata associated with a user.
+ * @template TExtra - Type of additional arbitrary metadata (default: Record<string, unknown>)
  */
-export interface UserMetadata {
+export interface UserMetadata<TExtra = Record<string, unknown>> {
   /** Full name of the user */
   name?: string;
 
@@ -22,13 +23,13 @@ export interface UserMetadata {
   kycStatus?: 'pending' | 'approved' | 'rejected';
 
   /** Additional arbitrary metadata */
-  [key: string]: any;
+  extra?: TExtra;
 }
 
 /**
  * Represents a user in the system.
  */
-export interface User {
+export interface User<TExtra = Record<string, unknown>> {
   /** Wallet address or unique user identifier */
   address: string;
 
@@ -42,13 +43,13 @@ export interface User {
   lastLoginAt: number;
 
   /** Optional additional metadata */
-  metadata?: UserMetadata;
+  metadata?: UserMetadata<TExtra>;
 }
 
 /**
  * Payload for creating a new user.
  */
-export interface CreateUserDTO {
+export interface CreateUserDTO<TExtra = Record<string, unknown>> {
   /** Wallet address or unique identifier of the user */
   address: string;
 
@@ -56,18 +57,18 @@ export interface CreateUserDTO {
   role?: UserRole;
 
   /** Optional metadata for the user */
-  metadata?: UserMetadata;
+  metadata?: UserMetadata<TExtra>;
 }
 
 /**
  * Payload for updating an existing user.
  */
-export interface UpdateUserDTO {
+export interface UpdateUserDTO<TExtra = Record<string, unknown>> {
   /** Optional updated role */
   role?: UserRole;
 
   /** Optional partial metadata to update */
-  metadata?: Partial<UserMetadata>;
+  metadata?: Partial<UserMetadata<TExtra>>;
 
   /** Optional timestamp for last login update (Unix ms) */
   lastLoginAt?: number;

@@ -27,7 +27,7 @@ export const addAggregatedActivity = async (req: Request, res: Response) => {
 
     const log = await aggregatedActivityModel.add(data)
     return success(res, log, 201)
-  } catch (err: any) {
+  } catch (err: unknown) {
     return handleError(res, err, 'Failed to create aggregated activity', 400)
   }
 }
@@ -49,7 +49,7 @@ export const getAggregatedActivityById = async (req: Request, res: Response) => 
     if (!log) return failure(res, 'Log not found', 404)
 
     return success(res, log)
-  } catch (err: any) {
+  } catch (err: unknown) {
     return handleError(res, err, 'Failed to fetch aggregated activity')
   }
 }
@@ -88,7 +88,7 @@ export const getAggregatedActivities = async (req: Request, res: Response) => {
       items: result.data,
       nextStartAfterTimestamp: result.nextStartAfterTimestamp ?? null,
     })
-  } catch (err: any) {
+  } catch (err: unknown) {
     return handleError(res, err, 'Failed to fetch aggregated activities')
   }
 }
@@ -111,7 +111,7 @@ export const addAggregatedTag = async (req: Request, res: Response) => {
 
     await aggregatedActivityModel.addTag(id, tag)
     return success(res, { tag, message: 'Tag added successfully' })
-  } catch (err: any) {
+  } catch (err: unknown) {
     return handleError(res, err, 'Failed to add tag to aggregated activity')
   }
 }
@@ -134,7 +134,7 @@ export const removeAggregatedTag = async (req: Request, res: Response) => {
 
     await aggregatedActivityModel.removeTag(id, tag)
     return success(res, { tag, message: 'Tag removed successfully' })
-  } catch (err: any) {
+  } catch (err: unknown) {
     return handleError(res, err, 'Failed to remove tag from aggregated activity')
   }
 }

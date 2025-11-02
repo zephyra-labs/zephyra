@@ -22,8 +22,9 @@ export enum WalletAction {
 
 /**
  * Represents a wallet connection or disconnection log entry.
+ * @template TMeta - Type of the optional metadata (default: Record<string, unknown>)
  */
-export interface WalletLog {
+export interface WalletLog<TMeta = Record<string, unknown>> {
   /** Ethereum account or wallet address */
   account: string
 
@@ -34,7 +35,7 @@ export interface WalletLog {
   timestamp: number
 
   /** Optional metadata (e.g., IP, device info, session ID) */
-  meta?: Record<string, any>
+  meta?: TMeta
 }
 
 /**

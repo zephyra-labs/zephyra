@@ -4,8 +4,9 @@
  * Provides aggregated admin dashboard and user-specific dashboard data.
  */
 
-import type { Request, Response } from "express"
+import type { Response } from "express"
 import { DashboardService } from "../services/dashboardService.js"
+import type { AuthRequest } from "../middlewares/authMiddleware.js"
 import { success, failure, handleError } from "../utils/responseHelper.js"
 
 export class DashboardController {
@@ -17,7 +18,7 @@ export class DashboardController {
    * @param {Response} res - Express response object.
    * @returns {Promise<Response>} JSON response with dashboard data or error.
    */
-  static async getDashboard(_req: Request, res: Response): Promise<Response> {
+  static async getDashboard(_req: AuthRequest, res: Response): Promise<Response> {
     try {
       const dashboard = await DashboardService.getDashboard()
       return success(res, dashboard.toResponse())
@@ -34,9 +35,9 @@ export class DashboardController {
    * @param {Response} res - Express response object.
    * @returns {Promise<Response>} JSON response with user dashboard data or error.
    */
-  static async getUserDashboard(req: Request, res: Response): Promise<Response> {
+  static async getUserDashboard(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const userAddress = (req as any).user?.address
+      const userAddress = req.user?.address
       if (!userAddress) {
         return failure(res, "Unauthorized: missing user address", 401)
       }

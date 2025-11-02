@@ -37,7 +37,7 @@ export default class NotificationDTO {
   updatedAt?: number;
 
   /** Optional additional data */
-  extraData?: Record<string, any>;
+  extraData?: Record<string, unknown>;
 
   /**
    * Constructor for NotificationDTO

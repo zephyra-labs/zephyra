@@ -21,14 +21,15 @@ export class NotificationController {
    */
   static async createInternal(req: Request, res: Response) {
     try {
-      let { userId, executorId, type, title, message, extraData } = req.body;
+      let { userId, executorId } = req.body;
+      const { type, title, message, extraData } = req.body;
 
       if (!userId || !type || !title || !message) {
         return failure(res, "Missing required fields", 400);
       }
 
-      userId = userId.toLowerCase();
-      if (executorId) executorId = executorId.toLowerCase();
+      userId = userId;
+      if (executorId) executorId = executorId;
 
       const notif = await NotificationService.notify(
         userId,

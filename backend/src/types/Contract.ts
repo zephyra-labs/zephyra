@@ -3,7 +3,21 @@
  * @description Types for contract logs, state, and on-chain information.
  */
 
-import { OnChainInfo } from './Info.js';
+import type { OnChainInfo } from './Info.js';
+
+/**
+ * Optional extra metadata for a log entry
+ * Can include roles, amounts, or any other info
+ */
+export interface ContractLogExtra {
+  importer?: string;
+  exporter?: string;
+  logistics?: string;
+  insurance?: string;
+  inspector?: string;
+  requiredAmount?: string;
+  [key: string]: unknown; // flexible for future metadata
+}
 
 /**
  * Represents a single log entry for a contract
@@ -25,7 +39,7 @@ export interface ContractLogEntry {
   importer?: string;
 
   /** Optional logistics provider address */
-  logistics?: string;
+  logistics?: string[];
 
   /** Optional insurance provider address */
   insurance?: string;
@@ -36,8 +50,8 @@ export interface ContractLogEntry {
   /** Optional required amount for this stage */
   requiredAmount?: string;
 
-  /** Optional extra metadata */
-  extra?: any;
+  /** Optional extra metadata (type-safe) */
+  extra?: ContractLogExtra;
 
   /** Unix timestamp (ms) of the log entry */
   timestamp: number;
@@ -57,7 +71,7 @@ export interface ContractState {
   importer?: string;
 
   /** Optional logistics provider address */
-  logistics?: string;
+  logistics?: string[];
 
   /** Optional insurance provider address */
   insurance?: string;
@@ -87,4 +101,13 @@ export interface ContractLogs {
 
   /** Historical log entries */
   history: ContractLogEntry[];
+}
+
+/**
+ * Extracted roles from a contract (used in helpers like getContractRoles)
+ */
+export interface ContractRoles {
+  importer: string;
+  exporter: string;
+  logistics: string;
 }

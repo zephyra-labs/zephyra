@@ -21,6 +21,8 @@ import { success, failure, handleError } from '../utils/responseHelper.js';
  */
 export const logWalletLogin = async (req: Request, res: Response) => {
   try {
+    if (!req.body.account) return failure(res, 'Account parameter is required');
+    
     const dto = new CreateWalletLogDTO(req.body);
     dto.action = WalletAction.CONNECT;
     dto.validate();
@@ -44,6 +46,8 @@ export const logWalletLogin = async (req: Request, res: Response) => {
  */
 export const logWalletDisconnect = async (req: Request, res: Response) => {
   try {
+    if (!req.body.account) return failure(res, 'Account parameter is required');
+    
     const dto = new CreateWalletLogDTO(req.body);
     dto.action = WalletAction.DISCONNECT;
     dto.validate();

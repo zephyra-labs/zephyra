@@ -1,9 +1,12 @@
 /**
  * @file DashboardModel.ts
- * @description Firestore model for dashboard-related queries
+ * @description Firestore model for dashboard-related queries (users, contracts, documents, and document logs)
  */
 
 import { db } from "../config/firebase.js";
+import type { User } from "../types/User.js";
+import type { ContractLogs } from "../types/Contract.js";
+import type { Document, DocumentLogs, DocumentLogEntry } from "../types/Document.js";
 
 /** Firestore collection references */
 const usersCollection = db.collection("users");
@@ -12,73 +15,81 @@ const documentsCollection = db.collection("documents");
 const documentLogsCollection = db.collection("documentLogs");
 
 /**
- * Firestore model for dashboard queries (users, contracts, documents, document logs)
+ * Firestore model for dashboard data aggregation and overview queries.
  */
 export class DashboardModel {
   /**
-   * Get all users
-   * @returns Array of users with id, address, and balance
+   * Get all users stored in Firestore.
+   * @returns Promise resolving to an array of users with ID, address, and balance (if available)
    */
-  static async getAllUsers(): Promise<{ id: string; address?: string; balance?: number }[]> {
+  static async getAllUsers(): Promise<
+    ({ id: string } & Pick<User, "address"> & { balance?: number })[]
+  > {
     const snap = await usersCollection.get();
-    return snap.docs.map(d => ({
+    return snap.docs.map((d) => ({
       id: d.id,
-      ...(d.data() as { address?: string; balance?: number }),
+      ...(d.data() as Pick<User, "address"> & { balance?: number }),
     }));
   }
 
   /**
-   * Get all contracts
-   * @returns Array of contracts with id and history
+   * Get all contracts with their histories.
+   * @returns Promise resolving to an array of contract logs summaries.
    */
-  static async getAllContracts(): Promise<{ id: string; history?: any[] }[]> {
+  static async getAllContracts(): Promise<
+    ({ id: string; history?: ContractLogs["history"] })[]
+  > {
     const snap = await contractsLogsCollection.get();
-    return snap.docs.map(d => ({
+    return snap.docs.map((d) => ({
       id: d.id,
-      ...(d.data() as { history?: any[] }),
+      ...(d.data() as { history?: ContractLogs["history"] }),
     }));
   }
 
   /**
-   * Get all documents
-   * @returns Array of documents with id, title, tokenId, owner, docType, status, createdAt, updatedAt, linkedContracts
+   * Get all documents with minimal dashboard fields.
+   * @returns Promise resolving to an array of documents with key properties.
    */
   static async getAllDocuments(): Promise<
-    {
+    ({
       id: string;
       title?: string;
-      tokenId?: string;
-      owner?: string;
-      docType?: string;
-      status?: string;
-      createdAt?: number;
-      updatedAt?: number;
-      linkedContracts?: string[];
-    }[]
+    } & Pick<
+      Document,
+      | "tokenId"
+      | "owner"
+      | "docType"
+      | "status"
+      | "createdAt"
+      | "updatedAt"
+      | "linkedContracts"
+    >)[]
   > {
     const snap = await documentsCollection.get();
-    return snap.docs.map(d => ({
+    return snap.docs.map((d) => ({
       id: d.id,
-      ...(d.data() as {
-        title?: string;
-        tokenId?: string;
-        owner?: string;
-        docType?: string;
-        status?: string;
-        createdAt?: number;
-        updatedAt?: number;
-        linkedContracts?: string[];
-      }),
+      ...(d.data() as Pick<
+        Document,
+        | "tokenId"
+        | "owner"
+        | "docType"
+        | "status"
+        | "createdAt"
+        | "updatedAt"
+        | "linkedContracts"
+      > & { title?: string }),
     }));
   }
 
   /**
-   * Get document logs for a specific document
-   * @param id Document token ID
-   * @returns Array of document log entries
+   * Get all log entries associated with a document.
+   * @param id - The document token ID.
+   * @returns Promise resolving to an array of document log entries.
    */
-  static async getDocumentLogs(id: string): Promise<any[]> {
+  static async getDocumentLogs(id: string): Promise<DocumentLogEntry[]> {
     const snap = await documentLogsCollection.doc(id).get();
-    return snap.exists ? (snap.data()?.history ?? []) : [];
+    return snap.exists
+      ? ((snap.data() as DocumentLogs)?.history ?? [])
+      : [];
   }
 }

@@ -59,8 +59,12 @@ export class CompanyService {
     const existing = await CompanyModel.getById(id);
     if (!existing) throw new Error("Company not found");
 
-    const merged = Object.assign({}, existing, data);
-    const safeData: Partial<Company> & Required<Pick<Company, 'name' | 'address' | 'city' | 'stateOrProvince' | 'postalCode' | 'country' | 'email'>> = merged as any;
+    const safeData: Partial<Company> & Required<
+      Pick<Company, 'name' | 'address' | 'city' | 'stateOrProvince' | 'postalCode' | 'country' | 'email'>
+    > = {
+      ...existing,
+      ...data,
+    };
 
     const dto = new CompanyDTO(safeData);
     dto.validate();
@@ -68,7 +72,7 @@ export class CompanyService {
 
     const updated = await CompanyModel.update(id, dto.toJSON());
     if (!updated) throw new Error("Failed to update company");
-
+    
     await notifyWithAdmins(executor, {
       type: 'system',
       title: 'Company Updated',

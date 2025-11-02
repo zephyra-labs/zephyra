@@ -41,7 +41,9 @@ export class DocumentModel {
 
     const existing = snap.data() as Document;
     const updated: Document = { ...existing, ...data, updatedAt: Date.now() };
-    await ref.update(updated as any);
+
+    // Use type-safe object spreading instead of casting to any
+    await ref.update({ ...updated });
     return updated;
   }
 
@@ -74,7 +76,7 @@ export class DocumentModel {
    */
   static async getAll(): Promise<Document[]> {
     const snap = await collection.get();
-    return snap.docs.map(d => d.data() as Document);
+    return snap.docs.map((d) => d.data() as Document);
   }
 
   /**
@@ -84,7 +86,7 @@ export class DocumentModel {
    */
   static async getByOwner(owner: string): Promise<Document[]> {
     const snap = await collection.where("owner", "==", owner).get();
-    return snap.docs.map(d => d.data() as Document);
+    return snap.docs.map((d) => d.data() as Document);
   }
 
   /**
@@ -94,7 +96,7 @@ export class DocumentModel {
    */
   static async getByContract(contractAddress: string): Promise<Document[]> {
     const snap = await collection.where("linkedContracts", "array-contains", contractAddress).get();
-    return snap.docs.map(d => d.data() as Document);
+    return snap.docs.map((d) => d.data() as Document);
   }
 
   /**
@@ -102,17 +104,24 @@ export class DocumentModel {
    * @param tokenId Document token ID
    * @param log Log entry
    */
-  static async addLog(tokenId: number, log: DocumentLogEntry) {
+  static async addLog(tokenId: number, log: DocumentLogEntry): Promise<void> {
     const logRef = logsCollection.doc(tokenId.toString());
     const snap = await logRef.get();
 
     if (!snap.exists) {
-      const newLog: DocumentLogs = { tokenId, contractAddress: log.linkedContract || "", history: [log] };
+      const newLog: DocumentLogs = {
+        tokenId,
+        contractAddress: log.linkedContract || "",
+        history: [log],
+      };
       await logRef.set(newLog);
     } else {
       const existing = snap.data() as DocumentLogs;
-      existing.history.push(log);
-      await logRef.update(existing as any);
+      const updatedLogs: DocumentLogs = {
+        ...existing,
+        history: [...existing.history, log],
+      };
+      await logRef.update({ ...updatedLogs });
     }
   }
 

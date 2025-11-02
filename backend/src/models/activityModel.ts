@@ -45,11 +45,11 @@ export const addActivityLog = async (
     type: dto.type,
     action: dto.action,
     account: dto.account,
-    accountLower: dto.account.toLowerCase(),
+    accountLower: dto.account,
     txHash: dto.txHash,
-    txHashLower: dto.txHash?.toLowerCase(),
+    txHashLower: dto.txHash,
     contractAddress: dto.contractAddress,
-    contractLower: dto.contractAddress?.toLowerCase(),
+    contractLower: dto.contractAddress,
     extra: dto.extra,
     onChainInfo: dto.onChainInfo,
     tags: data.tags ?? [],
@@ -171,9 +171,9 @@ export const getAggregatedActivities = async (filter?: {
 }): Promise<AggregatedActivityLog[]> => {
   let query: FirebaseFirestore.Query = aggregatedCollection.orderBy('timestamp', 'desc');
 
-  if (filter?.account) query = query.where('accountLower', '==', filter.account.toLowerCase());
-  if (filter?.txHash) query = query.where('txHashLower', '==', filter.txHash.toLowerCase());
-  if (filter?.contractAddress) query = query.where('contractLower', '==', filter.contractAddress.toLowerCase());
+  if (filter?.account) query = query.where('accountLower', '==', filter.account);
+  if (filter?.txHash) query = query.where('txHashLower', '==', filter.txHash);
+  if (filter?.contractAddress) query = query.where('contractLower', '==', filter.contractAddress);
   if (filter?.tags?.length) query = query.where('tags', 'array-contains', filter.tags[0]);
   if (filter?.startAfterTimestamp) query = query.startAfter(filter.startAfterTimestamp);
   if (filter?.limit) query = query.limit(filter.limit);

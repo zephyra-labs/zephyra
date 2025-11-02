@@ -25,7 +25,7 @@ export const createActivity = async (req: Request, res: Response) => {
 
     const entry = await addActivityLog(payload)
     return success(res, entry, 201)
-  } catch (err: any) {
+  } catch (err: unknown) {
     return handleError(res, err, 'Failed to create activity', 400)
   }
 }
@@ -64,7 +64,7 @@ export const getActivities = async (req: Request, res: Response) => {
       count: logs.length,
       items: logs,
     })
-  } catch (err: any) {
+  } catch (err: unknown) {
     return handleError(res, err, 'Failed to fetch activities')
   }
 }
@@ -99,7 +99,7 @@ export const getActivityByAccountController = async (req: Request, res: Response
       count: logs?.length || 0,
       items: logs || [],
     })
-  } catch (err: any) {
+  } catch (err: unknown) {
     return handleError(res, err, 'Failed to fetch activities for this account')
   }
 }

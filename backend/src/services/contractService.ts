@@ -7,7 +7,7 @@ import { ContractModel } from "../models/contractModel.js";
 import ContractLogDTO from "../dtos/contractDTO.js";
 import { notifyUsers, notifyWithAdmins } from "../utils/notificationHelper.js";
 import { getContractRoles } from "../utils/getContractRoles.js";
-import type { ContractLogEntry } from "../types/Contract.js";
+import type { ContractLogEntry, ContractState } from "../types/Contract.js";
 
 export class ContractService {
   /**
@@ -21,7 +21,7 @@ export class ContractService {
    * @throws {Error} If DTO validation fails or logistic already added/removed.
    */
   static async addContractLog(data: Partial<ContractLogDTO>): Promise<ContractLogEntry> {
-    const dto = new ContractLogDTO(data as any);
+    const dto = new ContractLogDTO(data as ContractLogDTO);
     dto.validate();
 
     const logEntry: ContractLogEntry = dto.toLogEntry();
@@ -32,14 +32,14 @@ export class ContractService {
       const roles = await getContractRoles(dto.contractAddress);
       newState.exporter = newState.exporter ?? roles.exporter;
       newState.importer = newState.importer ?? roles.importer;
-      newState.logistics = newState.logistics ?? roles.logistics ?? [];
+      newState.logistics = newState.logistics ?? (Array.isArray(roles.logistics) ? roles.logistics : roles.logistics ? [roles.logistics] : []);
     }
 
     // Ambil kontrak dari DB
     const doc = await ContractModel.getContractById(dto.contractAddress);
 
     // State awal atau merge
-    let mergedState: any;
+    let mergedState: ContractState;
     if (!doc) {
       // Deploy pertama
       mergedState = {
@@ -58,21 +58,24 @@ export class ContractService {
         importer: logEntry.extra?.importer ?? newState.importer ?? doc.state.importer,
         logistics: [...(doc.state.logistics ?? [])],
         status: logEntry.action,
-        currentStage: logEntry.extra?.stage ?? doc.state.currentStage ?? "1",
+        currentStage: typeof logEntry.extra?.stage === 'string' ? logEntry.extra.stage : doc.state.currentStage ?? "1",
         lastUpdated: Date.now(),
       };
 
       // Handle add/remove logistics
-      if (logEntry.action === "addLogistic" && logEntry.extra?.logistic) {
+      if (logEntry.action === "addLogistic" && typeof logEntry.extra?.logistic === 'string') {
+        mergedState.logistics = mergedState.logistics || [];
         if (!mergedState.logistics.includes(logEntry.extra.logistic)) {
           mergedState.logistics.push(logEntry.extra.logistic);
         } else {
           throw new Error(`Logistic ${logEntry.extra.logistic} already added`);
         }
       }
-      if (logEntry.action === "removeLogistic" && logEntry.extra?.logistic) {
+      if (logEntry.action === "removeLogistic" && typeof logEntry.extra?.logistic === 'string') {
+        mergedState.logistics = mergedState.logistics || [];
         if (mergedState.logistics.includes(logEntry.extra.logistic)) {
-          mergedState.logistics = mergedState.logistics.filter((l: string) => l !== logEntry.extra.logistic);
+          const logistic = logEntry.extra.logistic;
+          mergedState.logistics = mergedState.logistics.filter((l: string) => l !== logistic);
         } else {
           throw new Error(`Logistic ${logEntry.extra.logistic} not found`);
         }
@@ -97,7 +100,7 @@ export class ContractService {
 
     await notifyWithAdmins(dto.account, payload);
 
-    const participants = [mergedState.exporter, mergedState.importer, ...(mergedState.logistics ?? [])].filter(Boolean);
+    const participants = [mergedState.exporter, mergedState.importer, ...(mergedState.logistics ?? [])].filter((p): p is string => Boolean(p));
     if (participants.length) {
       await notifyUsers(participants, payload, dto.account);
     }
@@ -141,7 +144,7 @@ export class ContractService {
       const roles = c.state ?? (await getContractRoles(c.contractAddress));
       if (roles.exporter === address) result.push({ ...c, role: "Exporter" });
       else if (roles.importer === address) result.push({ ...c, role: "Importer" });
-      else if (roles.logistics === address) result.push({ ...c, role: "Logistics" });
+      else if (Array.isArray(roles.logistics) ? roles.logistics.includes(address) : roles.logistics === address) result.push({ ...c, role: "Logistics" });
     }
 
     return result;

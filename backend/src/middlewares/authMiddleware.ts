@@ -42,8 +42,16 @@ export async function authMiddleware(req: AuthRequest, res: Response, next: Next
 
     req.user = user;
     next();
-  } catch (err: any) {
-    console.warn('Auth error:', err.message);
-    return res.status(401).json({ success: false, message: 'Unauthorized' });
+  } catch (err: unknown) {
+    let message = 'Unauthorized';
+
+    if (err instanceof Error) {
+      console.warn('Auth error:', err.message);
+      message = err.message;
+    } else {
+      console.warn('Auth error:', err);
+    }
+
+    return res.status(401).json({ success: false, message });
   }
 }

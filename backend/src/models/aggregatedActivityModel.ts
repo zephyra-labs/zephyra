@@ -27,11 +27,11 @@ export default {
       type: dto.type,
       action: dto.action,
       account: dto.account,
-      accountLower: dto.account.toLowerCase(),
+      accountLower: dto.account,
       txHash: dto.txHash,
-      txHashLower: dto.txHash?.toLowerCase(),
+      txHashLower: dto.txHash,
       contractAddress: dto.contractAddress,
-      contractLower: dto.contractAddress?.toLowerCase(),
+      contractLower: dto.contractAddress,
       extra: dto.extra ?? undefined,
       onChainInfo: dto.onChainInfo,
       tags: [],
@@ -67,9 +67,9 @@ export default {
   }): Promise<{ data: AggregatedActivityLog[]; nextStartAfterTimestamp: number | null }> => {
     let query: FirebaseFirestore.Query = collection.orderBy('timestamp', 'desc')
 
-    if (filter?.account) query = query.where('accountLower', '==', filter.account.toLowerCase())
-    if (filter?.txHash) query = query.where('txHashLower', '==', filter.txHash.toLowerCase())
-    if (filter?.contractAddress) query = query.where('contractLower', '==', filter.contractAddress.toLowerCase())
+    if (filter?.account) query = query.where('accountLower', '==', filter.account)
+    if (filter?.txHash) query = query.where('txHashLower', '==', filter.txHash)
+    if (filter?.contractAddress) query = query.where('contractLower', '==', filter.contractAddress)
 
     // Filter by first tag for Firestore query
     if (filter?.tags?.length) query = query.where('tags', 'array-contains', filter.tags[0])

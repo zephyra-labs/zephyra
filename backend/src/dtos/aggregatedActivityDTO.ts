@@ -16,7 +16,7 @@ export default class AggregatedActivityLogDTO {
   account!: string;
   txHash?: string;
   contractAddress?: string;
-  extra?: Record<string, any>;
+  extra?: Record<string, unknown>;
   onChainInfo?: {
     status: string;
     blockNumber: number;
@@ -36,9 +36,9 @@ export default class AggregatedActivityLogDTO {
     }
 
     // Lowercase fields for indexing/search
-    this.accountLower = this.account?.toLowerCase();
-    this.txHashLower = this.txHash?.toLowerCase();
-    this.contractLower = this.contractAddress?.toLowerCase();
+    this.accountLower = this.account;
+    this.txHashLower = this.txHash;
+    this.contractLower = this.contractAddress;
   }
 
   /**

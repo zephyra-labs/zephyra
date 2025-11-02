@@ -45,5 +45,11 @@ export interface Notification {
   updatedAt?: number;
 
   /** Optional additional data (e.g., links, transaction hash, document ID) */
-  extraData?: Record<string, any>;
+  extraData?: Record<string, unknown>;
 }
+
+/**
+ * @description Payload structure for WebSocket notifications
+ * Reusable for broadcastNotificationToUser
+ */
+export type NotificationPayload = Omit<Notification, "userId" | "read" | "updatedAt">;

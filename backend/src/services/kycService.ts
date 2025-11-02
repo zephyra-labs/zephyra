@@ -9,7 +9,7 @@ import FormData from "form-data";
 import { v4 as uuidv4 } from "uuid";
 import { KYCModel } from "../models/kycModel.js";
 import { notifyWithAdmins, notifyUsers } from "../utils/notificationHelper.js";
-import type { KYC, KYCLogEntry, KYCStatus } from "../types/Kyc.js";
+import type { KYC, KYCLogEntry, KYCStatus, KYCUploadResponse } from "../types/Kyc.js";
 import type { UserMetadata } from "../types/User.js";
 import KYCDTO from "../dtos/kycDTO.js";
 import { UserService } from "./userService.js";
@@ -25,7 +25,7 @@ export class KYCService {
    * @returns {Promise<any>} Response data from the KYC service.
    * @throws {Error} If upload fails.
    */
-  static async uploadKYCStream(file: Express.Multer.File, walletAddress: string, tokenId: string): Promise<any> {
+  static async uploadKYCStream(file: Express.Multer.File, walletAddress: string, tokenId: string): Promise<KYCUploadResponse> {
     const form = new FormData();
     form.append("wallet_address", walletAddress);
     form.append("token_id", tokenId);
@@ -66,7 +66,7 @@ export class KYCService {
     const dto = new KYCDTO({
       ...data,
       tokenId,
-      status: uploadResult?.status || data.status || "Pending",
+      status: uploadResult?.status || data.status || "Draft",
       documentUrl: uploadResult?.documentUrl || data.documentUrl,
     });
 

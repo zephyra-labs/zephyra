@@ -7,7 +7,7 @@
 import { v4 as uuidv4 } from "uuid"
 import { NotificationModel } from "../models/notificationModel.js"
 import type { Notification, NotificationType } from "../types/Notification.js"
-import { broadcastNotificationToUser } from "../app.js"
+import { broadcastNotificationToUser } from "../ws/notificationWS.js"
 
 export class NotificationService {
   /**
@@ -30,7 +30,7 @@ export class NotificationService {
     type: NotificationType,
     title: string,
     message: string,
-    extraData: Record<string, any> = {},
+    extraData: Record<string, unknown> = {},
   ): Promise<Notification> {
     const normalizedUserId = userId.toLowerCase()
 

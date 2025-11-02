@@ -1,12 +1,14 @@
 /**
- * @file Activit.ts
- * @description Type definition for ActivityLog entries
+ * @file Activity.ts
+ * @description Type definitions for ActivityLog entries
  */
 
 /**
- * Represents an activity record in the system, either on-chain or backend
+ * Represents an activity record in the system, either on-chain or backend.
+ *
+ * @template TExtra - Type of optional extra metadata (default: Record<string, unknown>)
  */
-export interface ActivityLog {
+export interface ActivityLog<TExtra = Record<string, unknown>> {
   /** Timestamp (ms) when the activity occurred */
   timestamp: number;
 
@@ -26,7 +28,7 @@ export interface ActivityLog {
   contractAddress?: string;
 
   /** Optional additional metadata */
-  extra?: Record<string, any>;
+  extra?: TExtra;
 
   /** Optional on-chain information if activity is recorded on blockchain */
   onChainInfo?: {

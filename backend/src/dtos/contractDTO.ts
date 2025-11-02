@@ -3,7 +3,7 @@
  * @description DTO for contract log entries and partial contract state management.
  */
 
-import type { ContractLogEntry, ContractState } from '../types/Contract.js';
+import type { ContractLogEntry, ContractState, ContractLogExtra } from '../types/Contract.js';
 import type { OnChainInfo } from '../types/Info.js';
 
 /**
@@ -25,7 +25,7 @@ export default class ContractLogDTO {
   /** Optional participants in the contract */
   exporter?: string;
   importer?: string;
-  logistics?: string;
+  logistics?: string[];
   insurance?: string;
   inspector?: string;
 
@@ -39,7 +39,7 @@ export default class ContractLogDTO {
   currentStage?: string;
 
   /** Optional extra data */
-  extra?: any;
+  extra?: ContractLogExtra;
 
   /** Timestamp of the log */
   timestamp!: number;
@@ -91,11 +91,11 @@ export default class ContractLogDTO {
       account: this.account,
       exporter: this.exporter,
       importer: this.importer,
-      logistics: this.logistics,
+      logistics: this.logistics ?? [],
       insurance: this.insurance,
       inspector: this.inspector,
       requiredAmount: this.requiredAmount,
-      extra: this.extra ?? null,
+      extra: this.extra,
       timestamp: this.timestamp ?? Date.now(),
       onChainInfo: this.onChainInfo,
     };
@@ -109,7 +109,7 @@ export default class ContractLogDTO {
     return {
       exporter: this.exporter,
       importer: this.importer,
-      logistics: this.logistics,
+      logistics: this.logistics ?? [],
       insurance: this.insurance,
       inspector: this.inspector,
       status: this.status ?? this.state?.status,

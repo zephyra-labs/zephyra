@@ -19,7 +19,7 @@ import { success, failure, handleError } from "../utils/responseHelper.js";
 export async function walletConnectHandler(req: Request, res: Response) {
   try {
     const { user, token } = await UserService.walletConnect(req.body);
-    return success(res, { user, token });
+    return success(res, { data: user, token });
   } catch (err) {
     return handleError(res, err, "Wallet connect failed", 400);
   }

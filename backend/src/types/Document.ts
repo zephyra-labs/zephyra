@@ -3,7 +3,7 @@
  * @description Types and interfaces for document management, logs, and blockchain info.
  */
 
-import { OnChainInfo } from './Info.js';
+import type { OnChainInfo } from './Info.js';
 
 /**
  * Supported document types
@@ -16,7 +16,7 @@ export type DocType = "Invoice" | "B/L" | "COO" | "PackingList" | "Other";
 export type DocumentStatus = "Draft" | "Reviewed" | "Signed" | "Revoked";
 
 /**
- * Represents a trade-related document stored in the system
+ * Represents a trade-related document stored in the system.
  */
 export interface Document {
   /** Unique token ID for the document */
@@ -43,7 +43,7 @@ export interface Document {
   /** Timestamp when document was created (Unix ms) */
   createdAt: number;
 
-  /** Timestamp when document was last updated (optional) */
+  /** Timestamp when document was last updated (optional, Unix ms) */
   updatedAt?: number;
 
   /** Signer of the document (if signed) */
@@ -55,14 +55,16 @@ export interface Document {
   /** Optional description */
   description?: string;
 
-  /** Optional metadata URL */
+  /** Optional URL to JSON metadata */
   metadataUrl?: string;
 }
 
 /**
- * Represents a single log entry for a document's lifecycle event
+ * Represents a single log entry for a document's lifecycle event.
+ *
+ * @template TExtra - Type of optional extra metadata for the log entry
  */
-export interface DocumentLogEntry {
+export interface DocumentLogEntry<TExtra = Record<string, unknown>> {
   /** Action performed on the document */
   action:
     | 'mintDocument'
@@ -74,35 +76,37 @@ export interface DocumentLogEntry {
   /** Transaction hash on blockchain, if applicable */
   txHash: string;
 
-  /** Account that performed the action */
+  /** Ethereum account that performed the action */
   account: string;
 
   /** Signer of the document for sign actions (optional) */
   signer?: string;
 
-  /** Related contract for linkDocument action (optional) */
+  /** Related contract for `linkDocument` action (optional) */
   linkedContract?: string;
 
-  /** Extra metadata for the log entry */
-  extra?: any;
+  /** Extra metadata for the log entry (type-safe) */
+  extra?: TExtra;
 
   /** Timestamp of the action (Unix ms) */
   timestamp: number;
 
-  /** Optional blockchain info for this action */
+  /** Optional blockchain info associated with this action */
   onChainInfo?: OnChainInfo;
 }
 
 /**
- * Collection of logs for a specific document
+ * Collection of logs for a specific document.
+ *
+ * @template TExtra - Type of optional extra metadata for log entries
  */
-export interface DocumentLogs {
+export interface DocumentLogs<TExtra = Record<string, unknown>> {
   /** Token ID of the document */
   tokenId: number;
 
   /** Related contract address */
   contractAddress: string;
 
-  /** History of log entries */
-  history: DocumentLogEntry[];
+  /** History of log entries for this document */
+  history: DocumentLogEntry<TExtra>[];
 }

@@ -4,20 +4,17 @@
  */
 
 import { db } from "../config/firebase.js";
-
-export interface ContractRoles {
-  importer: string;
-  exporter: string;
-  logistics: string;
-}
+import type { ContractLogEntry, ContractRoles } from "../types/Contract.js";
 
 /**
  * Get roles for a specific contract from the first deploy log.
  *
- * @param {string} contractAddress - The address of the contract
- * @returns {Promise<ContractRoles>} Roles of the contract
+ * @param contractAddress - The address of the contract
+ * @returns Roles of the contract
  */
-export const getContractRoles = async (contractAddress: string): Promise<ContractRoles> => {
+export const getContractRoles = async (
+  contractAddress: string
+): Promise<ContractRoles> => {
   const contractsLogs = db.collection("contractLogs");
   const snapshot = await contractsLogs
     .where("contractAddress", "==", contractAddress)
@@ -25,13 +22,12 @@ export const getContractRoles = async (contractAddress: string): Promise<Contrac
 
   if (snapshot.empty) return { importer: "", exporter: "", logistics: "" };
 
-  // Ambil log deploy pertama
-  const deployLog = snapshot.docs[0].data().history?.find((h: any) => h.action === "deploy");
-  if (!deployLog || !deployLog.extra) return { importer: "", exporter: "", logistics: "" };
+  const history: ContractLogEntry[] = snapshot.docs[0].data().history ?? [];
+  const deployLog = history.find(h => h.action === "deploy");
 
-  const importer = deployLog.extra.importer || "";
-  const exporter = deployLog.extra.exporter || "";
-  const logistics = deployLog.extra.logistics || "";
+  if (!deployLog?.extra) return { importer: "", exporter: "", logistics: "" };
+
+  const { importer = "", exporter = "", logistics = "" } = deployLog.extra;
 
   return { importer, exporter, logistics };
 };
