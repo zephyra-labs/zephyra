@@ -9,11 +9,17 @@ on:
 jobs:
   # ────────────────────────────── SETUP ──────────────────────────────
   setup:
-    name: Install Dependencies (Root)
+    name: Setup Root
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -21,11 +27,42 @@ jobs:
           node-version: 22.x
           cache: 'pnpm'
 
-      - name: Install pnpm
-        run: npm install -g pnpm
-
-      - name: Install Dependencies (root)
+      - name: Install Root Dependencies
         run: pnpm install
+        env:
+          CI: true
+
+  # ────────────────────────────── SMART CONTRACTS ──────────────────────────────
+  contracts-build:
+    name: Compile Smart Contracts
+    runs-on: ubuntu-latest
+    needs: setup
+    defaults:
+      run:
+        working-directory: ./contracts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: 'pnpm'
+
+      - run: pnpm install
+
+      - name: Ignore Foundry test files
+        run: echo "contracts/**/*.t.sol" > .hardhatignore
+
+      - name: Compile Contracts
+        run: pnpm hardhat compile
+
+      - name: Upload Contract Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: contracts-artifacts
+          path: contracts/artifacts
 
   # ────────────────────────────── FRONTEND ──────────────────────────────
   lint-frontend:
@@ -37,41 +74,42 @@ jobs:
         working-directory: ./frontend
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
         with:
           node-version: 22.x
           cache: 'pnpm'
-      - run: npm install -g pnpm
       - run: pnpm install
-      - name: Run Linter
-        run: pnpm lint
+      - run: pnpm lint
 
   build-frontend:
     name: Build Frontend
     runs-on: ubuntu-latest
-    # ✅ Tambahkan contracts-build agar ABI tersedia sebelum build
     needs: [lint-frontend, contracts-build]
     defaults:
       run:
         working-directory: ./frontend
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
         with:
           node-version: 22.x
           cache: 'pnpm'
-      - run: npm install -g pnpm
       - run: pnpm install
 
-      # Copy artifacts hasil compile kontrak ke folder frontend
-      - name: Copy Smart Contract Artifacts
-        run: |
-          mkdir -p ./app/artifacts
-          cp -r ../contracts/artifacts ./app/artifacts
+      # ⬇️ Download artifacts dari job contracts-build
+      - name: Download Contract Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: contracts-artifacts
+          path: ./app/artifacts
 
-      - name: Build
+      - name: Build Nuxt
         run: pnpm build
 
   # ────────────────────────────── BACKEND ──────────────────────────────
@@ -84,15 +122,15 @@ jobs:
         working-directory: ./backend
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
         with:
           node-version: 22.x
           cache: 'pnpm'
-      - run: npm install -g pnpm
       - run: pnpm install
-      - name: Run Linter
-        run: pnpm lint
+      - run: pnpm lint
 
   backend-test:
     name: Test Backend
@@ -103,46 +141,15 @@ jobs:
         working-directory: ./backend
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
         with:
           node-version: 22.x
           cache: 'pnpm'
-      - run: npm install -g pnpm
       - run: pnpm install
-      - name: Run Jest Tests
-        run: pnpm test
-
-  # ────────────────────────────── SMART CONTRACTS ──────────────────────────────
-  contracts-build:
-    name: Compile Smart Contracts
-    runs-on: ubuntu-latest
-    needs: setup
-    defaults:
-      run:
-        working-directory: ./contracts
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22.x
-          cache: 'pnpm'
-      - run: npm install -g pnpm
-      - run: pnpm install
-
-      - name: Ignore Foundry test files
-        run: echo "contracts/**/*.t.sol" > .hardhatignore
-
-      - name: Compile Contracts
-        run: pnpm hardhat compile
-
-      # Simpan artifacts agar bisa dipakai job lain
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: contracts-artifacts
-          path: contracts/artifacts
+      - run: pnpm test
 
   # ────────────────────────────── DEPLOYMENT ──────────────────────────────
   deploy-staging:
@@ -152,9 +159,9 @@ jobs:
     if: github.ref == 'refs/heads/dev'
     steps:
       - name: Deploy Frontend
-        run: echo "jalankan perintah vercel / rsync (staging)"
+        run: echo "Deploying to staging..."
       - name: Deploy Backend
-        run: echo "jalankan perintah ssh/pm2/docker (staging)"
+        run: echo "Deploying backend staging..."
 
   deploy-production:
     name: Deploy Production
@@ -163,6 +170,6 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
       - name: Deploy Frontend
-        run: echo "jalankan perintah vercel / rsync (production)"
+        run: echo "Deploying to production..."
       - name: Deploy Backend
-        run: echo "jalankan perintah ssh/pm2/docker (production)"
+        run: echo "Deploying backend production..."
