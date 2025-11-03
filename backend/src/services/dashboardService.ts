@@ -5,10 +5,10 @@
  */
 
 import { getAddress } from "viem";
-import DashboardDTO from "../dtos/dashboardDTO.js";
-import { DashboardModel } from "../models/dashboardModel.js";
-import type { DashboardWallet, DashboardContract, DashboardDocument } from "../types/Dashboard.js";
-import { getContractRoles } from "../utils/getContractRoles.js";
+import DashboardDTO from "../dtos/dashboardDTO";
+import { DashboardModel } from "../models/dashboardModel";
+import type { DashboardWallet, DashboardContract, DashboardDocument } from "../types/Dashboard";
+import { getContractRoles } from "../utils/getContractRoles";
 
 export class DashboardService {
   /**
@@ -40,11 +40,11 @@ export class DashboardService {
         const lastAction = c.history?.[c.history.length - 1] ?? null;
         return {
           address: getAddress(c.id),
-          createdAt: lastAction?.timestamp ?? 0,
+          createdAt: String(lastAction?.timestamp ?? 0),
           lastAction,
         };
       })
-      .sort((a, b) => b.createdAt - a.createdAt)
+      .sort((a, b) => Number(b.createdAt) - Number(a.createdAt))
       .slice(0, 5);
 
     // --- Documents ---
@@ -118,7 +118,7 @@ export class DashboardService {
       ) {
         userContracts.push({
           address: getAddress(c.id),
-          createdAt: lastAction?.timestamp ?? 0,
+          createdAt: String(lastAction?.timestamp ?? 0),
           lastAction,
         });
       }

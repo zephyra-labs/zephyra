@@ -3,7 +3,7 @@
  * @description Data Transfer Object for ActivityLog entries.
  */
 
-import type { ActivityLog } from '../types/Activity.js';
+import type { ActivityLog } from '../types/Activity';
 
 /**
  * DTO for activity log records

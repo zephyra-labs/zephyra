@@ -3,7 +3,7 @@
  * @description Data Transfer Object for Dashboard data including wallets, contracts, and documents.
  */
 
-import type { DashboardWallet, DashboardContract, DashboardDocument } from "../types/Dashboard.js";
+import type { DashboardWallet, DashboardContract, DashboardDocument } from "../types/Dashboard";
 
 /**
  * DTO for Dashboard data

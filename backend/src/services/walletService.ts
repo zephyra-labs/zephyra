@@ -10,10 +10,10 @@ import {
   upsertWalletState,
   getWalletState,
   deleteWalletData,
-} from '../models/walletModel.js';
+} from '../models/walletModel';
 
-import { CreateWalletLogDTO, UpdateWalletStateDTO } from '../dtos/walletDTO.js';
-import type { WalletLog, WalletState } from '../types/Wallet.js';
+import { CreateWalletLogDTO, UpdateWalletStateDTO } from '../dtos/walletDTO';
+import type { WalletLog, WalletState } from '../types/Wallet';
 
 /**
  * Records a wallet connection, disconnection, or other action event.
@@ -30,11 +30,12 @@ export const recordWalletActivity = async (
 
   // Optional: update wallet state if action affects session
   if (data.account && data.action) {
+    const meta = data.meta ?? {};
     const stateDTO = new UpdateWalletStateDTO({
       account: data.account,
-      chainId: data.meta?.chainId,
-      provider: data.meta?.provider,
-      sessionId: data.meta?.sessionId,
+      chainId: typeof meta.chainId === "number" ? meta.chainId : undefined,
+      provider: typeof meta.provider === "string" ? meta.provider : undefined,
+      sessionId: typeof meta.sessionId === "string" ? meta.sessionId : undefined,
     });
 
     stateDTO.validate();

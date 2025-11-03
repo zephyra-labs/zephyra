@@ -3,8 +3,8 @@
  * @description Firestore model for managing trade records, participants, and statuses.
  */
 
-import { db } from "../config/firebase.js";
-import type { TradeRecord, TradeParticipant, TradeStatus } from "../types/Trade.js";
+import { db } from "../config/firebase";
+import type { TradeRecord, TradeParticipant, TradeStatus } from "../types/Trade";
 
 /** Firestore collection reference for trade records */
 const collection = db.collection("tradeRecords");

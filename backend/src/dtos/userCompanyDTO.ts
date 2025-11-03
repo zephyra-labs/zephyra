@@ -9,7 +9,7 @@ import {
   UserCompanyStatus,
   CreateUserCompanyDTO,
   UpdateUserCompanyDTO,
-} from "../types/UserCompany.js";
+} from "../types/UserCompany";
 
 /**
  * DTO class for UserCompany entity.

@@ -5,9 +5,9 @@
  */
 
 import type { Request, Response } from 'express'
-import aggregatedActivityModel from '../models/aggregatedActivityModel.js'
-import type { AggregatedActivityLog } from '../types/AggregatedActivity.js'
-import { success, failure, handleError } from '../utils/responseHelper.js'
+import aggregatedActivityModel from '../models/aggregatedActivityModel'
+import type { AggregatedActivityLog } from '../types/AggregatedActivity'
+import { success, failure, handleError } from '../utils/responseHelper'
 
 /**
  * Create a new aggregated activity log.

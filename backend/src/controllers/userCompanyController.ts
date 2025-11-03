@@ -4,11 +4,11 @@
  */
 
 import { Request, Response } from "express";
-import { UserCompanyService } from "../services/userCompanyService.js";
-import { CompanyService } from "../services/companyService.js";
-import type { AuthRequest } from "../middlewares/authMiddleware.js"
-import type { CreateUserCompanyDTO, UpdateUserCompanyDTO } from "../types/UserCompany.js";
-import { success, failure, handleError } from "../utils/responseHelper.js";
+import { UserCompanyService } from "../services/userCompanyService";
+import { CompanyService } from "../services/companyService";
+import type { AuthRequest } from "../middlewares/authMiddleware"
+import type { CreateUserCompanyDTO, UpdateUserCompanyDTO } from "../types/UserCompany";
+import { success, failure, handleError } from "../utils/responseHelper";
 
 /**
  * Controller class for UserCompany operations.

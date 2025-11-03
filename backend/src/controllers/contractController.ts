@@ -6,11 +6,11 @@
 
 import { Request, Response } from "express"
 import { createPublicClient, http } from "viem"
-import { Chain } from "../config/chain.js"
-import { ContractService } from "../services/contractService.js"
-import ContractLogDTO from "../dtos/contractDTO.js"
-import type { AuthRequest } from "../middlewares/authMiddleware.js"
-import { success, failure, handleError } from "../utils/responseHelper.js"
+import { Chain } from "../config/chain"
+import { ContractService } from "../services/contractService"
+import ContractLogDTO from "../dtos/contractDTO"
+import type { AuthRequest } from "../middlewares/authMiddleware"
+import { success, failure, handleError } from "../utils/responseHelper"
 
 // --- Public client untuk query blockchain ---
 const publicClient = createPublicClient({

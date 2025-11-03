@@ -3,8 +3,8 @@
  * @description Firestore model for managing KYC (Know Your Customer) records and their logs.
  */
 
-import type { KYC, KYCLogs, KYCLogEntry } from "../types/Kyc.js";
-import { db } from "../config/firebase.js";
+import type { KYC, KYCLogs, KYCLogEntry } from "../types/Kyc";
+import { db } from "../config/firebase";
 
 /** Firestore collection reference for KYC records */
 const collection = db.collection("KYCs");

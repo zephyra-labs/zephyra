@@ -3,8 +3,8 @@
  * @description Model for managing user notifications in Firestore.
  */
 
-import type { Notification } from "../types/Notification.js"
-import { db } from "../config/firebase.js"
+import type { Notification } from "../types/Notification"
+import { db } from "../config/firebase"
 
 /** Firestore collection reference for notifications */
 const collection = db.collection("notifications")

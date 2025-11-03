@@ -5,8 +5,8 @@
 
 import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import type { User } from '../types/User.js';
-import { UserModel } from '../models/userModel.js';
+import type { User } from '../types/User';
+import { UserModel } from '../models/userModel';
 
 /**
  * Extends Express Request to include `user` object after authentication

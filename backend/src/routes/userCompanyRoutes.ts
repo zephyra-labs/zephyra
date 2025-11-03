@@ -4,9 +4,9 @@
  */
 
 import { Router } from "express";
-import { UserCompanyController } from "../controllers/userCompanyController.js";
-import { authMiddleware } from "../middlewares/authMiddleware.js";
-import { adminMiddleware } from "../middlewares/adminMiddleware.js";
+import { UserCompanyController } from "../controllers/userCompanyController";
+import { authMiddleware } from "../middlewares/authMiddleware";
+import { adminMiddleware } from "../middlewares/adminMiddleware";
 
 const router = Router();
 

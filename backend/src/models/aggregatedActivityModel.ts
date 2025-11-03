@@ -4,9 +4,9 @@
  */
 
 import admin from 'firebase-admin'
-import { db } from '../config/firebase.js'
-import type { AggregatedActivityLog } from '../types/AggregatedActivity.js'
-import ActivityLogDTO from '../dtos/activityDTO.js'
+import { db } from '../config/firebase'
+import type { AggregatedActivityLog } from '../types/AggregatedActivity'
+import ActivityLogDTO from '../dtos/activityDTO'
 
 /** Firestore collection reference for aggregated activity logs */
 const collection = db.collection('aggregatedActivityLogs')

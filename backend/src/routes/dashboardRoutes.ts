@@ -5,9 +5,9 @@
  */
 
 import { Router } from "express";
-import { DashboardController } from "../controllers/dashboardController.js";
-import { authMiddleware } from "../middlewares/authMiddleware.js";
-import { adminMiddleware } from "../middlewares/adminMiddleware.js";
+import { DashboardController } from "../controllers/dashboardController";
+import { authMiddleware } from "../middlewares/authMiddleware";
+import { adminMiddleware } from "../middlewares/adminMiddleware";
 
 const router = Router();
 

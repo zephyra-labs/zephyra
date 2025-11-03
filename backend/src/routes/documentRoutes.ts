@@ -14,8 +14,8 @@ import {
   updateDocument,
   deleteDocument,
   getAllDocuments,
-} from "../controllers/documentController.js";
-import { authMiddleware } from "../middlewares/authMiddleware.js";
+} from "../controllers/documentController";
+import { authMiddleware } from "../middlewares/authMiddleware";
 
 const router = Router();
 

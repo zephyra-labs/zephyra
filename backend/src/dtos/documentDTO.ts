@@ -3,7 +3,7 @@
  * @description Data Transfer Object for Document entity with validation and Firestore transformation.
  */
 
-import { Document, DocType, DocumentStatus } from "../types/Document.js";
+import { Document, DocType, DocumentStatus } from "../types/Document";
 
 /**
  * DTO for Document

@@ -3,7 +3,7 @@
  * @description Types and interfaces for document management, logs, and blockchain info.
  */
 
-import type { OnChainInfo } from './Info.js';
+import type { OnChainInfo } from './Info';
 
 /**
  * Supported document types

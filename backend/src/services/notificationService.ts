@@ -5,9 +5,9 @@
  */
 
 import { v4 as uuidv4 } from "uuid"
-import { NotificationModel } from "../models/notificationModel.js"
-import type { Notification, NotificationType } from "../types/Notification.js"
-import { broadcastNotificationToUser } from "../ws/notificationWS.js"
+import { NotificationModel } from "../models/notificationModel"
+import type { Notification, NotificationType } from "../types/Notification"
+import { broadcastNotificationToUser } from "../ws/notificationWS"
 
 export class NotificationService {
   /**

@@ -3,8 +3,8 @@
  * @description Firestore model for managing companies
  */
 
-import { db } from '../config/firebase.js';
-import type { Company } from '../types/Company.js';
+import { db } from '../config/firebase';
+import type { Company } from '../types/Company';
 
 /** Firestore collection reference for companies */
 const collection = db.collection('companies');

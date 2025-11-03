@@ -4,9 +4,9 @@
  */
 
 import type { Request, Response } from "express";
-import type { AuthRequest } from "../middlewares/authMiddleware.js";
-import { UserService } from "../services/userService.js";
-import { success, failure, handleError } from "../utils/responseHelper.js";
+import type { AuthRequest } from "../middlewares/authMiddleware";
+import { UserService } from "../services/userService";
+import { success, failure, handleError } from "../utils/responseHelper";
 
 /**
  * Wallet connect / auto-register handler.

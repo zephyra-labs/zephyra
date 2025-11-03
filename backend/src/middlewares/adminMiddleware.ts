@@ -4,7 +4,7 @@
  */
 
 import type { Response, NextFunction } from 'express';
-import type { AuthRequest } from './authMiddleware.js';
+import type { AuthRequest } from './authMiddleware';
 
 /**
  * Admin access middleware

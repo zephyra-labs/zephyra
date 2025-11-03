@@ -3,7 +3,7 @@
  * @description Types for contract logs, state, and on-chain information.
  */
 
-import type { OnChainInfo } from './Info.js';
+import type { OnChainInfo } from './Info';
 
 /**
  * Optional extra metadata for a log entry

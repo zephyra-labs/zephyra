@@ -5,9 +5,9 @@
  */
 
 import { Request, Response } from "express"
-import DocumentDTO from "../dtos/documentDTO.js"
-import { DocumentService } from "../services/documentService.js"
-import { success, failure, handleError } from "../utils/responseHelper.js"
+import DocumentDTO from "../dtos/documentDTO"
+import { DocumentService } from "../services/documentService"
+import { success, failure, handleError } from "../utils/responseHelper"
 
 /**
  * Attach a new document to a contract.

@@ -10,9 +10,9 @@ import {
   getAggregatedActivities,
   addAggregatedTag,
   removeAggregatedTag,
-} from '../controllers/aggregatedActivityController.js';
-import { authMiddleware } from "../middlewares/authMiddleware.js";
-import { adminMiddleware } from "../middlewares/adminMiddleware.js";
+} from '../controllers/aggregatedActivityController';
+import { authMiddleware } from "../middlewares/authMiddleware";
+import { adminMiddleware } from "../middlewares/adminMiddleware";
 
 const router = Router();
 

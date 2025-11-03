@@ -12,9 +12,9 @@ import {
   getWalletState,
   updateWalletStateController,
   deleteWalletController
-} from "../controllers/walletController.js";
-import { authMiddleware } from "../middlewares/authMiddleware.js";
-import { adminMiddleware } from "../middlewares/adminMiddleware.js";
+} from "../controllers/walletController";
+import { authMiddleware } from "../middlewares/authMiddleware";
+import { adminMiddleware } from "../middlewares/adminMiddleware";
 
 const router = Router();
 

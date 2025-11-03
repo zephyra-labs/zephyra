@@ -3,8 +3,8 @@
  * @description DTO for contract log entries and partial contract state management.
  */
 
-import type { ContractLogEntry, ContractState, ContractLogExtra } from '../types/Contract.js';
-import type { OnChainInfo } from '../types/Info.js';
+import type { ContractLogEntry, ContractState, ContractLogExtra } from '../types/Contract';
+import type { OnChainInfo } from '../types/Info';
 
 /**
  * Data Transfer Object for a contract log entry

@@ -3,7 +3,7 @@
  * @description Data Transfer Object for Company entity.
  */
 
-import type { Company } from '../types/Company.js';
+import type { Company } from '../types/Company';
 
 /**
  * DTO for company data

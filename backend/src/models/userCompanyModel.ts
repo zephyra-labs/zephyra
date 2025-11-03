@@ -3,8 +3,8 @@
  * @description Firestore model for managing User-Company relationships with CRUD and query methods.
  */
 
-import type { UserCompany, CreateUserCompanyDTO, UpdateUserCompanyDTO } from "../types/UserCompany.js";
-import { db } from "../config/firebase.js";
+import type { UserCompany, CreateUserCompanyDTO, UpdateUserCompanyDTO } from "../types/UserCompany";
+import { db } from "../config/firebase";
 
 const collection = db.collection("userCompanies");
 

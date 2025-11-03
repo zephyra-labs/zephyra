@@ -3,8 +3,8 @@
  * @description Firestore model for managing User entities.
  */
 
-import type { User } from "../types/User.js";
-import { db } from "../config/firebase.js";
+import type { User } from "../types/User";
+import { db } from "../config/firebase";
 
 /** Firestore collection reference for users */
 const collection = db.collection("users");

@@ -11,7 +11,9 @@ export type NotificationType =
   | "document"
   | "transaction"
   | "system"
-  | "agreement";
+  | "agreement"
+  | "user"
+  | "user_company";
 
 /**
  * Represents a notification sent to a user.

@@ -7,12 +7,12 @@
 import axios from "axios";
 import FormData from "form-data";
 import { v4 as uuidv4 } from "uuid";
-import { KYCModel } from "../models/kycModel.js";
-import { notifyWithAdmins, notifyUsers } from "../utils/notificationHelper.js";
-import type { KYC, KYCLogEntry, KYCStatus, KYCUploadResponse } from "../types/Kyc.js";
-import type { UserMetadata } from "../types/User.js";
-import KYCDTO from "../dtos/kycDTO.js";
-import { UserService } from "./userService.js";
+import { KYCModel } from "../models/kycModel";
+import { notifyWithAdmins, notifyUsers } from "../utils/notificationHelper";
+import type { KYC, KYCLogEntry, KYCStatus, KYCUploadResponse } from "../types/Kyc";
+import type { UserMetadata } from "../types/User";
+import KYCDTO from "../dtos/kycDTO";
+import { UserService } from "./userService";
 
 export class KYCService {
   /**

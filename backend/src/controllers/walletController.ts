@@ -4,10 +4,10 @@
  */
 
 import type { Request, Response } from 'express';
-import * as WalletService from '../services/walletService.js';
-import { WalletAction } from '../types/Wallet.js';
-import { CreateWalletLogDTO, UpdateWalletStateDTO } from '../dtos/walletDTO.js';
-import { success, failure, handleError } from '../utils/responseHelper.js';
+import * as WalletService from '../services/walletService';
+import { WalletAction } from '../types/Wallet';
+import { CreateWalletLogDTO, UpdateWalletStateDTO } from '../dtos/walletDTO';
+import { success, failure, handleError } from '../utils/responseHelper';
 
 /**
  * Record a wallet login event for a user

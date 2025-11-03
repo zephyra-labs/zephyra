@@ -5,11 +5,11 @@
  */
 
 import { getAddress } from "viem";
-import { DocumentModel } from "../models/documentModel.js";
-import DocumentDTO from "../dtos/documentDTO.js";
-import type { Document, DocumentLogEntry } from "../types/Document.js";
-import { notifyWithAdmins, notifyUsers } from "../utils/notificationHelper.js";
-import { getContractRoles } from "../utils/getContractRoles.js";
+import { DocumentModel } from "../models/documentModel";
+import DocumentDTO from "../dtos/documentDTO";
+import type { Document, DocumentLogEntry } from "../types/Document";
+import { notifyWithAdmins, notifyUsers } from "../utils/notificationHelper";
+import { getContractRoles } from "../utils/getContractRoles";
 
 /**
  * Safely normalizes and validates an Ethereum address.

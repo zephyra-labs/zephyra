@@ -4,9 +4,9 @@
  */
 
 import type { Request, Response } from "express";
-import type { AuthRequest } from "../middlewares/authMiddleware.js";
-import { TradeService } from "../services/tradeService.js";
-import { success, failure, handleError } from "../utils/responseHelper.js";
+import type { AuthRequest } from "../middlewares/authMiddleware";
+import { TradeService } from "../services/tradeService";
+import { success, failure, handleError } from "../utils/responseHelper";
 
 /**
  * Trade controller

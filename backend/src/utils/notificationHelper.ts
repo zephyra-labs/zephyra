@@ -3,8 +3,8 @@
  * @description Utility functions to send notifications to admins or other users.
  */
 
-import { NotificationService } from "../services/notificationService.js";
-import type { NotificationType } from "../types/Notification.js";
+import { NotificationService } from "../services/notificationService";
+import type { NotificationType } from "../types/Notification";
 
 /**
  * Payload structure for notifications

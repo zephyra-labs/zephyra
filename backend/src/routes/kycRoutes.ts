@@ -13,9 +13,9 @@ import {
   deleteKYC,
   getKYCLogs,
   updateKYCInternal,
-} from "../controllers/kycController.js";
-import { authMiddleware } from "../middlewares/authMiddleware.js";
-import { internalAuthMiddleware } from "../middlewares/internalAuthMiddleware.js";
+} from "../controllers/kycController";
+import { authMiddleware } from "../middlewares/authMiddleware";
+import { internalAuthMiddleware } from "../middlewares/internalAuthMiddleware";
 
 const router = Router();
 

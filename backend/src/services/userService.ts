@@ -4,12 +4,12 @@
  */
 
 import jwt from 'jsonwebtoken';
-import { UserModel } from "../models/userModel.js";
-import { notifyWithAdmins } from "../utils/notificationHelper.js";
-import UserDTO, { CreateUserDTO, UpdateUserDTO } from "../dtos/userDTO.js";
-import type { User } from "../types/User.js";
-import { UserCompanyService } from './userCompanyService.js';
-import { CompanyService } from './companyService.js';
+import { UserModel } from "../models/userModel";
+import { notifyWithAdmins } from "../utils/notificationHelper";
+import UserDTO, { CreateUserDTO, UpdateUserDTO } from "../dtos/userDTO";
+import type { User } from "../types/User";
+import { UserCompanyService } from './userCompanyService';
+import { CompanyService } from './companyService';
 
 export class UserService {
   /**

@@ -3,9 +3,9 @@
  * @description Service layer for managing User-Company relationships, including notifications.
  */
 
-import { UserCompanyModel } from "../models/userCompanyModel.js";
-import type { UserCompany, CreateUserCompanyDTO, UpdateUserCompanyDTO } from "../types/UserCompany.js";
-import { notifyWithAdmins } from "../utils/notificationHelper.js";
+import { UserCompanyModel } from "../models/userCompanyModel";
+import type { UserCompany, CreateUserCompanyDTO, UpdateUserCompanyDTO } from "../types/UserCompany";
+import { notifyWithAdmins } from "../utils/notificationHelper";
 
 /**
  * Service class to manage UserCompany CRUD operations with notifications.
@@ -29,7 +29,7 @@ export class UserCompanyService {
     const created = await UserCompanyModel.create(data);
 
     await notifyWithAdmins(data.userAddress, {
-      type: "userCompany",
+      type: "user_company",
       title: `UserCompany Created`,
       message: `UserCompany for user ${data.userAddress} in company ${data.companyId} created.`,
       data: created,
@@ -50,7 +50,7 @@ export class UserCompanyService {
     if (!updated) throw new Error("UserCompany not found");
 
     await notifyWithAdmins(updated.userAddress, {
-      type: "userCompany",
+      type: "user_company",
       title: `UserCompany Updated`,
       message: `UserCompany ${id} updated.`,
       data: updated,
@@ -72,7 +72,7 @@ export class UserCompanyService {
     const deleted = await UserCompanyModel.delete(id);
     if (deleted) {
       await notifyWithAdmins(existing.userAddress, {
-        type: "userCompany",
+        type: "user_company",
         title: `UserCompany Deleted`,
         message: `UserCompany ${id} deleted.`,
         data: existing,

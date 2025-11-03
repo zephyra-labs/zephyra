@@ -4,9 +4,9 @@
  * Handles creation, updates, status transitions, and participant management for trades.
  */
 
-import { TradeModel } from "../models/tradeModel.js"
-import type { TradeRecord, TradeParticipant, TradeStatus } from "../types/Trade.js"
-import { notifyUsers } from "../utils/notificationHelper.js"
+import { TradeModel } from "../models/tradeModel"
+import type { TradeRecord, TradeParticipant, TradeStatus } from "../types/Trade"
+import { notifyUsers } from "../utils/notificationHelper"
 import { v4 as uuidv4 } from "uuid"
 
 export class TradeService {

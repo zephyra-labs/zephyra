@@ -8,8 +8,8 @@ import {
   createActivity,
   getActivities,
   getActivityByAccountController,
-} from '../controllers/activityController.js';
-import { authMiddleware } from "../middlewares/authMiddleware.js";
+} from '../controllers/activityController';
+import { authMiddleware } from "../middlewares/authMiddleware";
 
 const router = Router();
 

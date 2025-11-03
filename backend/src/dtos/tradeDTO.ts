@@ -3,7 +3,7 @@
  * @description DTO for TradeRecord entity including validation and transformation for storage.
  */
 
-import type { TradeRecord, TradeParticipant, TradeStatus } from '../types/Trade.js';
+import type { TradeRecord, TradeParticipant, TradeStatus } from '../types/Trade';
 
 /**
  * Data Transfer Object for TradeRecord.

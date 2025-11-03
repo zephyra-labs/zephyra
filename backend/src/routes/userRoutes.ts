@@ -13,9 +13,9 @@ import {
   updateUserHandler,
   updateMeHandler,
   deleteUserHandler,
-} from "../controllers/userController.js"
-import { authMiddleware } from "../middlewares/authMiddleware.js"
-import { adminMiddleware } from "../middlewares/adminMiddleware.js"
+} from "../controllers/userController"
+import { authMiddleware } from "../middlewares/authMiddleware"
+import { adminMiddleware } from "../middlewares/adminMiddleware"
 
 const router = Router();
 

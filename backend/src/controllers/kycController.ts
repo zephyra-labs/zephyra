@@ -5,9 +5,9 @@
  */
 
 import type { Request, Response } from "express";
-import { KYCService } from "../services/kycService.js";
+import { KYCService } from "../services/kycService";
 import multer from "multer";
-import { success, failure, handleError } from "../utils/responseHelper.js";
+import { success, failure, handleError } from "../utils/responseHelper";
 
 const upload = multer({ limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB limit
 

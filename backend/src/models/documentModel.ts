@@ -3,8 +3,8 @@
  * @description Firestore model for Documents and DocumentLogs.
  */
 
-import { db } from "../config/firebase.js";
-import type { Document, DocumentLogs, DocumentLogEntry } from "../types/Document.js";
+import { db } from "../config/firebase";
+import type { Document, DocumentLogs, DocumentLogEntry } from "../types/Document";
 
 /** Firestore collection references */
 const collection = db.collection("documents");

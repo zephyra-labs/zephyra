@@ -3,7 +3,7 @@
  * @description DTOs for wallet requests and validation.
  */
 
-import { WalletAction, WalletLog, WalletState } from '../types/Wallet.js';
+import { WalletAction, WalletLog, WalletState } from '../types/Wallet';
 
 /**
  * Data Transfer Object for creating a new wallet log entry.

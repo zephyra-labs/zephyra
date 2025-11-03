@@ -5,7 +5,7 @@
  */
 
 import { WebSocket, WebSocketServer } from 'ws'
-import type { NotificationPayload } from '../types/Notification.js'
+import type { NotificationPayload } from '../types/Notification'
 import type { Server as HTTPServer } from 'http'
 
 /**

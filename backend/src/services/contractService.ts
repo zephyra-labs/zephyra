@@ -3,11 +3,11 @@
  * @description Business logic for managing contracts, contract logs, participants, and notifications.
  */
 
-import { ContractModel } from "../models/contractModel.js";
-import ContractLogDTO from "../dtos/contractDTO.js";
-import { notifyUsers, notifyWithAdmins } from "../utils/notificationHelper.js";
-import { getContractRoles } from "../utils/getContractRoles.js";
-import type { ContractLogEntry, ContractState } from "../types/Contract.js";
+import { ContractModel } from "../models/contractModel";
+import ContractLogDTO from "../dtos/contractDTO";
+import { notifyUsers, notifyWithAdmins } from "../utils/notificationHelper";
+import { getContractRoles } from "../utils/getContractRoles";
+import type { ContractLogEntry, ContractState } from "../types/Contract";
 
 export class ContractService {
   /**

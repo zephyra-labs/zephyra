@@ -3,10 +3,10 @@
  * @description Business logic for managing companies: create, update, delete, get, and default creation for new users.
  */
 
-import { CompanyModel } from "../models/companyModel.js";
-import CompanyDTO from "../dtos/companyDTO.js";
-import type { Company } from "../types/Company.js";
-import { notifyWithAdmins } from "../utils/notificationHelper.js";
+import { CompanyModel } from "../models/companyModel";
+import CompanyDTO from "../dtos/companyDTO";
+import type { Company } from "../types/Company";
+import { notifyWithAdmins } from "../utils/notificationHelper";
 
 export class CompanyService {
   /**

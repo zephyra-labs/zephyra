@@ -3,8 +3,8 @@
  * @description Helper function to fetch the roles (importer, exporter, logistics) from a deployed contract log in Firestore.
  */
 
-import { db } from "../config/firebase.js";
-import type { ContractLogEntry, ContractRoles } from "../types/Contract.js";
+import { db } from "../config/firebase";
+import type { ContractLogEntry, ContractRoles } from "../types/Contract";
 
 /**
  * Get roles for a specific contract from the first deploy log.

@@ -5,8 +5,8 @@
  */
 
 import type { Request, Response } from 'express'
-import { CompanyService } from '../services/companyService.js'
-import { success, failure, handleError } from '../utils/responseHelper.js'
+import { CompanyService } from '../services/companyService'
+import { success, failure, handleError } from '../utils/responseHelper'
 
 /**
  * Create a new company (manual/admin action).

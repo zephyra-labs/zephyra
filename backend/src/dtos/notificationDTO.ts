@@ -3,7 +3,7 @@
  * @description Data Transfer Object for Notification entity including validation and transformation for storage.
  */
 
-import { Notification, NotificationType } from "../types/Notification.js";
+import { Notification, NotificationType } from "../types/Notification";
 
 /**
  * DTO for Notification

@@ -4,9 +4,9 @@
  */
 
 import type { Request, Response } from "express";
-import { NotificationModel } from "../models/notificationModel.js";
-import { NotificationService } from "../services/notificationService.js";
-import { success, failure, handleError } from "../utils/responseHelper.js";
+import { NotificationModel } from "../models/notificationModel";
+import { NotificationService } from "../services/notificationService";
+import { success, failure, handleError } from "../utils/responseHelper";
 
 /**
  * Notification controller

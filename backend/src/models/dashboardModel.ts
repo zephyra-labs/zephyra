@@ -3,10 +3,10 @@
  * @description Firestore model for dashboard-related queries (users, contracts, documents, and document logs)
  */
 
-import { db } from "../config/firebase.js";
-import type { User } from "../types/User.js";
-import type { ContractLogs } from "../types/Contract.js";
-import type { Document, DocumentLogs, DocumentLogEntry } from "../types/Document.js";
+import { db } from "../config/firebase";
+import type { User } from "../types/User";
+import type { ContractLogs } from "../types/Contract";
+import type { Document, DocumentLogs, DocumentLogEntry } from "../types/Document";
 
 /** Firestore collection references */
 const usersCollection = db.collection("users");

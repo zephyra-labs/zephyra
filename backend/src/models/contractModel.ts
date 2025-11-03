@@ -4,8 +4,8 @@
  */
 
 import admin from "firebase-admin";
-import { db } from "../config/firebase.js";
-import type { ContractLogs, ContractLogEntry, ContractState } from "../types/Contract.js";
+import { db } from "../config/firebase";
+import type { ContractLogs, ContractLogEntry, ContractState } from "../types/Contract";
 
 /** Firestore collection reference for contract logs */
 const collection = db.collection("contractLogs");
@@ -95,13 +95,13 @@ export class ContractModel {
       const data = doc.data() as ContractLogs;
       const roles =
         data.state ??
-        (await import("../utils/getContractRoles.js").then((m) => m.getContractRoles(doc.id)));
+        (await import("../utils/getContractRoles").then((m) => m.getContractRoles(doc.id)));
 
       if (roles.exporter === userAddress) {
         contracts.push({ ...data, contractAddress: doc.id, role: "Exporter" });
       } else if (roles.importer === userAddress) {
         contracts.push({ ...data, contractAddress: doc.id, role: "Importer" });
-      } else if (roles.logistics === userAddress) {
+      } else if (roles.logistics?.includes(userAddress)) {
         contracts.push({ ...data, contractAddress: doc.id, role: "Logistics" });
       }
     }

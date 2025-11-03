@@ -3,7 +3,7 @@
  * @description Extended activity log with aggregation metadata and tags
  */
 
-import { ActivityLog } from "./Activity.js";
+import { ActivityLog } from "./Activity";
 
 /**
  * Represents an aggregated activity log entry with extra metadata for search and tagging

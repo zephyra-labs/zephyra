@@ -3,7 +3,7 @@
  * @description Data Transfer Object for KYC entity with validation and transformation for storage.
  */
 
-import { KYC, KYCStatus } from "../types/Kyc.js";
+import { KYC, KYCStatus } from "../types/Kyc";
 
 /**
  * DTO for KYC

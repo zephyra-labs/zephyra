@@ -5,8 +5,8 @@
  */
 
 import type { Request, Response } from 'express'
-import { addActivityLog, getAllActivities, getActivityByAccount } from '../models/activityModel.js'
-import { success, failure, handleError } from '../utils/responseHelper.js'
+import { addActivityLog, getAllActivities, getActivityByAccount } from '../models/activityModel'
+import { success, failure, handleError } from '../utils/responseHelper'
 
 /**
  * Create a new activity log entry.

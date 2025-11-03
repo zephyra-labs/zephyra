@@ -3,7 +3,7 @@
  * @description Types and interfaces for KYC (Know Your Customer) records, logs, and upload responses.
  */
 
-import type { OnChainInfo } from './Info.js';
+import type { OnChainInfo } from './Info';
 
 /**
  * Allowed KYC statuses.

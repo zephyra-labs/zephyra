@@ -3,7 +3,7 @@
  * @description DTO for aggregated activity logs, extending ActivityLog with additional indexing fields
  */
 
-import type { AggregatedActivityLog } from '../types/AggregatedActivity.js';
+import type { AggregatedActivityLog } from '../types/AggregatedActivity';
 
 /**
  * Data Transfer Object for aggregated activity logs

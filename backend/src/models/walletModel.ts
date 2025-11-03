@@ -3,9 +3,9 @@
  * @description Data access layer for wallet logs and wallet state in Firestore.
  */
 
-import { db } from '../config/firebase.js';
-import { CreateWalletLogDTO, UpdateWalletStateDTO } from '../dtos/walletDTO.js';
-import type { WalletLog, WalletState } from '../types/Wallet.js';
+import { db } from '../config/firebase';
+import { CreateWalletLogDTO, UpdateWalletStateDTO } from '../dtos/walletDTO';
+import type { WalletLog, WalletState } from '../types/Wallet';
 
 const walletLogsCollection = db.collection('walletLogs');
 const walletStateCollection = db.collection('walletStates');

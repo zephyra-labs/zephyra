@@ -3,10 +3,10 @@
  * @description Firestore service for managing activity logs per account and aggregated logs globally.
  */
 
-import { db } from '../config/firebase.js';
-import type { ActivityLog } from '../types/Activity.js';
-import type { AggregatedActivityLog } from '../types/AggregatedActivity.js';
-import ActivityLogDTO from '../dtos/activityDTO.js';
+import { db } from '../config/firebase';
+import type { ActivityLog } from '../types/Activity';
+import type { AggregatedActivityLog } from '../types/AggregatedActivity';
+import ActivityLogDTO from '../dtos/activityDTO';
 
 /** Firestore collection references */
 const activityCollection = db.collection('activityLogs');

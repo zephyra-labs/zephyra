@@ -5,9 +5,9 @@
  */
 
 import type { Response } from "express"
-import { DashboardService } from "../services/dashboardService.js"
-import type { AuthRequest } from "../middlewares/authMiddleware.js"
-import { success, failure, handleError } from "../utils/responseHelper.js"
+import { DashboardService } from "../services/dashboardService"
+import type { AuthRequest } from "../middlewares/authMiddleware"
+import { success, failure, handleError } from "../utils/responseHelper"
 
 export class DashboardController {
   /**

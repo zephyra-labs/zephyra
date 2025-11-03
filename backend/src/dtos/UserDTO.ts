@@ -3,7 +3,7 @@
  * @description DTOs for User entity including create, update, and Firestore conversion.
  */
 
-import type { User, UserMetadata, UserRole } from "../types/User.js";
+import type { User, UserMetadata, UserRole } from "../types/User";
 
 /**
  * Data Transfer Object for User.
