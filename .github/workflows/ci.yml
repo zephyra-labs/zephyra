@@ -8,7 +8,7 @@ on:
 
 jobs:
   setup:
-    name: Install Dependencies
+    name: Install Dependencies (Root)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -22,13 +22,17 @@ jobs:
       - name: Install pnpm
         run: npm install -g pnpm
 
-      - name: Install Dependencies
+      - name: Install Dependencies (root)
         run: pnpm install
 
+  # ────────────────────────────── FRONTEND ──────────────────────────────
   lint-frontend:
     name: Lint Frontend
     runs-on: ubuntu-latest
     needs: setup
+    defaults:
+      run:
+        working-directory: ./frontend
     steps:
       - uses: actions/checkout@v3
       - name: Setup Node.js
@@ -38,12 +42,15 @@ jobs:
       - run: npm install -g pnpm
       - run: pnpm install
       - name: Run Linter
-        run: pnpm --filter frontend lint
+        run: pnpm lint
 
   build-frontend:
     name: Build Frontend
     runs-on: ubuntu-latest
     needs: lint-frontend
+    defaults:
+      run:
+        working-directory: ./frontend
     steps:
       - uses: actions/checkout@v3
       - name: Setup Node.js
@@ -53,12 +60,16 @@ jobs:
       - run: npm install -g pnpm
       - run: pnpm install
       - name: Build
-        run: pnpm --filter frontend build
+        run: pnpm build
 
+  # ────────────────────────────── BACKEND ──────────────────────────────
   backend-lint:
     name: Lint Backend
     runs-on: ubuntu-latest
     needs: setup
+    defaults:
+      run:
+        working-directory: ./backend
     steps:
       - uses: actions/checkout@v3
       - name: Setup Node.js
@@ -67,13 +78,16 @@ jobs:
           node-version: 22.x
       - run: npm install -g pnpm
       - run: pnpm install
-      - name: Lint Backend
-        run: pnpm --filter backend lint
+      - name: Run Linter
+        run: pnpm lint
 
   backend-test:
     name: Test Backend
     runs-on: ubuntu-latest
     needs: backend-lint
+    defaults:
+      run:
+        working-directory: ./backend
     steps:
       - uses: actions/checkout@v3
       - name: Setup Node.js
@@ -82,13 +96,17 @@ jobs:
           node-version: 22.x
       - run: npm install -g pnpm
       - run: pnpm install
-      - name: Run Tests
-        run: pnpm --filter backend test
+      - name: Run Jest Tests
+        run: pnpm test
 
+  # ────────────────────────────── SMART CONTRACTS ──────────────────────────────
   contracts-build:
     name: Compile Smart Contracts
     runs-on: ubuntu-latest
     needs: setup
+    defaults:
+      run:
+        working-directory: ./contracts
     steps:
       - uses: actions/checkout@v3
       - name: Setup Node.js
@@ -104,6 +122,7 @@ jobs:
       - name: Compile Contracts
         run: pnpm hardhat compile
 
+  # ────────────────────────────── DEPLOYMENT ──────────────────────────────
   deploy-staging:
     name: Deploy Staging
     runs-on: ubuntu-latest
@@ -112,11 +131,11 @@ jobs:
     steps:
       - name: Deploy Frontend
         run: |
-          echo "jalankan perintah vercel / rsync"
+          echo "jalankan perintah vercel / rsync (staging)"
 
       - name: Deploy Backend
         run: |
-          echo "jalankan perintah ssh/pm2/docker"
+          echo "jalankan perintah ssh/pm2/docker (staging)"
 
   deploy-production:
     name: Deploy Production
@@ -126,8 +145,8 @@ jobs:
     steps:
       - name: Deploy Frontend
         run: |
-          echo "jalankan perintah vercel / rsync untuk production"
+          echo "jalankan perintah vercel / rsync (production)"
 
       - name: Deploy Backend
         run: |
-          echo "jalankan perintah ssh/pm2/docker untuk production"
+          echo "jalankan perintah ssh/pm2/docker (production)"
