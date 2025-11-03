@@ -97,6 +97,10 @@ jobs:
           node-version: 22.x
       - run: npm install -g pnpm
       - run: pnpm install
+
+      - name: Ignore Foundry test files
+        run: echo "contracts/**/*.t.sol" > .hardhatignore
+
       - name: Compile Contracts
         run: pnpm hardhat compile
 

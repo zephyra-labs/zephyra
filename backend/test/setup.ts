@@ -15,11 +15,11 @@ process.env.JWT_SECRET = process.env.JWT_SECRET || "test-secret";
 process.env.FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID || "demo-project";
 
 // --- Global mocks (you can expand these) ---
-jest.mock("../src/utils/notificationHelper.ts", () => ({
+jest.mock("../src/utils/notificationHelper", () => ({
   notifyWithAdmins: jest.fn().mockResolvedValue(true),
 }));
 
-jest.mock("../src/models/userModel.ts", () => ({
+jest.mock("../src/models/userModel", () => ({
   UserModel: {
     create: jest.fn(),
     getByAddress: jest.fn(),
