@@ -1,18 +1,18 @@
 /** @type {import('ts-jest').JestConfigWithTsJest} */
+const { pathsToModuleNameMapper } = require("ts-jest");
+const { compilerOptions } = require("./tsconfig.json");
 
 module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
-  roots: ['<rootDir>/src', '<rootDir>/test'],
-  setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
-  moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
-    '^@models/(.*)$': '<rootDir>/src/models/$1',
-    '^@utils/(.*)$': '<rootDir>/src/utils/$1',
-  },
+  preset: "ts-jest",
+  testEnvironment: "node",
+  roots: ["<rootDir>/src", "<rootDir>/test"],
+  setupFilesAfterEnv: ["<rootDir>/test/setup.ts"],
+  moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, {
+    prefix: "<rootDir>/",
+  }),
   transform: {
-    '^.+\\.tsx?$': ['ts-jest', { tsconfig: './tsconfig.json' }],
+    "^.+\\.tsx?$": ["ts-jest", { tsconfig: "./tsconfig.json" }],
   },
-  collectCoverageFrom: ['src/**/*.ts', '!src/**/*.d.ts'],
-  coverageDirectory: 'coverage',
-}
+  collectCoverageFrom: ["src/**/*.ts", "!src/**/*.d.ts"],
+  coverageDirectory: "coverage",
+};

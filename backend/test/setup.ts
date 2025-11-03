@@ -4,23 +4,28 @@
  */
 
 import dotenv from "dotenv";
+import { resolve } from "path";
+import { Module } from "module";
 
-/** --- Load environment variables for test --- */
+// --- Fix path aliases for Jest + GitHub Actions ---
+const appRoot = resolve(__dirname, "../src");
+process.env.NODE_PATH = appRoot;
+(Module as any)._initPaths();
+
+// --- Load environment variables ---
 dotenv.config({ path: ".env.test" });
 
-/** --- Default environment values --- */
+// --- Default environment values ---
 process.env.NODE_ENV = "test";
 process.env.JWT_SECRET ||= "test-secret";
 process.env.FIREBASE_PROJECT_ID ||= "demo-project";
 
-/** --- Global Mocks --- */
+// --- Global Mocks ---
 
-/** Mock notification helper */
 jest.mock("@/utils/notificationHelper", () => ({
   notifyWithAdmins: jest.fn().mockResolvedValue(true),
 }));
 
-/** Mock UserModel */
 jest.mock("@/models/userModel", () => ({
   UserModel: {
     create: jest.fn(),
@@ -31,36 +36,26 @@ jest.mock("@/models/userModel", () => ({
   },
 }));
 
-/** --- Silence console logs during test runs --- */
+// --- Silence console logs ---
 beforeAll(() => {
   jest.spyOn(console, "error").mockImplementation(() => {});
   jest.spyOn(console, "warn").mockImplementation(() => {});
   jest.spyOn(console, "info").mockImplementation(() => {});
 });
 
-/** --- Cleanup after each test --- */
+// --- Cleanup after each test ---
 afterEach(() => {
-  // Clear all mocks to reset call counts
   jest.clearAllMocks();
-
-  // Clear all timers (setTimeout, setInterval, setImmediate)
   jest.clearAllTimers();
-
-  // Optionally restore spies if you use jest.spyOn in tests
   jest.restoreAllMocks();
 });
 
-/** --- Cleanup after all tests --- */
+// --- Final cleanup ---
 afterAll(async () => {
-  // Restore console mocks
   jest.restoreAllMocks();
-
-  // Close DB connections if you have any
-  // Example: await db.disconnect();
-
-  // Close any servers if started in tests
-  // Example: server?.close();
-
-  // Clear remaining timers just in case
   jest.clearAllTimers();
+
+  // If using external resources:
+  // await db.disconnect?.();
+  // server?.close?.();
 });

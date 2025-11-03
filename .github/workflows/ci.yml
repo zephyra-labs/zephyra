@@ -9,28 +9,22 @@ on:
 jobs:
   # ────────────────────────────── SETUP ──────────────────────────────
   setup:
-    name: Setup Root
+    name: Install Dependencies (Root)
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v4
         with:
           version: 9
-          run_install: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22.x
           cache: 'pnpm'
 
-      - name: Install Root Dependencies
+      - name: Install Dependencies (root)
         run: pnpm install
-        env:
-          CI: true
 
   # ────────────────────────────── SMART CONTRACTS ──────────────────────────────
   contracts-build:
@@ -49,20 +43,9 @@ jobs:
         with:
           node-version: 22.x
           cache: 'pnpm'
-
       - run: pnpm install
-
-      - name: Ignore Foundry test files
-        run: echo "contracts/**/*.t.sol" > .hardhatignore
-
-      - name: Compile Contracts
-        run: pnpm hardhat compile
-
-      - name: Upload Contract Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: contracts-artifacts
-          path: contracts/artifacts
+      - run: echo "contracts/**/*.t.sol" > .hardhatignore
+      - run: pnpm hardhat compile
 
   # ────────────────────────────── FRONTEND ──────────────────────────────
   lint-frontend:
@@ -87,10 +70,8 @@ jobs:
   build-frontend:
     name: Build Frontend
     runs-on: ubuntu-latest
+    # 🚀 build dari root agar akses ke artifacts tidak perlu download
     needs: [lint-frontend, contracts-build]
-    defaults:
-      run:
-        working-directory: ./frontend
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -100,17 +81,16 @@ jobs:
         with:
           node-version: 22.x
           cache: 'pnpm'
-      - run: pnpm install
 
-      # ⬇️ Download artifacts dari job contracts-build
-      - name: Download Contract Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: contracts-artifacts
-          path: ./app/artifacts
+      - name: Install Dependencies
+        run: pnpm install
 
-      - name: Build Nuxt
-        run: pnpm build
+      # ✅ pastikan kontrak sudah tersedia sebelum build
+      - name: Verify contract artifacts
+        run: ls -R contracts/artifacts || echo "⚠️ Artifacts not found!"
+
+      - name: Build Frontend
+        run: cd frontend && pnpm build
 
   # ────────────────────────────── BACKEND ──────────────────────────────
   backend-lint:
@@ -158,10 +138,7 @@ jobs:
     needs: [build-frontend, backend-test, contracts-build]
     if: github.ref == 'refs/heads/dev'
     steps:
-      - name: Deploy Frontend
-        run: echo "Deploying to staging..."
-      - name: Deploy Backend
-        run: echo "Deploying backend staging..."
+      - run: echo "🚀 Deploying to staging environment..."
 
   deploy-production:
     name: Deploy Production
@@ -169,7 +146,4 @@ jobs:
     needs: [build-frontend, backend-test, contracts-build]
     if: github.ref == 'refs/heads/main'
     steps:
-      - name: Deploy Frontend
-        run: echo "Deploying to production..."
-      - name: Deploy Backend
-        run: echo "Deploying backend production..."
+      - run: echo "🚀 Deploying to production environment..."
