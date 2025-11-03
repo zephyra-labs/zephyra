@@ -6,7 +6,7 @@
 import { NotificationService } from "../notificationService"
 import { NotificationModel } from "../../models/notificationModel"
 import { broadcastNotificationToUser } from "../../ws/notificationWS"
-import type { Notification, NotificationType } from "../../types/Notification"
+import type { Notification } from "../../types/Notification"
 
 // 🔹 Mock database model & websocket broadcast
 jest.mock("../../models/notificationModel")

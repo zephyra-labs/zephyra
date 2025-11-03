@@ -7,7 +7,6 @@ import { ContractController } from "../contractController";
 import { ContractService } from "../../services/contractService";
 import type { AuthRequest } from "../../middlewares/authMiddleware";
 import type { Response, Request } from "express";
-import ContractLogDTO from "../../dtos/contractDTO";
 
 // --- Helper: Mock Response Type-safe ---
 function createMockResponse(): jest.Mocked<Response> {

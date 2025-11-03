@@ -6,8 +6,7 @@
 import { DashboardService } from "../dashboardService";
 import { DashboardModel } from "../../models/dashboardModel";
 import { getContractRoles } from "../../utils/getContractRoles";
-import { getAddress } from "viem"; // ✅ import getAddress
-import type { DashboardWallet, DashboardContract, DashboardDocument } from "../../types/Dashboard";
+import { getAddress } from "viem"
 
 // 🔹 Mock dependencies
 jest.mock("../../models/dashboardModel");
@@ -59,7 +58,7 @@ describe("DashboardService", () => {
       (DashboardModel.getAllUsers as jest.Mock).mockResolvedValue(mockUsers);
       (DashboardModel.getAllContracts as jest.Mock).mockResolvedValue(mockContracts);
       (DashboardModel.getAllDocuments as jest.Mock).mockResolvedValue(mockDocuments);
-      (DashboardModel.getDocumentLogs as jest.Mock).mockImplementation(async (id: string) => [{ timestamp: 5000 }]);
+      (DashboardModel.getDocumentLogs as jest.Mock).mockImplementation(async () => [{ timestamp: 5000 }]);
 
       const result = await DashboardService.getDashboard();
 
@@ -86,7 +85,7 @@ describe("DashboardService", () => {
       (DashboardModel.getAllDocuments as jest.Mock).mockResolvedValue(mockDocuments);
       (DashboardModel.getDocumentLogs as jest.Mock).mockResolvedValue([{ timestamp: 5000 }]);
 
-      (getContractRoles as jest.Mock).mockImplementation(async (contractId: string) => ({
+      (getContractRoles as jest.Mock).mockImplementation(async () => ({
         exporter: "0x1111111111111111111111111111111111111111",
         importer: "0x2222222222222222222222222222222222222222",
         logistics: "0x3333333333333333333333333333333333333333",

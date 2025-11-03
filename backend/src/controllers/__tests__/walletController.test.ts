@@ -2,7 +2,6 @@
 import type { Request, Response } from "express";
 import * as WalletController from "../walletController";
 import * as WalletService from "../../services/walletService";
-import { WalletAction } from "../../types/Wallet";
 import { CreateWalletLogDTO, UpdateWalletStateDTO } from "../../dtos/walletDTO";
 
 // Mock seluruh service

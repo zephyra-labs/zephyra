@@ -7,7 +7,6 @@ import { Request } from "express";
 import * as documentController from "../documentController";
 import { DocumentService } from "../../services/documentService";
 import { success, failure, handleError } from "../../utils/responseHelper";
-import DocumentDTO from "../../dtos/documentDTO";
 
 jest.mock("../../services/documentService");
 jest.mock("../../utils/responseHelper");
