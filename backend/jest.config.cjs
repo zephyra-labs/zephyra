@@ -8,7 +8,9 @@ module.exports = {
     "^.+\\.ts$": "ts-jest",
   },
   moduleNameMapper: {
-    "^<rootDir>/src/(.*)$": "<rootDir>/src/$1",
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^<rootDir>/(.*)$': '<rootDir>/$1',
+    '^src/(.*)$': '<rootDir>/src/$1',
   },
   setupFilesAfterEnv: ["<rootDir>/test/setup.ts"],
   testTimeout: 10000,

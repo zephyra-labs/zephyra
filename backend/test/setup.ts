@@ -16,12 +16,12 @@ process.env.FIREBASE_PROJECT_ID ||= "demo-project";
 /** --- Global Mocks --- */
 
 /** Mock notification helper */
-jest.mock("<rootDir>/src/utils/notificationHelper", () => ({
+jest.mock("@/utils/notificationHelper", () => ({
   notifyWithAdmins: jest.fn().mockResolvedValue(true),
 }));
 
 /** Mock UserModel */
-jest.mock("<rootDir>/src/models/userModel", () => ({
+jest.mock("@/models/userModel", () => ({
   UserModel: {
     create: jest.fn(),
     getByAddress: jest.fn(),
