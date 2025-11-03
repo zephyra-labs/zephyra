@@ -38,7 +38,29 @@ beforeAll(() => {
   jest.spyOn(console, "info").mockImplementation(() => {});
 });
 
-/** --- Restore console mocks after all tests --- */
-afterAll(() => {
+/** --- Cleanup after each test --- */
+afterEach(() => {
+  // Clear all mocks to reset call counts
+  jest.clearAllMocks();
+
+  // Clear all timers (setTimeout, setInterval, setImmediate)
+  jest.clearAllTimers();
+
+  // Optionally restore spies if you use jest.spyOn in tests
   jest.restoreAllMocks();
+});
+
+/** --- Cleanup after all tests --- */
+afterAll(async () => {
+  // Restore console mocks
+  jest.restoreAllMocks();
+
+  // Close DB connections if you have any
+  // Example: await db.disconnect();
+
+  // Close any servers if started in tests
+  // Example: server?.close();
+
+  // Clear remaining timers just in case
+  jest.clearAllTimers();
 });
