@@ -5,23 +5,23 @@
 
 import dotenv from "dotenv";
 
-/** --- Load env --- */
+/** --- Load environment variables for test --- */
 dotenv.config({ path: ".env.test" });
 
-/** --- Default env fallback --- */
+/** --- Default environment values --- */
 process.env.NODE_ENV = "test";
 process.env.JWT_SECRET ||= "test-secret";
 process.env.FIREBASE_PROJECT_ID ||= "demo-project";
 
-/** --- Global mocks --- */
+/** --- Global Mocks --- */
 
 /** Mock notification helper */
-jest.mock("../src/utils/notificationHelper", () => ({
+jest.mock("<rootDir>/src/utils/notificationHelper", () => ({
   notifyWithAdmins: jest.fn().mockResolvedValue(true),
 }));
 
 /** Mock UserModel */
-jest.mock("../src/models/userModel", () => ({
+jest.mock("<rootDir>/src/models/userModel", () => ({
   UserModel: {
     create: jest.fn(),
     getByAddress: jest.fn(),
@@ -31,14 +31,14 @@ jest.mock("../src/models/userModel", () => ({
   },
 }));
 
-/** Silence console logs during test runs */
+/** --- Silence console logs during test runs --- */
 beforeAll(() => {
   jest.spyOn(console, "error").mockImplementation(() => {});
   jest.spyOn(console, "warn").mockImplementation(() => {});
   jest.spyOn(console, "info").mockImplementation(() => {});
 });
 
-/** Restore console mocks after all tests */
+/** --- Restore console mocks after all tests --- */
 afterAll(() => {
   jest.restoreAllMocks();
 });
