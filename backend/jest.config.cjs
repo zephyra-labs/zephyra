@@ -7,13 +7,18 @@ module.exports = {
   testEnvironment: 'node',
   roots: ['<rootDir>/src', '<rootDir>/test'],
   setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
-  moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths || {}, {
-    prefix: '<rootDir>/',
-  }),
+
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+    ...pathsToModuleNameMapper(compilerOptions.paths || {}, {
+      prefix: '<rootDir>/',
+    }),
+  },
+
   transform: {
     '^.+\\.tsx?$': ['ts-jest', { tsconfig: './tsconfig.json' }],
   },
+
   collectCoverageFrom: ['src/**/*.ts', '!src/**/*.d.ts'],
   coverageDirectory: 'coverage',
-  testTimeout: 10000,
 }
