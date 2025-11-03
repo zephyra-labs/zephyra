@@ -1,6 +1,4 @@
 /** @type {import('ts-jest').JestConfigWithTsJest} */
-const { pathsToModuleNameMapper } = require('ts-jest')
-const { compilerOptions } = require('./tsconfig.json')
 
 module.exports = {
   preset: 'ts-jest',
@@ -8,9 +6,6 @@ module.exports = {
   roots: ['<rootDir>/src', '<rootDir>/test'],
   setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
   moduleNameMapper: {
-    ...pathsToModuleNameMapper(compilerOptions.paths || {}, {
-      prefix: '<rootDir>/',
-    }),
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@models/(.*)$': '<rootDir>/src/models/$1',
     '^@utils/(.*)$': '<rootDir>/src/utils/$1',
