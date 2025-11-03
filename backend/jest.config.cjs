@@ -1,20 +1,18 @@
-/** @type {import('ts-jest').JestConfigWithTsJest} */
-module.exports = {
+import { pathsToModuleNameMapper } from 'ts-jest'
+import { compilerOptions } from './tsconfig.json' assert { type: 'json' }
+
+/** @type {import('jest').Config} */
+export default {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  roots: ['<rootDir>/src', '<rootDir>/test'],
-  moduleFileExtensions: ['ts', 'js', 'json'],
-  transform: {
-    '^.+\\.ts$': 'ts-jest',
-  },
-  moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
-    '^src/(.*)$': '<rootDir>/src/$1',
-    '^<rootDir>/(.*)$': '<rootDir>/$1',
-  },
+  roots: ['<rootDir>/src'],
   setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
-  testTimeout: 10000,
-  collectCoverage: true,
-  coverageDirectory: '<rootDir>/coverage',
+  moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths || {}, {
+    prefix: '<rootDir>/',
+  }),
+  transform: {
+    '^.+\\.tsx?$': ['ts-jest', { tsconfig: './tsconfig.json' }],
+  },
   collectCoverageFrom: ['src/**/*.ts', '!src/**/*.d.ts'],
-};
+  coverageDirectory: 'coverage',
+}
