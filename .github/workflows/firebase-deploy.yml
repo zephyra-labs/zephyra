@@ -48,9 +48,11 @@ jobs:
       # 8. Deploy to Firebase Hosting
       - name: Deploy to Firebase Hosting
         shell: bash
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
           if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
-            firebase deploy --only hosting --project zephyra-prod --token "${{ secrets.FIREBASE_TOKEN }}"
+            firebase deploy --only hosting --project zephyra-prod
           elif [[ "${GITHUB_REF}" == "refs/heads/dev" ]]; then
-            firebase deploy --only hosting --project zephyra-dev --token "${{ secrets.FIREBASE_TOKEN }}"
+            firebase deploy --only hosting --project zephyra-dev
           fi
