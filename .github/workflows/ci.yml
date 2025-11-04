@@ -2,143 +2,125 @@ name: Zephyra CI/CD
 
 on:
   push:
-    branches: [dev, main]
+    branches: [ dev, main ]
   pull_request:
-    branches: [dev]
+    branches: [ dev ]
 
 jobs:
-  # ────────────────────────────── SETUP ──────────────────────────────
   setup:
-    name: Install Dependencies (Root)
+    name: Install Dependencies
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v3
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: 22.x
-          cache: 'pnpm'
 
-      - name: Install Dependencies (root)
-        run: pnpm install
-
-  # ────────────────────────────── SMART CONTRACTS ──────────────────────────────
-  contracts-build:
-    name: Compile Smart Contracts
-    runs-on: ubuntu-latest
-    needs: setup
-    defaults:
-      run:
-        working-directory: ./contracts
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22.x
-          cache: 'pnpm'
-      - run: pnpm install
-      - run: echo "contracts/**/*.t.sol" > .hardhatignore
-      - run: pnpm hardhat compile
-
-  # ────────────────────────────── FRONTEND ──────────────────────────────
-  lint-frontend:
-    name: Lint Frontend
-    runs-on: ubuntu-latest
-    needs: setup
-    defaults:
-      run:
-        working-directory: ./frontend
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22.x
-          cache: 'pnpm'
-      - run: pnpm install
-      - run: pnpm lint
-
-  build-frontend:
-    name: Build Frontend
-    runs-on: ubuntu-latest
-    # 🚀 build dari root agar akses ke artifacts tidak perlu download
-    needs: [lint-frontend, contracts-build]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22.x
-          cache: 'pnpm'
+      - name: Install pnpm
+        run: npm install -g pnpm
 
       - name: Install Dependencies
         run: pnpm install
 
-      # ✅ pastikan kontrak sudah tersedia sebelum build
-      - name: Verify contract artifacts
-        run: ls -R contracts/artifacts || echo "⚠️ Artifacts not found!"
+  lint-frontend:
+    name: Lint Frontend
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22.x
+      - run: npm install -g pnpm
+      - run: pnpm install
+      - name: Run Linter
+        run: pnpm --filter frontend lint
 
-      - name: Build Frontend
-        run: cd frontend && pnpm build
+  build-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    needs: lint-frontend
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22.x
+      - run: npm install -g pnpm
+      - run: pnpm install
+      - name: Build
+        run: pnpm --filter frontend build
 
-  # ────────────────────────────── BACKEND ──────────────────────────────
   backend-lint:
     name: Lint Backend
     runs-on: ubuntu-latest
     needs: setup
-    defaults:
-      run:
-        working-directory: ./backend
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: 22.x
-          cache: 'pnpm'
+      - run: npm install -g pnpm
       - run: pnpm install
-      - run: pnpm lint
+      - name: Lint Backend
+        run: pnpm --filter backend lint
 
   backend-test:
     name: Test Backend
     runs-on: ubuntu-latest
     needs: backend-lint
-    defaults:
-      run:
-        working-directory: ./backend
+    env:
+      NODE_ENV: test
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: 22.x
-          cache: 'pnpm'
+      - run: npm install -g pnpm
       - run: pnpm install
-      - run: pnpm test
+      - name: Run Tests
+        run: pnpm --filter backend test -- --coverage --runInBand
+      - name: Upload Coverage Report
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage
 
-  # ────────────────────────────── DEPLOYMENT ──────────────────────────────
+  contracts-build:
+    name: Compile Smart Contracts
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22.x
+      - run: npm install -g pnpm
+      - run: pnpm install
+      - name: Compile Contracts
+        run: pnpm hardhat compile
+
   deploy-staging:
     name: Deploy Staging
     runs-on: ubuntu-latest
     needs: [build-frontend, backend-test, contracts-build]
     if: github.ref == 'refs/heads/dev'
     steps:
-      - run: echo "🚀 Deploying to staging environment..."
+      - name: Deploy Frontend
+        run: |
+          echo "jalankan perintah vercel / rsync"
+
+      - name: Deploy Backend
+        run: |
+          echo "jalankan perintah ssh/pm2/docker"
 
   deploy-production:
     name: Deploy Production
@@ -146,4 +128,10 @@ jobs:
     needs: [build-frontend, backend-test, contracts-build]
     if: github.ref == 'refs/heads/main'
     steps:
-      - run: echo "🚀 Deploying to production environment..."
+      - name: Deploy Frontend
+        run: |
+          echo "jalankan perintah vercel / rsync untuk production"
+
+      - name: Deploy Backend
+        run: |
+          echo "jalankan perintah ssh/pm2/docker untuk production"
