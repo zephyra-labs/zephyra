@@ -45,27 +45,18 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools@latest
 
-      # 8. Prepare Firebase Service Account in workspace
-      - name: Prepare Firebase Service Account
-        shell: bash
-        env:
-          FIREBASE_JSON_PATH: ${{ github.workspace }}/firebase-service-account.json
-        run: |
-          # Write service account JSON from secret to file
-          printf "%s" "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" > "$FIREBASE_JSON_PATH"
-          # Set environment variable for Firebase CLI
-          export GOOGLE_APPLICATION_CREDENTIALS="$FIREBASE_JSON_PATH"
-
-      # 9. Deploy to Firebase Hosting
+      # 8. Deploy to Firebase Hosting
       - name: Deploy to Firebase Hosting
         shell: bash
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/firebase-service-account.json
         run: |
-          # Deploy to production if main branch
+          # Write service account JSON to workspace
+          printf "%s" "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" > $GITHUB_WORKSPACE/firebase-service-account.json
+          # Export environment variable for this session
+          export GOOGLE_APPLICATION_CREDENTIALS=$GITHUB_WORKSPACE/firebase-service-account.json
+
+          # Deploy based on branch
           if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
             firebase deploy --only hosting --project zephyra-prod
-          # Deploy to staging if dev branch
           elif [[ "${GITHUB_REF}" == "refs/heads/dev" ]]; then
             firebase deploy --only hosting --project zephyra-dev
           fi
