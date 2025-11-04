@@ -22,7 +22,7 @@ process.env.FIREBASE_PROJECT_ID ||= "demo-project";
 
 // --- Global Mocks ---
 
-// Note: Match exact case with file names on Linux (e.g., UserModel.ts)
+// Mock UserModel
 jest.mock("@/models/UserModel", () => ({
   UserModel: {
     create: jest.fn(),
@@ -33,9 +33,42 @@ jest.mock("@/models/UserModel", () => ({
   },
 }));
 
+// Mock notification helper
 jest.mock("@/utils/notificationHelper", () => ({
   notifyWithAdmins: jest.fn().mockResolvedValue(true),
 }));
+
+// --- Mock Firebase Admin / Firestore ---
+jest.mock("firebase-admin", () => {
+  const actualAdmin = jest.requireActual("firebase-admin");
+  const mockCollection = jest.fn().mockReturnValue({
+    doc: jest.fn().mockReturnValue({
+      set: jest.fn().mockResolvedValue(true),
+      get: jest.fn().mockResolvedValue({ exists: true, data: () => ({}) }),
+      update: jest.fn().mockResolvedValue(true),
+      delete: jest.fn().mockResolvedValue(true),
+    }),
+    add: jest.fn().mockResolvedValue({ id: "mock-id" }),
+    get: jest.fn().mockResolvedValue({
+      docs: [],
+      empty: true,
+    }),
+  });
+
+  const mockFirestore = jest.fn(() => ({
+    collection: mockCollection,
+    settings: jest.fn(),
+  }));
+
+  return {
+    ...actualAdmin,
+    initializeApp: jest.fn(),
+    firestore: mockFirestore,
+    credential: {
+      cert: jest.fn(),
+    },
+  };
+});
 
 // --- Silence console logs ---
 beforeAll(() => {
@@ -55,8 +88,6 @@ afterEach(() => {
 afterAll(async () => {
   jest.restoreAllMocks();
   jest.clearAllTimers();
-
-  // If using external resources:
   // await db.disconnect?.();
   // server?.close?.();
 });
