@@ -13,7 +13,7 @@ import { UserCompanyService } from "../userCompanyService";
 import jwt from "jsonwebtoken";
 
 // 🔹 Jest mocks for all dependencies
-jest.mock("../../models/userModel.ts");
+jest.mock("../../models/UserModel.ts");
 jest.mock("../../utils/notificationHelper.ts");
 jest.mock("../companyService.ts");
 jest.mock("../userCompanyService.ts");
