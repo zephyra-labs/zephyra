@@ -41,5 +41,5 @@ jobs:
           if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
             npx firebase deploy --only hosting --token "${{ secrets.FIREBASE_TOKEN }}"
           elif [[ "${GITHUB_REF}" == "refs/heads/dev" ]]; then
-            npx firebase deploy --only hosting:staging --token "${{ secrets.FIREBASE_TOKEN }}"`
+            npx firebase deploy --only hosting:staging --token "${{ secrets.FIREBASE_TOKEN }}"
           fi
