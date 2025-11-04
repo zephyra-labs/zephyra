@@ -23,7 +23,7 @@ process.env.FIREBASE_PROJECT_ID ||= "demo-project";
 // --- Global Mocks ---
 
 // Mock UserModel
-jest.mock("@/models/UserModel", () => ({
+jest.mock("@/models/userModel", () => ({
   UserModel: {
     create: jest.fn(),
     getByAddress: jest.fn(),

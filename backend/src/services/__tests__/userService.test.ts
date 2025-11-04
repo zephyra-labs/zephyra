@@ -6,14 +6,14 @@
  */
 
 import { UserService } from "../userService";
-import { UserModel } from "../../models/UserModel";
+import { UserModel } from "../../models/userModel";
 import { notifyWithAdmins } from "../../utils/notificationHelper";
 import { CompanyService } from "../companyService";
 import { UserCompanyService } from "../userCompanyService";
 import jwt from "jsonwebtoken";
 
 // 🔹 Jest mocks for all dependencies
-jest.mock("../../models/UserModel.ts");
+jest.mock("../../models/userModel.ts");
 jest.mock("../../utils/notificationHelper.ts");
 jest.mock("../companyService.ts");
 jest.mock("../userCompanyService.ts");

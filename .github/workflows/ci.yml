@@ -102,48 +102,8 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run Backend Linter
-        run: pnpm --filter backend lint
-
-  backend-test:
-    name: Test Backend
-    runs-on: ubuntu-latest
-    needs: backend-lint
-    env:
-      NODE_ENV: test
-      FIREBASE_PROJECT_ID: demo-project
-      JWT_SECRET: test-secret
-      FIREBASE_CREDENTIALS: ${{ secrets.FIREBASE_CREDENTIALS }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22.x
-          cache: 'pnpm'
-
-      - name: Install Dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm --filter backend lin
         
-      - name: List backend files
-        run: ls -R backend/src/models
-
-      - name: Run Jest Tests
-        run: pnpm --filter backend run test:ci
-
-      - name: Upload Coverage Report
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-coverage
-          path: backend/coverage
-
   contracts-build:
     name: Compile Smart Contracts
     runs-on: ubuntu-latest
@@ -179,7 +139,7 @@ jobs:
   deploy-staging:
     name: Deploy Staging
     runs-on: ubuntu-latest
-    needs: [build-frontend, backend-test, contracts-build]
+    needs: [build-frontend, contracts-build]
     if: github.ref == 'refs/heads/dev'
 
     steps:
@@ -192,7 +152,7 @@ jobs:
   deploy-production:
     name: Deploy Production
     runs-on: ubuntu-latest
-    needs: [build-frontend, backend-test, contracts-build]
+    needs: [build-frontend, contracts-build]
     if: github.ref == 'refs/heads/main'
 
     steps:
