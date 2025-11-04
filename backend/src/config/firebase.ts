@@ -2,40 +2,38 @@
  * @file firebase.ts
  * @description Firebase Admin SDK initialization for Firestore.
  * Provides a single Firestore instance for backend usage.
- * Automatically skips initialization in test environment.
  */
 
-import admin from "firebase-admin";
-import { readFileSync } from "fs";
-import path from "path";
+import admin from 'firebase-admin'
+import path from 'path'
 
-let db: FirebaseFirestore.Firestore;
+/**
+ * @constant {string}
+ * @description Path to Firebase service account JSON file
+ */
+const serviceAccountPath = process.env.FIREBASE_ADMIN_JSON
+  ? path.resolve(process.env.FIREBASE_ADMIN_JSON)
+  : null;
 
-if (process.env.NODE_ENV === "test") {
-  // In Jest tests, provide a dummy Firestore object to avoid initialization errors
-  db = {} as FirebaseFirestore.Firestore;
-} else {
-  let serviceAccount: admin.ServiceAccount;
-
-  if (process.env.FIREBASE_CREDENTIALS) {
-    // Parse JSON from environment variable (CI/CD friendly)
-    serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS);
-  } else {
-    // Fallback to local JSON file for development
-    const serviceAccountPath = path.resolve(__dirname, "./firebaseServiceAccount.json");
-    serviceAccount = JSON.parse(readFileSync(serviceAccountPath, "utf-8"));
-  }
-
-  // Initialize Firebase Admin SDK only once
-  if (!admin.apps.length) {
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
-  }
-
-  db = admin.firestore();
-  db.settings({ ignoreUndefinedProperties: true });
+/**
+ * Initialize Firebase Admin SDK if not already initialized
+ */
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: serviceAccountPath
+      ? admin.credential.cert(serviceAccountPath)
+      : admin.credential.applicationDefault(),
+  });
 }
 
-export { db };
-export default admin;
+/**
+ * @constant {FirebaseFirestore.Firestore}
+ * @description Firestore database instance
+ */
+const db = admin.firestore()
+
+// Ensure undefined properties are ignored in Firestore writes
+db.settings({ ignoreUndefinedProperties: true })
+
+export { db }
+export default admin

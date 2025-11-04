@@ -4,6 +4,7 @@ module.exports = {
   testEnvironment: 'node',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1', 
+    '^@/config/firebase$': '<rootDir>/src/config/__mocks__/firebase.ts',
   },
   moduleFileExtensions: ['ts', 'js', 'json'],
   setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
