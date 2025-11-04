@@ -129,9 +129,12 @@ jobs:
 
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
+        
+      - name: List backend files
+        run: ls -R backend/src/models
 
       - name: Run Jest Tests
-        run: pnpm --filter backend test -- --coverage --runInBand --passWithNoTests
+        run: pnpm --filter backend test --coverage --runInBand --passWithNoTests
 
       - name: Upload Coverage Report
         if: success()
