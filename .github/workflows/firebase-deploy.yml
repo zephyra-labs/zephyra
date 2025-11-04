@@ -49,8 +49,11 @@ jobs:
       - name: Deploy to Firebase Hosting
         shell: bash
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/firebase-service-account.json
         run: |
+          # Write secret JSON to a file
+          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" > $GOOGLE_APPLICATION_CREDENTIALS
+          
           if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
             firebase deploy --only hosting --project zephyra-prod
           elif [[ "${GITHUB_REF}" == "refs/heads/dev" ]]; then
