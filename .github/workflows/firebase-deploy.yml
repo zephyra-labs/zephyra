@@ -2,7 +2,7 @@ name: Firebase Deploy
 
 on:
   push:
-    branches: [ main, dev ]  # main → production, dev → staging
+    branches: [ main, dev ]
 
 jobs:
   deploy-frontend:
@@ -25,6 +25,11 @@ jobs:
           cd frontend
           pnpm install --frozen-lockfile
 
+      - name: Compile Contracts
+        run: |
+          cd backend
+          pnpm hardhat compile
+
       - name: Build Nuxt 4
         run: |
           cd frontend
@@ -36,5 +41,5 @@ jobs:
           if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
             npx firebase deploy --only hosting --token "${{ secrets.FIREBASE_TOKEN }}"
           elif [[ "${GITHUB_REF}" == "refs/heads/dev" ]]; then
-            npx firebase deploy --only hosting:staging --token "${{ secrets.FIREBASE_TOKEN }}"
+            npx firebase deploy --only hosting:staging --token "${{ secrets.FIREBASE_TOKEN }}"`
           fi
