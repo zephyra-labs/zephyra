@@ -2,44 +2,51 @@ name: Firebase Deploy
 
 on:
   push:
-    branches: [ main, dev ]
+    branches: [ main, dev ]  # main → production, dev → staging
 
 jobs:
   deploy-frontend:
     name: Deploy Frontend to Firebase Hosting
     runs-on: ubuntu-latest
     steps:
+      # 1. Checkout repo
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2. Setup pnpm
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with: { version: 9 }
+        with:
+          version: 9
 
+      # 3. Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
-        with: { node-version: 22.x, cache: 'pnpm' }
+        with:
+          node-version: 22.x
+          cache: 'pnpm'
 
-      - name: Install Dependencies
-        run: |
-          cd frontend
-          pnpm install --frozen-lockfile
+      # 4. Install frontend dependencies
+      - name: Install Frontend Dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: frontend
 
+      # 5. Compile smart contracts
       - name: Compile Contracts
-        run: |
-          cd backend
-          pnpm hardhat compile
+        run: pnpm hardhat compile
+        working-directory: backend
 
+      # 6. Build Nuxt 4
       - name: Build Nuxt 4
-        run: |
-          cd frontend
-          pnpm build
+        run: pnpm build
+        working-directory: frontend
 
+      # 7. Deploy to Firebase Hosting
       - name: Deploy to Firebase Hosting
         run: |
-          cd frontend
           if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
             npx firebase deploy --only hosting --token "${{ secrets.FIREBASE_TOKEN }}"
           elif [[ "${GITHUB_REF}" == "refs/heads/dev" ]]; then
             npx firebase deploy --only hosting:staging --token "${{ secrets.FIREBASE_TOKEN }}"
           fi
+        working-directory: frontend
