@@ -43,8 +43,12 @@ jobs:
 
       # 7. Deploy to Firebase Hosting
       - name: Deploy to Firebase Hosting
-        run: npx firebase deploy --only hosting:$FIREBASE_TARGET --token "${{ secrets.FIREBASE_TOKEN }}"
         working-directory: frontend
         shell: bash
-        env:
-          FIREBASE_TARGET: ${{ github.ref == 'refs/heads/main' && 'default' || 'staging' }}
+        run: |
+          if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
+            npx firebase deploy --only hosting --token "${{ secrets.FIREBASE_TOKEN }}"
+          elif [[ "${GITHUB_REF}" == "refs/heads/dev" ]]; then
+            npx firebase deploy --only hosting:staging --token "${{ secrets.FIREBASE_TOKEN }}"
+          fi
+          
