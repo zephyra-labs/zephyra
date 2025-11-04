@@ -34,21 +34,18 @@ jobs:
       # 5. Compile smart contracts
       - name: Compile Contracts
         run: pnpm hardhat compile
-        working-directory: backend
 
       # 6. Build Nuxt 4
       - name: Build Nuxt 4
         run: pnpm build
         working-directory: frontend
 
-      # 7. Deploy to Firebase Hosting
       - name: Deploy to Firebase Hosting
-        working-directory: frontend
         shell: bash
         run: |
+          cd frontend
           if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
             npx firebase deploy --only hosting --token "${{ secrets.FIREBASE_TOKEN }}"
           elif [[ "${GITHUB_REF}" == "refs/heads/dev" ]]; then
             npx firebase deploy --only hosting:staging --token "${{ secrets.FIREBASE_TOKEN }}"
           fi
-          
