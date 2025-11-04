@@ -41,22 +41,11 @@ jobs:
         run: pnpm build
         working-directory: frontend
 
-      # 7. Install Firebase CLI globally
-      - name: Install Firebase CLI
-        run: npm install -g firebase-tools@latest
-
-      # 8. Deploy to Firebase Hosting
+      # 7. Deploy to Firebase Hosting using official GitHub Action
       - name: Deploy to Firebase Hosting
-        shell: bash
-        run: |
-          # Write service account JSON to workspace
-          printf "%s" "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" > $GITHUB_WORKSPACE/firebase-service-account.json
-          # Export environment variable for this session
-          export GOOGLE_APPLICATION_CREDENTIALS=$GITHUB_WORKSPACE/firebase-service-account.json
-
-          # Deploy based on branch
-          if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
-            firebase deploy --only hosting --project zephyra-prod
-          elif [[ "${GITHUB_REF}" == "refs/heads/dev" ]]; then
-            firebase deploy --only hosting --project zephyra-dev
-          fi
+        uses: FirebaseExtended/action-hosting-deploy@v0.10.0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: ${{ github.ref == 'refs/heads/main' && 'zephyra-prod' || 'zephyra-dev' }}
+          channelId: ${{ github.ref == 'refs/heads/main' && 'live' || 'staging' }}
