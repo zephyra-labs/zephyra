@@ -6,7 +6,7 @@
  */
 
 import { UserService } from "../userService";
-import { UserModel } from "../../models/userModel";
+import { UserModel } from "../../models/UserModel";
 import { notifyWithAdmins } from "../../utils/notificationHelper";
 import { CompanyService } from "../companyService";
 import { UserCompanyService } from "../userCompanyService";
