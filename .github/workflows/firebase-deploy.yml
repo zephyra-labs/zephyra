@@ -9,7 +9,7 @@ jobs:
     name: Deploy Frontend to Firebase Hosting
     runs-on: ubuntu-latest
     steps:
-      # 1. Checkout repo
+      # 1. Checkout repository
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -43,21 +43,20 @@ jobs:
 
       # 7. Install Firebase CLI globally
       - name: Install Firebase CLI
-        run: npm install -g firebase-tools
+        run: npm install -g firebase-tools@latest
 
-      # 8. Deploy to Firebase Hosting
+      # 8. Prepare Firebase Service Account
+      - name: Prepare Firebase Service Account
+        shell: bash
+        run: |
+          # Save secret JSON to a file
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > $GITHUB_WORKSPACE/firebase-service-account.json
+          export GOOGLE_APPLICATION_CREDENTIALS=$GITHUB_WORKSPACE/firebase-service-account.json
+
+      # 9. Deploy to Firebase Hosting
       - name: Deploy to Firebase Hosting
         shell: bash
-        env:
-          FIREBASE_JSON_PATH: ${{ github.workspace }}/firebase-service-account.json
         run: |
-          # Write service account JSON to file safely
-          printf "%s" "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" > "$FIREBASE_JSON_PATH"
-          
-          # Set GOOGLE_APPLICATION_CREDENTIALS to point to the JSON file
-          export GOOGLE_APPLICATION_CREDENTIALS="$FIREBASE_JSON_PATH"
-
-          # Deploy based on branch
           if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
             firebase deploy --only hosting --project zephyra-prod
           elif [[ "${GITHUB_REF}" == "refs/heads/dev" ]]; then
