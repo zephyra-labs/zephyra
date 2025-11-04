@@ -1,10 +1,27 @@
-import type { Notification } from "../types/Notification.js"
-import { db } from "../config/firebase.js"
+/**
+ * @file notificationModel.ts
+ * @description Model for managing user notifications in Firestore.
+ */
 
+import type { Notification } from "../types/Notification"
+import { db } from "../config/firebase"
+
+/** Firestore collection reference for notifications */
 const collection = db.collection("notifications")
 
+/**
+ * Model for managing user notifications in Firestore.
+ * Provides methods for CRUD operations and state management (e.g., mark as read).
+ * @class
+ */
 export class NotificationModel {
-  // --- Create Notification ---
+  /**
+   * Create a new notification entry.
+   * 
+   * @param {Notification} data - Notification data to create.
+   * @returns {Promise<Notification>} The newly created notification.
+   * @throws {Error} If required fields are missing or notification already exists.
+   */
   static async create(data: Notification): Promise<Notification> {
     if (!data.id || !data.userId || !data.type || !data.title || !data.message) {
       throw new Error("Missing required notification fields")
@@ -31,26 +48,45 @@ export class NotificationModel {
     return newDoc
   }
 
-  // --- Get All Notifications ---
+  /**
+   * Retrieve all notifications in the system.
+   * 
+   * @returns {Promise<Notification[]>} List of all notifications.
+   */
   static async getAll(): Promise<Notification[]> {
     const snapshot = await collection.get()
     return snapshot.docs.map((doc) => doc.data() as Notification)
   }
 
-  // --- Get Notifications by User ---
+  /**
+   * Retrieve all notifications belonging to a specific user.
+   * 
+   * @param {string} userId - The ID of the user to fetch notifications for.
+   * @returns {Promise<Notification[]>} List of user notifications.
+   */
   static async getByUser(userId: string): Promise<Notification[]> {
     const snapshot = await collection.where("userId", "==", userId).get()
     return snapshot.docs.map((doc) => doc.data() as Notification)
   }
 
-  // --- Get by Id ---
+  /**
+   * Retrieve a single notification by its unique ID.
+   * 
+   * @param {string} id - The ID of the notification.
+   * @returns {Promise<Notification | null>} The notification if found, otherwise `null`.
+   */
   static async getById(id: string): Promise<Notification | null> {
     const doc = await collection.doc(id).get()
     if (!doc.exists) return null
     return doc.data() as Notification
   }
 
-  // --- Mark as Read ---
+  /**
+   * Mark a notification as read by its ID.
+   * 
+   * @param {string} id - The ID of the notification to mark as read.
+   * @returns {Promise<boolean>} Returns `true` if updated successfully, `false` if not found.
+   */
   static async markAsRead(id: string): Promise<boolean> {
     const docRef = collection.doc(id)
     const snapshot = await docRef.get()
@@ -60,7 +96,12 @@ export class NotificationModel {
     return true
   }
 
-  // --- Delete Notification ---
+  /**
+   * Delete a notification from the database.
+   * 
+   * @param {string} id - The ID of the notification to delete.
+   * @returns {Promise<boolean>} Returns `true` if deleted successfully, `false` if not found.
+   */
   static async delete(id: string): Promise<boolean> {
     const docRef = collection.doc(id)
     const snapshot = await docRef.get()

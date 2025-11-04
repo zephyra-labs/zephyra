@@ -1,9 +1,27 @@
-import { ActivityLog } from "./Activity.js";
+/**
+ * @file AggregatedActivityLog.ts
+ * @description Extended activity log with aggregation metadata and tags
+ */
 
+import { ActivityLog } from "./Activity";
+
+/**
+ * Represents an aggregated activity log entry with extra metadata for search and tagging
+ * @extends ActivityLog
+ */
 export interface AggregatedActivityLog extends ActivityLog {
-  id: string; 
+  /** Unique ID for this aggregated log entry */
+  id: string;
+
+  /** Lowercase version of the account for indexing/searching */
   accountLower?: string;
+
+  /** Lowercase version of the transaction hash for indexing/searching */
   txHashLower?: string;
+
+  /** Lowercase version of the related contract address for indexing/searching */
   contractLower?: string;
-  tags?: string[];        
+
+  /** Optional list of tags associated with this activity */
+  tags?: string[];
 }

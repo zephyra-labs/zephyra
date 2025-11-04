@@ -1,20 +1,28 @@
-import { db } from '../config/firebase.js';
-import type { ActivityLog } from '../types/Activity.js';
-import type { AggregatedActivityLog } from '../types/AggregatedActivity.js';
-import ActivityLogDTO from '../dtos/activityDTO.js';
+/**
+ * @file activityLogsModel.ts
+ * @description Firestore service for managing activity logs per account and aggregated logs globally.
+ */
 
+import { db } from '../config/firebase';
+import type { ActivityLog } from '../types/Activity';
+import type { AggregatedActivityLog } from '../types/AggregatedActivity';
+import ActivityLogDTO from '../dtos/activityDTO';
+
+/** Firestore collection references */
 const activityCollection = db.collection('activityLogs');
 const aggregatedCollection = db.collection('aggregatedActivityLogs');
 
 /**
- * Tambah Activity Log dan otomatis ke Aggregated Collection
+ * Add a new activity log and automatically update aggregated logs
+ * @param data Partial activity log data with optional tags
+ * @returns The newly created ActivityLog
  */
-export const addActivityLog = async (data: Partial<ActivityLog> & { tags?: string[] }): Promise<ActivityLog> => {
-  const timestamp = Date.now()
-  const entryData: Partial<ActivityLog> = { ...data, timestamp }
-
-  const dto = new ActivityLogDTO(entryData)
-  dto.validate()
+export const addActivityLog = async (
+  data: Partial<ActivityLog> & { tags?: string[] }
+): Promise<ActivityLog> => {
+  const timestamp = Date.now();
+  const dto = new ActivityLogDTO({ ...data, timestamp });
+  dto.validate();
 
   const entry: ActivityLog = {
     timestamp,
@@ -25,33 +33,36 @@ export const addActivityLog = async (data: Partial<ActivityLog> & { tags?: strin
     contractAddress: dto.contractAddress,
     extra: dto.extra,
     onChainInfo: dto.onChainInfo,
-  }
+  };
 
-  await activityCollection.doc(dto.account).collection('history').add(entry)
+  // Save per-account history
+  await activityCollection.doc(dto.account).collection('history').add(entry);
 
+  // Save aggregated log
   const aggregatedEntry: AggregatedActivityLog = {
     id: `${dto.account}_${timestamp}`,
     timestamp,
     type: dto.type,
     action: dto.action,
     account: dto.account,
-    accountLower: dto.account.toLowerCase(),
+    accountLower: dto.account,
     txHash: dto.txHash,
-    txHashLower: dto.txHash?.toLowerCase(),
+    txHashLower: dto.txHash,
     contractAddress: dto.contractAddress,
-    contractLower: dto.contractAddress?.toLowerCase(),
+    contractLower: dto.contractAddress,
     extra: dto.extra,
     onChainInfo: dto.onChainInfo,
     tags: data.tags ?? [],
-  }
+  };
 
-  await aggregatedCollection.doc(aggregatedEntry.id).set(aggregatedEntry)
+  await aggregatedCollection.doc(aggregatedEntry.id).set(aggregatedEntry);
 
-  return entry
-}
+  return entry;
+};
 
 /**
- * Ambil semua account yang punya activity
+ * Get all accounts that have activity logs
+ * @returns Array of account strings
  */
 export const getAllAccounts = async (): Promise<string[]> => {
   const snapshot = await activityCollection.get();
@@ -59,7 +70,10 @@ export const getAllAccounts = async (): Promise<string[]> => {
 };
 
 /**
- * Ambil activity log per account dengan pagination
+ * Get activity logs for a specific account with pagination
+ * @param account Account address
+ * @param options Pagination options
+ * @returns Array of ActivityLog
  */
 export const getActivityByAccount = async (
   account: string,
@@ -78,7 +92,10 @@ export const getActivityByAccount = async (
 };
 
 /**
- * Ambil semua activity log global dengan pagination dan filter
+ * Get all activity logs globally, with optional filters for account, txHash, or contract
+ * Supports pagination by timestamp and limit
+ * @param filter Optional filters and pagination
+ * @returns Array of ActivityLog
  */
 export const getAllActivities = async (filter?: {
   account?: string;
@@ -93,7 +110,7 @@ export const getAllActivities = async (filter?: {
   let logs: ActivityLog[] = [];
 
   if (filter?.account) {
-    // Jika account spesifik
+    // Query for specific account
     let query: FirebaseFirestore.Query = activityCollection
       .doc(filter.account)
       .collection('history')
@@ -105,7 +122,7 @@ export const getAllActivities = async (filter?: {
     const snapshot = await query.get();
     logs = snapshot.docs.map(doc => doc.data() as ActivityLog);
   } else {
-    // Global: iterasi semua akun
+    // Query globally: iterate over all accounts
     const accountsSnapshot = await activityCollection.get();
     const accountIds = accountsSnapshot.docs.map(doc => doc.id);
 
@@ -126,15 +143,48 @@ export const getAllActivities = async (filter?: {
     logs = results.flat();
   }
 
-  // Filter txHash / contractAddress di memory
+  // Filter in-memory for txHash and contractAddress
   if (filter?.txHash) logs = logs.filter(l => l.txHash === filter.txHash);
   if (filter?.contractAddress) logs = logs.filter(l => l.contractAddress === filter.contractAddress);
 
-  // Sort descending
+  // Sort descending by timestamp
   logs.sort((a, b) => b.timestamp - a.timestamp);
 
-  // Slice sesuai limit
+  // Limit results
   if (logs.length > limit) logs = logs.slice(0, limit);
 
   return logs;
+};
+
+/**
+ * Get aggregated logs globally with optional filtering and pagination
+ * @param filter Optional filter object
+ * @returns Array of AggregatedActivityLog
+ */
+export const getAggregatedActivities = async (filter?: {
+  account?: string;
+  txHash?: string;
+  contractAddress?: string;
+  tags?: string[];
+  limit?: number;
+  startAfterTimestamp?: number;
+}): Promise<AggregatedActivityLog[]> => {
+  let query: FirebaseFirestore.Query = aggregatedCollection.orderBy('timestamp', 'desc');
+
+  if (filter?.account) query = query.where('accountLower', '==', filter.account);
+  if (filter?.txHash) query = query.where('txHashLower', '==', filter.txHash);
+  if (filter?.contractAddress) query = query.where('contractLower', '==', filter.contractAddress);
+  if (filter?.tags?.length) query = query.where('tags', 'array-contains', filter.tags[0]);
+  if (filter?.startAfterTimestamp) query = query.startAfter(filter.startAfterTimestamp);
+  if (filter?.limit) query = query.limit(filter.limit);
+
+  const snapshot = await query.get();
+  let data = snapshot.docs.map(doc => doc.data() as AggregatedActivityLog);
+
+  // AND filtering for tags beyond first
+  if (filter?.tags?.length && filter.tags.length > 1) {
+    data = data.filter(log => filter.tags!.every(tag => log.tags!.includes(tag)));
+  }
+
+  return data;
 };

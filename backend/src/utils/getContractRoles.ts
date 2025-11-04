@@ -1,19 +1,33 @@
-import { db } from "../config/firebase.js"
+/**
+ * @file getContractRoles.ts
+ * @description Helper function to fetch the roles (importer, exporter, logistics) from a deployed contract log in Firestore.
+ */
 
-export const getContractRoles = async (contractAddress: string) => {
-  const contractsLogs = db.collection("contractLogs")
+import { db } from "../config/firebase";
+import type { ContractLogEntry, ContractRoles } from "../types/Contract";
+
+/**
+ * Get roles for a specific contract from the first deploy log.
+ *
+ * @param contractAddress - The address of the contract
+ * @returns Roles of the contract
+ */
+export const getContractRoles = async (
+  contractAddress: string
+): Promise<ContractRoles> => {
+  const contractsLogs = db.collection("contractLogs");
   const snapshot = await contractsLogs
     .where("contractAddress", "==", contractAddress)
-    .get()
+    .get();
 
-  if (snapshot.empty) return { importer: "", exporter: "", logistics: "" }
+  if (snapshot.empty) return { importer: "", exporter: "", logistics: "" };
 
-  const deployLog = snapshot.docs[0].data().history?.find((h: any) => h.action === "deploy")
-  if (!deployLog || !deployLog.extra) return { importer: "", exporter: "", logistics: "" }
+  const history: ContractLogEntry[] = snapshot.docs[0].data().history ?? [];
+  const deployLog = history.find(h => h.action === "deploy");
 
-  const importer = deployLog.extra.importer || ""
-  const exporter = deployLog.extra.exporter || ""
-  const logistics = deployLog.extra.logistics || ""
-  
-  return { importer, exporter, logistics }
-}
+  if (!deployLog?.extra) return { importer: "", exporter: "", logistics: "" };
+
+  const { importer = "", exporter = "", logistics = "" } = deployLog.extra;
+
+  return { importer, exporter, logistics };
+};

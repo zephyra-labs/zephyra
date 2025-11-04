@@ -1,23 +1,59 @@
-import type { ActivityLog } from '../types/Activity.js';
+/**
+ * @file ActivityDTO.ts
+ * @description Data Transfer Object for ActivityLog entries.
+ */
 
+import type { ActivityLog } from '../types/Activity';
+
+/**
+ * DTO for activity log records
+ */
 export default class ActivityLogDTO {
+  /** Unix timestamp in milliseconds */
   timestamp!: number;
+
+  /** Type of activity log */
   type!: 'onChain' | 'backend';
+
+  /** Action performed */
   action!: string;
+
+  /** Account/wallet performing the action */
   account!: string;
+
+  /** Optional transaction hash */
   txHash?: string;
+
+  /** Optional contract address (required for onChain logs) */
   contractAddress?: string;
-  extra?: Record<string, any>;
+
+  /** Optional extra data */
+  extra?: Record<string, unknown>;
+
+  /** Optional on-chain info */
   onChainInfo?: {
+    /** Status of the transaction */
     status: string;
+
+    /** Block number */
     blockNumber: number;
+
+    /** Number of confirmations */
     confirmations: number;
   };
 
+  /**
+   * Constructor
+   * @param data Partial activity log data
+   */
   constructor(data: Partial<ActivityLog>) {
     Object.assign(this, data);
   }
 
+  /**
+   * Validate required fields
+   * @throws Error if required fields are missing
+   */
   validate() {
     if (!this.timestamp) throw new Error('timestamp required');
     if (!this.type) throw new Error('type required');
@@ -28,6 +64,10 @@ export default class ActivityLogDTO {
     }
   }
 
+  /**
+   * Transform DTO into ActivityLog object
+   * @returns {ActivityLog} activity log record
+   */
   toJSON(): ActivityLog {
     return {
       timestamp: this.timestamp ?? Date.now(),

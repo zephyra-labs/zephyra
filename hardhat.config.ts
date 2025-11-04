@@ -28,6 +28,12 @@ const config: HardhatUserConfig = {
       },
     },
   },
+  paths: {
+    sources: "./contracts",
+    tests: "./test",
+    cache: "./cache",
+    artifacts: "./artifacts",
+  },
   networks: {
     hardhatMainnet: {
       type: "edr-simulated",
@@ -43,6 +49,9 @@ const config: HardhatUserConfig = {
       url: configVariable("SEPOLIA_RPC_URL"),
       accounts: [configVariable("SEPOLIA_PRIVATE_KEY")],
     },
+  },
+  mocha: {
+    exclude: ["**/*.t.sol"],
   },
 };
 

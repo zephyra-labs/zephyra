@@ -1,5 +1,9 @@
-import express from "express"
-import { Router } from "express"
+/**
+ * @file kycRoutes.ts
+ * @description Routes for managing KYC records: creation, updates, deletion, logs, and internal status updates
+ */
+
+import express, { Router } from "express";
 import {
   createKYC,
   getAllKYCs,
@@ -9,43 +13,105 @@ import {
   deleteKYC,
   getKYCLogs,
   updateKYCInternal,
-} from "../controllers/kycController.js"
-import { authMiddleware } from "../middlewares/authMiddleware.js"
-import { internalAuthMiddleware } from "../middlewares/internalAuthMiddleware.js"
+} from "../controllers/kycController";
+import { authMiddleware } from "../middlewares/authMiddleware";
+import { internalAuthMiddleware } from "../middlewares/internalAuthMiddleware";
 
-const router = Router()
+const router = Router();
 
-// -------------------- Internal Routes --------------------
+/**
+ * -------------------- Internal Routes --------------------
+ */
 
-// Internal: Update KYC status
+/**
+ * Internal: Update KYC status
+ * @route PATCH /kyc/internal/:tokenId/status
+ * @group KYC
+ * @security InternalBearerAuth
+ * @param {string} tokenId.path.required - KYC token ID
+ * @param {object} body - Status update payload
+ * @returns {object} 200 - Updated KYC record
+ */
 router.patch(
   "/internal/:tokenId/status",
   internalAuthMiddleware,
   express.json(),
   updateKYCInternal
-)
+);
 
-// -------------------- Public Routes --------------------
+/**
+ * -------------------- Public Routes --------------------
+ */
 
-// Create new KYC (with file)
-router.post("/", authMiddleware, createKYC)
+/**
+ * Create a new KYC record
+ * @route POST /kyc
+ * @group KYC
+ * @security BearerAuth
+ * @param {multipart/form-data} file - KYC document file
+ * @param {string} body - Other KYC fields (owner, fileHash, metadataUrl, etc.)
+ * @returns {object} 201 - Created KYC record
+ */
+router.post("/", authMiddleware, createKYC);
 
-// Update KYC (JSON body)
-router.patch("/:tokenId", authMiddleware, express.json(), updateKYC)
+/**
+ * Update an existing KYC record
+ * @route PATCH /kyc/:tokenId
+ * @group KYC
+ * @security BearerAuth
+ * @param {string} tokenId.path.required - KYC token ID
+ * @param {object} body - Fields to update
+ * @returns {object} 200 - Updated KYC record
+ */
+router.patch("/:tokenId", authMiddleware, express.json(), updateKYC);
 
-// Delete KYC
-router.delete("/:tokenId", authMiddleware, express.json(), deleteKYC)
+/**
+ * Delete a specific KYC record
+ * @route DELETE /kyc/:tokenId
+ * @group KYC
+ * @security BearerAuth
+ * @param {string} tokenId.path.required - KYC token ID
+ * @returns {object} 200 - Success message
+ */
+router.delete("/:tokenId", authMiddleware, express.json(), deleteKYC);
 
-// Get all KYCs
-router.get("/", authMiddleware, getAllKYCs)
+/**
+ * Get all KYC records
+ * @route GET /kyc
+ * @group KYC
+ * @security BearerAuth
+ * @returns {Array<object>} 200 - List of all KYC records
+ */
+router.get("/", authMiddleware, getAllKYCs);
 
-// Get KYC by tokenId
-router.get("/:tokenId", authMiddleware, getKYCById)
+/**
+ * Get KYC record by token ID
+ * @route GET /kyc/:tokenId
+ * @group KYC
+ * @security BearerAuth
+ * @param {string} tokenId.path.required - KYC token ID
+ * @returns {object} 200 - KYC record
+ */
+router.get("/:tokenId", authMiddleware, getKYCById);
 
-// Get KYCs by owner
-router.get("/owner/:owner", authMiddleware, getKYCsByOwner)
+/**
+ * Get all KYC records for a specific owner
+ * @route GET /kyc/owner/:owner
+ * @group KYC
+ * @security BearerAuth
+ * @param {string} owner.path.required - Owner wallet address
+ * @returns {Array<object>} 200 - List of KYC records
+ */
+router.get("/owner/:owner", authMiddleware, getKYCsByOwner);
 
-// Get KYC Logs
-router.get("/:tokenId/logs", authMiddleware, getKYCLogs)
+/**
+ * Get KYC activity logs
+ * @route GET /kyc/:tokenId/logs
+ * @group KYC
+ * @security BearerAuth
+ * @param {string} tokenId.path.required - KYC token ID
+ * @returns {Array<object>} 200 - List of KYC activity logs
+ */
+router.get("/:tokenId/logs", authMiddleware, getKYCLogs);
 
-export default router
+export default router;

@@ -1,3 +1,9 @@
+/**
+ * @file userRoutes.ts
+ * @description Express router for user-related endpoints, including wallet connection,
+ * user profile management, and admin user management.
+ */
+
 import { Router } from "express"
 import {
   walletConnectHandler,
@@ -7,31 +13,82 @@ import {
   updateUserHandler,
   updateMeHandler,
   deleteUserHandler,
-} from "../controllers/UserController.js"
-import { authMiddleware } from "../middlewares/authMiddleware.js"
-import { adminMiddleware } from "../middlewares/adminMiddleware.js"
+} from "../controllers/userController"
+import { authMiddleware } from "../middlewares/authMiddleware"
+import { adminMiddleware } from "../middlewares/adminMiddleware"
 
-const router = Router()
+const router = Router();
 
-// --- Wallet Connect / Auto-register ---
-router.post("/wallet-connect", walletConnectHandler)
+/**
+ * --- User Routes ---
+ * Wallet connection, user profile management, admin user management
+ */
 
-// --- Get Current User ---
-router.get("/me", authMiddleware, getCurrentUserHandler)
+/**
+ * Wallet connect / auto-register user
+ * @route POST /users/wallet-connect
+ * @group Users
+ * @returns {object} 200 - Success response with user data
+ */
+router.post("/wallet-connect", walletConnectHandler);
 
-// --- Get All Users ---
-router.get("/", authMiddleware, getAllUsersHandler)
+/**
+ * Get current authenticated user's profile
+ * @route GET /users/me
+ * @group Users
+ * @security BearerAuth
+ * @returns {object} 200 - User profile
+ */
+router.get("/me", authMiddleware, getCurrentUserHandler);
 
-// --- Get Single User ---
-router.get("/:address", authMiddleware, getUserHandler)
+/**
+ * Get all users (requires authentication)
+ * @route GET /users
+ * @group Users
+ * @security BearerAuth
+ * @returns {Array<object>} 200 - List of users
+ */
+router.get("/", authMiddleware, getAllUsersHandler);
 
-// --- Update Current User ---
-router.patch("/update/me", authMiddleware, updateMeHandler)
+/**
+ * Get single user by wallet address
+ * @route GET /users/:address
+ * @group Users
+ * @security BearerAuth
+ * @param {string} address.path.required - Wallet address
+ * @returns {object} 200 - User profile
+ */
+router.get("/:address", authMiddleware, getUserHandler);
 
-// --- Update User (Admin only) ---
-router.patch("/:address", authMiddleware, adminMiddleware, updateUserHandler)
+/**
+ * Update current authenticated user's profile
+ * @route PATCH /users/update/me
+ * @group Users
+ * @security BearerAuth
+ * @param {object} body - Partial user data to update
+ * @returns {object} 200 - Updated user profile
+ */
+router.patch("/update/me", authMiddleware, updateMeHandler);
 
-// --- Delete User (Admin only) ---
-router.delete("/:address", authMiddleware, adminMiddleware, deleteUserHandler)
+/**
+ * Update user (admin only)
+ * @route PATCH /users/:address
+ * @group Admin Users
+ * @security BearerAuth
+ * @param {string} address.path.required - Wallet address of the user
+ * @param {object} body - Fields to update
+ * @returns {object} 200 - Updated user profile
+ */
+router.patch("/:address", authMiddleware, adminMiddleware, updateUserHandler);
 
-export default router
+/**
+ * Delete user (admin only)
+ * @route DELETE /users/:address
+ * @group Admin Users
+ * @security BearerAuth
+ * @param {string} address.path.required - Wallet address of the user
+ * @returns {object} 200 - Success message
+ */
+router.delete("/:address", authMiddleware, adminMiddleware, deleteUserHandler);
+
+export default router;

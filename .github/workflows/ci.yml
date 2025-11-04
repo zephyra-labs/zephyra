@@ -10,33 +10,47 @@ jobs:
   setup:
     name: Install Dependencies
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 22.x
-
-      - name: Install pnpm
-        run: npm install -g pnpm
+          cache: 'pnpm'
 
       - name: Install Dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
   lint-frontend:
     name: Lint Frontend
     runs-on: ubuntu-latest
     needs: setup
+
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 22.x
-      - run: npm install -g pnpm
-      - run: pnpm install
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
       - name: Run Linter
         run: pnpm --filter frontend lint
 
@@ -44,71 +58,146 @@ jobs:
     name: Build Frontend
     runs-on: ubuntu-latest
     needs: lint-frontend
+
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 22.x
-      - run: npm install -g pnpm
-      - run: pnpm install
-      - name: Build
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Frontend
         run: pnpm --filter frontend build
 
   backend-lint:
     name: Lint Backend
     runs-on: ubuntu-latest
     needs: setup
+
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 22.x
-      - run: npm install -g pnpm
-      - run: pnpm install
-      - name: Lint Backend
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Backend Linter
         run: pnpm --filter backend lint
+
+  backend-test:
+    name: Test Backend
+    runs-on: ubuntu-latest
+    needs: backend-lint
+    env:
+      NODE_ENV: test
+      FIREBASE_PROJECT_ID: demo-project
+      JWT_SECRET: test-secret
+      FIREBASE_CREDENTIALS: ${{ secrets.FIREBASE_CREDENTIALS }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: List backend files
+        run: ls -R backend/src/models
+
+      - name: Run Jest Tests
+        run: pnpm --filter backend run test:ci
+
+      - name: Upload Coverage Report
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage
 
   contracts-build:
     name: Compile Smart Contracts
     runs-on: ubuntu-latest
     needs: setup
+
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 22.x
-      - run: npm install -g pnpm
-      - run: pnpm install
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
       - name: Compile Contracts
         run: pnpm hardhat compile
+
+      - name: Upload Contract Artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: contracts-artifacts
+          path: backend/artifacts
 
   deploy-staging:
     name: Deploy Staging
     runs-on: ubuntu-latest
-    needs: [build-frontend, backend-lint, contracts-build]
+    needs: [build-frontend, backend-test, contracts-build]
     if: github.ref == 'refs/heads/dev'
-    steps:
-      - name: Deploy Frontend
-        run: |
-          echo "jalankan perintah vercel / rsync"
 
-      - name: Deploy Backend
-        run: |
-          echo "jalankan perintah ssh/pm2/docker"
+    steps:
+      - name: Deploy Frontend (staging)
+        run: echo "jalankan perintah vercel / rsync"
+
+      - name: Deploy Backend (staging)
+        run: echo "jalankan perintah ssh/pm2/docker"
 
   deploy-production:
     name: Deploy Production
     runs-on: ubuntu-latest
-    needs: [build-frontend, backend-lint, contracts-build]
+    needs: [build-frontend, backend-test, contracts-build]
     if: github.ref == 'refs/heads/main'
-    steps:
-      - name: Deploy Frontend
-        run: |
-          echo "jalankan perintah vercel / rsync untuk production"
 
-      - name: Deploy Backend
-        run: |
-          echo "jalankan perintah ssh/pm2/docker untuk production"
+    steps:
+      - name: Deploy Frontend (production)
+        run: echo "jalankan perintah vercel / rsync untuk production"
+
+      - name: Deploy Backend (production)
+        run: echo "jalankan perintah ssh/pm2/docker untuk production"

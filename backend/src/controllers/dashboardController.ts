@@ -1,47 +1,51 @@
-import type { Request, Response } from "express"
-import { DashboardService } from "../services/dashboardService.js"
+/**
+ * @file dashboardController.ts
+ * @description Express controller for dashboard endpoints.
+ * Provides aggregated admin dashboard and user-specific dashboard data.
+ */
+
+import type { Response } from "express"
+import { DashboardService } from "../services/dashboardService"
+import type { AuthRequest } from "../middlewares/authMiddleware"
+import { success, failure, handleError } from "../utils/responseHelper"
 
 export class DashboardController {
   /**
-   * Get global admin dashboard
-   * (aggregated overview of users, contracts, and documents)
+   * Retrieves aggregated dashboard overview for admin.
+   *
+   * @route GET /dashboard
+   * @param {Request} _req - Express request object.
+   * @param {Response} res - Express response object.
+   * @returns {Promise<Response>} JSON response with dashboard data or error.
    */
-  static async getDashboard(req: Request, res: Response): Promise<Response> {
+  static async getDashboard(_req: AuthRequest, res: Response): Promise<Response> {
     try {
       const dashboard = await DashboardService.getDashboard()
-      return res.status(200).json({
-        success: true,
-        data: dashboard.toResponse(),
-      })
-    } catch (error) {
-      console.error("Error fetching admin dashboard:", error)
-      const message = error instanceof Error ? error.message : "Internal server error"
-      return res.status(500).json({ success: false, message })
+      return success(res, dashboard.toResponse())
+    } catch (err) {
+      return handleError(res, err, "Failed to fetch admin dashboard")
     }
   }
 
   /**
-   * Get dashboard data for the authenticated user
+   * Retrieves dashboard data for the authenticated user.
+   *
+   * @route GET /dashboard/user
+   * @param {Request} req - Express request object (requires authenticated user).
+   * @param {Response} res - Express response object.
+   * @returns {Promise<Response>} JSON response with user dashboard data or error.
    */
-  static async getUserDashboard(req: Request, res: Response): Promise<Response> {
+  static async getUserDashboard(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const userAddress = (req as any).user?.address
+      const userAddress = req.user?.address
       if (!userAddress) {
-        return res.status(401).json({
-          success: false,
-          message: "Unauthorized: missing user address",
-        })
+        return failure(res, "Unauthorized: missing user address", 401)
       }
 
       const dashboard = await DashboardService.getUserDashboard(userAddress)
-      return res.status(200).json({
-        success: true,
-        data: dashboard.toResponse(),
-      })
-    } catch (error) {
-      console.error("Error fetching user dashboard:", error)
-      const message = error instanceof Error ? error.message : "Internal server error"
-      return res.status(500).json({ success: false, message })
+      return success(res, dashboard.toResponse())
+    } catch (err) {
+      return handleError(res, err, "Failed to fetch user dashboard")
     }
   }
 }

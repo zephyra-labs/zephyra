@@ -1,8 +1,22 @@
-import { Request, Response } from "express"
-import DocumentDTO from "../dtos/documentDTO.js"
-import { DocumentService } from "../services/documentService.js"
+/**
+ * @file documentController.ts
+ * @description Express controller for managing documents attached to contracts.
+ * Supports creation, retrieval, update, deletion, and fetching document logs.
+ */
 
-// --- POST /contract/:addr/docs ---
+import { Request, Response } from "express"
+import DocumentDTO from "../dtos/documentDTO"
+import { DocumentService } from "../services/documentService"
+import { success, failure, handleError } from "../utils/responseHelper"
+
+/**
+ * Attach a new document to a contract.
+ *
+ * @route POST /contract/:addr/docs
+ * @param {Request} req - Express request object.
+ * @param {Response} res - Express response object.
+ * @returns {Promise<void>} JSON response with created document or error.
+ */
 export const attachDocument = async (req: Request, res: Response) => {
   try {
     const { addr: contractAddress } = req.params
@@ -20,11 +34,10 @@ export const attachDocument = async (req: Request, res: Response) => {
       txHash,
     } = req.body
 
-    if (!tokenId || !owner || !fileHash || !uri || !docType) {
-      return res.status(400).json({ success: false, message: "Missing required fields" })
-    }
-    if (!action) return res.status(400).json({ success: false, message: "Missing action field" })
-    if (!signer) return res.status(400).json({ success: false, message: "Missing signer/account field" })
+    if (!tokenId || !owner || !fileHash || !uri || !docType)
+      return failure(res, "Missing required fields")
+    if (!action) return failure(res, "Missing action field")
+    if (!signer) return failure(res, "Missing signer/account field")
 
     const dto = new DocumentDTO({
       tokenId,
@@ -42,108 +55,149 @@ export const attachDocument = async (req: Request, res: Response) => {
     })
 
     const document = await DocumentService.createDocument(dto.toFirestore(), signer, action, txHash)
-    return res.status(201).json({ success: true, data: document })
-  } catch (err: any) {
-    console.error(err)
-    return res.status(500).json({ success: false, message: err.message })
+    return success(res, document, 201)
+  } catch (err) {
+    return handleError(res, err, "Failed to attach document")
   }
 }
 
-// --- GET /documents ---
+/**
+ * Retrieves all documents in the system.
+ *
+ * @route GET /documents
+ * @param {Request} _req - Express request object.
+ * @param {Response} res - Express response object.
+ * @returns {Promise<void>} JSON response with documents or error.
+ */
 export const getAllDocuments = async (_req: Request, res: Response) => {
   try {
     const docs = await DocumentService.getAllDocuments()
-    return res.json({ success: true, data: docs })
-  } catch (err: any) {
-    console.error(err)
-    return res.status(500).json({ success: false, message: err.message })
+    return success(res, docs)
+  } catch (err) {
+    return handleError(res, err, "Failed to fetch documents")
   }
 }
 
-// --- GET /documents/:tokenId ---
+/**
+ * Retrieves a document by its tokenId.
+ *
+ * @route GET /documents/:tokenId
+ * @param {Request} req - Express request object.
+ * @param {Response} res - Express response object.
+ * @returns {Promise<void>} JSON response with document or error.
+ */
 export const getDocument = async (req: Request, res: Response) => {
   try {
     const { tokenId } = req.params
     const doc = await DocumentService.getDocumentById(+tokenId)
-    if (!doc) return res.status(404).json({ success: false, message: "Document not found" })
-    return res.json({ success: true, data: doc })
-  } catch (err: any) {
-    console.error(err)
-    return res.status(500).json({ success: false, message: err.message })
+    if (!doc) return failure(res, "Document not found", 404)
+    return success(res, doc)
+  } catch (err) {
+    return handleError(res, err, "Failed to fetch document")
   }
 }
 
-// --- GET /documents/owner/:owner ---
+/**
+ * Retrieves all documents owned by a specific owner.
+ *
+ * @route GET /documents/owner/:owner
+ * @param {Request} req - Express request object.
+ * @param {Response} res - Express response object.
+ * @returns {Promise<void>} JSON response with documents or error.
+ */
 export const getDocumentsByOwner = async (req: Request, res: Response) => {
   try {
     const { owner } = req.params
     const docs = await DocumentService.getDocumentsByOwner(owner)
-    return res.json({ success: true, data: docs })
-  } catch (err: any) {
-    console.error(err)
-    return res.status(500).json({ success: false, message: err.message })
+    return success(res, docs)
+  } catch (err) {
+    return handleError(res, err, "Failed to fetch documents by owner")
   }
 }
 
-// --- GET /documents/contract/:addr ---
+/**
+ * Retrieves all documents linked to a specific contract address.
+ *
+ * @route GET /documents/contract/:addr
+ * @param {Request} req - Express request object.
+ * @param {Response} res - Express response object.
+ * @returns {Promise<void>} JSON response with documents or error.
+ */
 export const getDocumentsByContract = async (req: Request, res: Response) => {
   try {
     const { addr } = req.params
     const docs = await DocumentService.getDocumentsByContract(addr)
-    return res.json({ success: true, data: docs })
-  } catch (err: any) {
-    console.error(err)
-    return res.status(500).json({ success: false, message: err.message })
+    return success(res, docs)
+  } catch (err) {
+    return handleError(res, err, "Failed to fetch documents by contract")
   }
 }
 
-// --- GET /documents/:tokenId/logs ---
+/**
+ * Retrieves the history/logs of a specific document.
+ *
+ * @route GET /documents/:tokenId/logs
+ * @param {Request} req - Express request object.
+ * @param {Response} res - Express response object.
+ * @returns {Promise<void>} JSON response with document logs or error.
+ */
 export const getDocumentLogs = async (req: Request, res: Response) => {
   try {
     const { tokenId } = req.params
     const doc = await DocumentService.getDocumentById(+tokenId)
-    if (!doc) return res.status(404).json({ success: false, message: "Document not found" })
+    if (!doc) return failure(res, "Document not found", 404)
 
     const logs = doc.history || []
-    if (!logs.length) return res.status(404).json({ success: false, message: "No logs found" })
-    return res.json({ success: true, data: logs })
-  } catch (err: any) {
-    console.error(err)
-    return res.status(500).json({ success: false, message: err.message })
+    if (!logs.length) return failure(res, "No logs found", 404)
+    return success(res, logs)
+  } catch (err) {
+    return handleError(res, err, "Failed to fetch document logs")
   }
 }
 
-// --- PATCH /documents/:tokenId ---
+/**
+ * Updates an existing document.
+ *
+ * @route PATCH /documents/:tokenId
+ * @param {Request} req - Express request object.
+ * @param {Response} res - Express response object.
+ * @returns {Promise<void>} JSON response with updated document or error.
+ */
 export const updateDocument = async (req: Request, res: Response) => {
   try {
     const { tokenId } = req.params
     const { action, txHash, account, ...updateData } = req.body
 
-    if (!action) return res.status(400).json({ success: false, message: "Missing action field" })
-    if (!account) return res.status(400).json({ success: false, message: "Missing account field" })
+    if (!action) return failure(res, "Missing action field")
+    if (!account) return failure(res, "Missing account field")
 
     const updated = await DocumentService.updateDocument(+tokenId, updateData, account, action, txHash)
-    return res.json({ success: true, data: updated })
-  } catch (err: any) {
-    console.error(err)
-    return res.status(500).json({ success: false, message: err.message })
+    return success(res, updated)
+  } catch (err) {
+    return handleError(res, err, "Failed to update document")
   }
 }
 
-// --- DELETE /documents/:tokenId ---
+/**
+ * Deletes a document by tokenId.
+ *
+ * @route DELETE /documents/:tokenId
+ * @param {Request} req - Express request object.
+ * @param {Response} res - Express response object.
+ * @returns {Promise<void>} JSON response with deletion status or error.
+ */
 export const deleteDocument = async (req: Request, res: Response) => {
   try {
     const { tokenId } = req.params
     const { action, txHash, account } = req.body
 
-    if (!action) return res.status(400).json({ success: false, message: "Missing action field" })
-    if (!account) return res.status(400).json({ success: false, message: "Missing account field" })
+    if (!action) return failure(res, "Missing action field")
+    if (!account) return failure(res, "Missing account field")
 
-    const success = await DocumentService.deleteDocument(+tokenId, account, action, txHash)
-    if (!success) return res.status(404).json({ success: false, message: "Document not found" })
-    return res.json({ success: true, message: "Document deleted successfully" })
-  } catch (err: any) {
-    console.error(err)
-    return res.status(500).json({ success: false, message: err.message })
+    const deleted = await DocumentService.deleteDocument(+tokenId, account, action, txHash)
+    if (!deleted) return failure(res, "Document not found", 404)
+    return success(res, { message: "Document deleted successfully" })
+  } catch (err) {
+    return handleError(res, err, "Failed to delete document")
   }
 }

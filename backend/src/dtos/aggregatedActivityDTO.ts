@@ -1,5 +1,13 @@
-import type { AggregatedActivityLog } from '../types/AggregatedActivity.js';
+/**
+ * @file AggregatedActivityLogDTO.ts
+ * @description DTO for aggregated activity logs, extending ActivityLog with additional indexing fields
+ */
 
+import type { AggregatedActivityLog } from '../types/AggregatedActivity';
+
+/**
+ * Data Transfer Object for aggregated activity logs
+ */
 export default class AggregatedActivityLogDTO {
   id!: string;
   timestamp!: number;
@@ -8,7 +16,7 @@ export default class AggregatedActivityLogDTO {
   account!: string;
   txHash?: string;
   contractAddress?: string;
-  extra?: Record<string, any>;
+  extra?: Record<string, unknown>;
   onChainInfo?: {
     status: string;
     blockNumber: number;
@@ -21,14 +29,21 @@ export default class AggregatedActivityLogDTO {
 
   constructor(data: Partial<AggregatedActivityLog>) {
     Object.assign(this, data);
+
+    // Generate ID if missing
     if (!this.id) {
       this.id = `${this.account}-${this.timestamp}-${this.action}`;
     }
-    this.accountLower = this.account?.toLowerCase();
-    this.txHashLower = this.txHash?.toLowerCase();
-    this.contractLower = this.contractAddress?.toLowerCase();
+
+    // Lowercase fields for indexing/search
+    this.accountLower = this.account;
+    this.txHashLower = this.txHash;
+    this.contractLower = this.contractAddress;
   }
 
+  /**
+   * Validate required fields
+   */
   validate() {
     if (!this.timestamp) throw new Error('timestamp required');
     if (!this.type) throw new Error('type required');
@@ -39,6 +54,10 @@ export default class AggregatedActivityLogDTO {
     }
   }
 
+  /**
+   * Transform DTO to AggregatedActivityLog
+   * @returns AggregatedActivityLog
+   */
   toJSON(): AggregatedActivityLog {
     return {
       id: this.id,
