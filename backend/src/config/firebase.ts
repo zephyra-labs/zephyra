@@ -8,23 +8,26 @@ import admin from "firebase-admin";
 import { readFileSync } from "fs";
 import path from "path";
 
-let serviceAccount: admin.ServiceAccount;
+let serviceAccount: admin.ServiceAccount | undefined;
 
-if (process.env.FIREBASE_CREDENTIALS) {
-  // Parse JSON string from environment variable (for CI)
-  serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS);
-} else {
-  // Fallback local file (for development)
-  const serviceAccountPath = path.resolve(__dirname, "./firebaseServiceAccount.json");
-  serviceAccount = JSON.parse(readFileSync(serviceAccountPath, "utf-8"));
+// Only initialize serviceAccount if not in test
+if (process.env.NODE_ENV !== "test") {
+  if (process.env.FIREBASE_CREDENTIALS) {
+    // Parse JSON string from environment variable (CI)
+    serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS);
+  } else {
+    // Fallback local file (development)
+    const serviceAccountPath = path.resolve(__dirname, "./firebaseServiceAccount.json");
+    serviceAccount = JSON.parse(readFileSync(serviceAccountPath, "utf-8"));
+  }
 }
 
 // Initialize Firebase Admin SDK if not already initialized
-if (!admin.apps.length) {
+if (!admin.apps.length && serviceAccount) {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
   });
-}
+} 
 
 // Firestore instance
 const db = admin.firestore();
