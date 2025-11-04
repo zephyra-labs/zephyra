@@ -1,15 +1,13 @@
 /** @type {import('jest').Config} */
-const path = require('path');
-
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   moduleNameMapper: {
-    '^@/(.*)$': path.resolve(__dirname, 'src/$1'), // <-- __dirname = backend/
+    '^@/(.*)$': '<rootDir>/src/$1', 
   },
   moduleFileExtensions: ['ts', 'js', 'json'],
-  setupFilesAfterEnv: [path.resolve(__dirname, 'test/setup.ts')],
+  setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
   collectCoverage: true,
-  coverageDirectory: path.resolve(__dirname, 'coverage'),
-  roots: [path.resolve(__dirname, 'src'), path.resolve(__dirname, 'test')],
+  coverageDirectory: 'coverage',
+  roots: ['<rootDir>/src', '<rootDir>/test'],
 };

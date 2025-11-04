@@ -1,5 +1,5 @@
 /**
- * @file UserModel.ts
+ * @file userModel.ts
  * @description Firestore model for managing User entities.
  */
 

@@ -22,11 +22,8 @@ process.env.FIREBASE_PROJECT_ID ||= "demo-project";
 
 // --- Global Mocks ---
 
-jest.mock("@/utils/notificationHelper", () => ({
-  notifyWithAdmins: jest.fn().mockResolvedValue(true),
-}));
-
-jest.mock("@/models/userModel", () => ({
+// Note: Match exact case with file names on Linux (e.g., UserModel.ts)
+jest.mock("@/models/UserModel", () => ({
   UserModel: {
     create: jest.fn(),
     getByAddress: jest.fn(),
@@ -34,6 +31,10 @@ jest.mock("@/models/userModel", () => ({
     update: jest.fn(),
     delete: jest.fn(),
   },
+}));
+
+jest.mock("@/utils/notificationHelper", () => ({
+  notifyWithAdmins: jest.fn().mockResolvedValue(true),
 }));
 
 // --- Silence console logs ---
