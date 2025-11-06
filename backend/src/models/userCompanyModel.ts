@@ -18,13 +18,18 @@ export class UserCompanyModel {
    * @returns {Promise<UserCompany>} The newly created UserCompany record with generated ID
    */
   static async create(data: CreateUserCompanyDTO): Promise<UserCompany> {
-    const docRef = await collection.add({
-      ...data,
+    const newItem: UserCompany = {
+      id: "",
+      userAddress: data.userAddress,
+      companyId: data.companyId,
+      joinedAt: data.joinedAt ?? Date.now(),
       role: data.role ?? "staff",
       status: data.status ?? "pending",
-      joinedAt: data.joinedAt ?? Date.now(),
-    });
-    return { id: docRef.id, ...data } as UserCompany;
+    };
+
+    const docRef = await collection.add(newItem);
+    newItem.id = docRef.id;
+    return newItem;
   }
 
   /**

@@ -19,56 +19,59 @@ dotenv.config({ path: ".env.test" });
 process.env.NODE_ENV = "test";
 process.env.JWT_SECRET ||= "test-secret";
 process.env.FIREBASE_PROJECT_ID ||= "demo-project";
+process.env.GOOGLE_CLOUD_PROJECT ||= "demo-project";
+process.env.FIRESTORE_EMULATOR_HOST ||= "localhost:8080";
 
 // --- Global Mocks ---
-
 // Mock UserModel
-jest.mock("@/models/userModel", () => ({
-  UserModel: {
-    create: jest.fn(),
-    getByAddress: jest.fn(),
-    getAll: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-  },
-}));
+jest.mock("@/models/userModel", () => {
+  const dataStore: Record<string, any> = {};
+
+  const mockUserModel = {
+    create: jest.fn((user) => {
+      if (dataStore[user.address])
+        return Promise.reject(new Error(`User with address ${user.address} already exists`));
+      dataStore[user.address] = user;
+      return user;
+    }),
+    getByAddress: jest.fn((address) => dataStore[address] || null),
+    getAll: jest.fn(() => Object.values(dataStore)),
+    update: jest.fn((address, data) => {
+      if (!dataStore[address]) return null;
+      dataStore[address] = {
+        ...dataStore[address],
+        ...data,
+        metadata: {
+          ...dataStore[address].metadata,
+          ...data.metadata,
+        },
+      };
+      return dataStore[address];
+    }),
+    delete: jest.fn((address) => {
+      if (!dataStore[address]) return false;
+      delete dataStore[address];
+      return true;
+    }),
+    __dataStore: dataStore,
+  };
+
+  return { UserModel: mockUserModel };
+});
 
 // Mock notification helper
 jest.mock("@/utils/notificationHelper", () => ({
   notifyWithAdmins: jest.fn().mockResolvedValue(true),
 }));
 
-// --- Mock Firebase Admin / Firestore ---
-jest.mock("firebase-admin", () => {
-  const actualAdmin = jest.requireActual("firebase-admin");
-  const mockCollection = jest.fn().mockReturnValue({
-    doc: jest.fn().mockReturnValue({
-      set: jest.fn().mockResolvedValue(true),
-      get: jest.fn().mockResolvedValue({ exists: true, data: () => ({}) }),
-      update: jest.fn().mockResolvedValue(true),
-      delete: jest.fn().mockResolvedValue(true),
-    }),
-    add: jest.fn().mockResolvedValue({ id: "mock-id" }),
-    get: jest.fn().mockResolvedValue({
-      docs: [],
-      empty: true,
-    }),
-  });
-
-  const mockFirestore = jest.fn(() => ({
-    collection: mockCollection,
-    settings: jest.fn(),
-  }));
-
-  return {
-    ...actualAdmin,
-    initializeApp: jest.fn(),
-    firestore: mockFirestore,
-    credential: {
-      cert: jest.fn(),
-    },
-  };
-});
+// Mock getContractRoles
+jest.mock("@/utils/getContractRoles", () => ({
+  getContractRoles: jest.fn().mockResolvedValue({
+    exporter: "0xuser1",
+    importer: "0xuser2",
+    logistics: ["0xuser3"],
+  }),
+}));
 
 // --- Silence console logs ---
 beforeAll(() => {
@@ -81,13 +84,16 @@ beforeAll(() => {
 afterEach(() => {
   jest.clearAllMocks();
   jest.clearAllTimers();
-  jest.restoreAllMocks();
+
+  // Reset mock data store
+  const { UserModel } = jest.requireMock("@/models/userModel");
+  for (const key of Object.keys(UserModel.__dataStore)) {
+    delete UserModel.__dataStore[key];
+  }
 });
 
 // --- Final cleanup ---
 afterAll(async () => {
-  jest.restoreAllMocks();
   jest.clearAllTimers();
-  // await db.disconnect?.();
-  // server?.close?.();
+  jest.restoreAllMocks();
 });
