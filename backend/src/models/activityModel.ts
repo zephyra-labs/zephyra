@@ -1,5 +1,5 @@
 /**
- * @file activityLogsModel.ts
+ * @file activityModel.ts
  * @description Firestore service for managing activity logs per account and aggregated logs globally.
  */
 
@@ -8,9 +8,9 @@ import type { ActivityLog } from '../types/Activity';
 import type { AggregatedActivityLog } from '../types/AggregatedActivity';
 import ActivityLogDTO from '../dtos/activityDTO';
 
-/** Firestore collection references */
-const activityCollection = db.collection('activityLogs');
-const aggregatedCollection = db.collection('aggregatedActivityLogs');
+/** Getter functions for collections (lazy initialization) */
+const getActivityCollection = () => db.collection('activityLogs');
+const getAggregatedCollection = () => db.collection('aggregatedActivityLogs');
 
 /**
  * Add a new activity log and automatically update aggregated logs
@@ -36,7 +36,7 @@ export const addActivityLog = async (
   };
 
   // Save per-account history
-  await activityCollection.doc(dto.account).collection('history').add(entry);
+  await getActivityCollection().doc(dto.account).collection('history').add(entry);
 
   // Save aggregated log
   const aggregatedEntry: AggregatedActivityLog = {
@@ -45,17 +45,17 @@ export const addActivityLog = async (
     type: dto.type,
     action: dto.action,
     account: dto.account,
-    accountLower: dto.account,
+    accountLower: dto.account.toLowerCase(),
     txHash: dto.txHash,
-    txHashLower: dto.txHash,
+    txHashLower: dto.txHash?.toLowerCase(),
     contractAddress: dto.contractAddress,
-    contractLower: dto.contractAddress,
+    contractLower: dto.contractAddress?.toLowerCase(),
     extra: dto.extra,
     onChainInfo: dto.onChainInfo,
     tags: data.tags ?? [],
   };
 
-  await aggregatedCollection.doc(aggregatedEntry.id).set(aggregatedEntry);
+  await getAggregatedCollection().doc(aggregatedEntry.id).set(aggregatedEntry);
 
   return entry;
 };
@@ -65,7 +65,7 @@ export const addActivityLog = async (
  * @returns Array of account strings
  */
 export const getAllAccounts = async (): Promise<string[]> => {
-  const snapshot = await activityCollection.get();
+  const snapshot = await getActivityCollection().get();
   return snapshot.docs.map(doc => doc.id);
 };
 
@@ -79,7 +79,7 @@ export const getActivityByAccount = async (
   account: string,
   options?: { limit?: number; startAfterTimestamp?: number }
 ): Promise<ActivityLog[]> => {
-  let query: FirebaseFirestore.Query = activityCollection
+  let query: FirebaseFirestore.Query = getActivityCollection()
     .doc(account)
     .collection('history')
     .orderBy('timestamp', 'desc');
@@ -110,30 +110,28 @@ export const getAllActivities = async (filter?: {
   let logs: ActivityLog[] = [];
 
   if (filter?.account) {
-    // Query for specific account
-    let query: FirebaseFirestore.Query = activityCollection
+    let query: FirebaseFirestore.Query = getActivityCollection()
       .doc(filter.account)
       .collection('history')
       .orderBy('timestamp', 'desc');
 
     if (startAfter) query = query.startAfter(startAfter);
-    query = query.limit(limit);
+    if (limit) query = query.limit(limit);
 
     const snapshot = await query.get();
     logs = snapshot.docs.map(doc => doc.data() as ActivityLog);
   } else {
-    // Query globally: iterate over all accounts
-    const accountsSnapshot = await activityCollection.get();
+    const accountsSnapshot = await getActivityCollection().get();
     const accountIds = accountsSnapshot.docs.map(doc => doc.id);
 
     const promises = accountIds.map(async acc => {
-      let q: FirebaseFirestore.Query = activityCollection
+      let q: FirebaseFirestore.Query = getActivityCollection()
         .doc(acc)
         .collection('history')
         .orderBy('timestamp', 'desc');
 
       if (startAfter) q = q.startAfter(startAfter);
-      q = q.limit(limit);
+      if (limit) q = q.limit(limit);
 
       const snap = await q.get();
       return snap.docs.map(doc => doc.data() as ActivityLog);
@@ -143,14 +141,11 @@ export const getAllActivities = async (filter?: {
     logs = results.flat();
   }
 
-  // Filter in-memory for txHash and contractAddress
   if (filter?.txHash) logs = logs.filter(l => l.txHash === filter.txHash);
   if (filter?.contractAddress) logs = logs.filter(l => l.contractAddress === filter.contractAddress);
 
-  // Sort descending by timestamp
   logs.sort((a, b) => b.timestamp - a.timestamp);
 
-  // Limit results
   if (logs.length > limit) logs = logs.slice(0, limit);
 
   return logs;
@@ -169,11 +164,11 @@ export const getAggregatedActivities = async (filter?: {
   limit?: number;
   startAfterTimestamp?: number;
 }): Promise<AggregatedActivityLog[]> => {
-  let query: FirebaseFirestore.Query = aggregatedCollection.orderBy('timestamp', 'desc');
+  let query: FirebaseFirestore.Query = getAggregatedCollection().orderBy('timestamp', 'desc');
 
-  if (filter?.account) query = query.where('accountLower', '==', filter.account);
-  if (filter?.txHash) query = query.where('txHashLower', '==', filter.txHash);
-  if (filter?.contractAddress) query = query.where('contractLower', '==', filter.contractAddress);
+  if (filter?.account) query = query.where('accountLower', '==', filter.account.toLowerCase());
+  if (filter?.txHash) query = query.where('txHashLower', '==', filter.txHash?.toLowerCase());
+  if (filter?.contractAddress) query = query.where('contractLower', '==', filter.contractAddress?.toLowerCase());
   if (filter?.tags?.length) query = query.where('tags', 'array-contains', filter.tags[0]);
   if (filter?.startAfterTimestamp) query = query.startAfter(filter.startAfterTimestamp);
   if (filter?.limit) query = query.limit(filter.limit);

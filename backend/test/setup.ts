@@ -59,20 +59,6 @@ jest.mock("@/models/userModel", () => {
   return { UserModel: mockUserModel };
 });
 
-// Mock notification helper
-jest.mock("@/utils/notificationHelper", () => ({
-  notifyWithAdmins: jest.fn().mockResolvedValue(true),
-}));
-
-// Mock getContractRoles
-jest.mock("@/utils/getContractRoles", () => ({
-  getContractRoles: jest.fn().mockResolvedValue({
-    exporter: "0xuser1",
-    importer: "0xuser2",
-    logistics: ["0xuser3"],
-  }),
-}));
-
 // --- Silence console logs ---
 beforeAll(() => {
   jest.spyOn(console, "error").mockImplementation(() => {});

@@ -15,6 +15,15 @@ jest.mock("firebase-admin", () => ({
   },
 }));
 
+// Mock getContractRoles
+jest.mock("@/utils/getContractRoles", () => ({
+  getContractRoles: jest.fn().mockResolvedValue({
+    exporter: "0xuser1",
+    importer: "0xuser2",
+    logistics: ["0xuser3"],
+  }),
+}));
+
 // --- Jest mock for Firebase ---
 jest.mock("../../config/firebase", () => {
   const __collections: Record<string, Record<string, ContractLogs>> = {};

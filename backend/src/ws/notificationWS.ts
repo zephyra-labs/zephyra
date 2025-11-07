@@ -1,7 +1,6 @@
 /**
  * @file notificationWS.ts
- * @description
- * WebSocket server for real-time notifications.
+ * @description WebSocket server for real-time notifications.
  */
 
 import { WebSocket, WebSocketServer } from 'ws'
@@ -11,7 +10,7 @@ import type { Server as HTTPServer } from 'http'
 /**
  * Maps userId (lowercased) to WebSocket connection
  */
-const clients = new Map<string, WebSocket>()
+export const clients = new Map<string, WebSocket>()
 
 /**
  * Initialize WebSocket server for notifications
@@ -35,12 +34,17 @@ export function initNotificationWS(server: HTTPServer): WebSocketServer {
       return
     }
 
-    console.log(`User ${userId} connected via WS`)
+    if (process.env.NODE_ENV !== 'test') {
+      console.log(`User ${userId} connected via WS`)
+    }
+
     clients.set(userId, ws)
 
     ws.on('close', () => {
       clients.delete(userId)
-      console.log(`User ${userId} disconnected`)
+      if (process.env.NODE_ENV !== 'test') {
+        console.log(`User ${userId} disconnected`)
+      }
     })
   })
 
@@ -54,7 +58,7 @@ export function initNotificationWS(server: HTTPServer): WebSocketServer {
  */
 export function broadcastNotificationToUser(userId: string, notif: NotificationPayload) {
   const ws = clients.get(userId)
-  if (ws && ws.readyState === ws.OPEN) {
+  if (ws && ws.readyState === 1) {
     ws.send(JSON.stringify({ event: 'notification', data: notif }))
   }
 }
