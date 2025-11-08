@@ -23,6 +23,8 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "uuid": "^8.3.2",
     "ws": "^8.18.3"
   },
@@ -37,6 +39,8 @@
     "@types/morgan": "^1.9.10",
     "@types/multer": "^2.0.0",
     "@types/node": "^24.9.2",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
     "@types/uuid": "^8.3.4",
     "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.46.2",

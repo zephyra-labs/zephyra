@@ -80,7 +80,7 @@ const mockCollection = jest.fn((name: string) => {
     doc: (id: string) => ({
       id,
       set: mockSet,
-      collection: (subName: string) => {
+      collection: () => {
         if (!mockAccounts[id]) mockAccounts[id] = {};
         return createSubCollectionMock(mockAccounts[id]);
       },

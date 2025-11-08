@@ -1,15 +1,16 @@
 /**
  * @file app.ts
  * @description
- * Main backend entry point for Zephyra backend.
- * Sets up Express server, middleware, API routes, and WebSocket server for real-time notifications.
+ * Main entry point for Zephyra backend.
+ * Sets up Express server, middleware, API routes, Swagger documentation, and WebSocket server for real-time notifications.
  */
 
-import express, { Request, Response } from 'express'
+import express, { type Application, type Request, type Response } from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import morgan from 'morgan'
 import http from 'http'
+import { setupSwagger } from './config/swagger'
 
 // Routes
 import { initNotificationWS } from './ws/notificationWS'
@@ -24,13 +25,13 @@ import notificationRoutes from './routes/notificationRoutes'
 import userRoutes from './routes/userRoutes'
 import userCompanyRoutes from './routes/userCompanyRoutes'
 import dashboardRoutes from './routes/dashboardRoutes'
+import tradeRoutes from './routes/tradeRoutes'
 
-// Load environment variables from .env file
+// -------------------- Environment --------------------
 dotenv.config()
 
 // -------------------- Express App --------------------
-/** @type {Application} */
-const app = express()
+const app: Application = express()
 
 // -------------------- Middleware --------------------
 app.use(cors()) // Enable Cross-Origin Resource Sharing
@@ -39,42 +40,48 @@ app.use(morgan('dev')) // HTTP request logger
 // KYC routes (file upload + multi-endpoint)
 app.use('/api/kyc', kycRoutes)
 
-// JSON parser for request bodies
-app.use(express.json())
+app.use(express.json()) // JSON parser for request bodies
 
 // -------------------- Routes --------------------
 /**
  * @route GET /
  * @description Health check endpoint
+ * @returns {string} Returns a simple message indicating server status
  */
-app.get('/', (req: Request, res: Response) => res.send('Backend is running'))
+app.get('/', (_req: Request, res: Response) => {
+  res.status(200).send('✅ Zephyra backend is running smoothly.')
+})
 
-// Other API routes
-app.use('/api/contract', contractRoutes)
-app.use('/api/wallet', walletRoutes)
-app.use('/api/company', companyRoutes)
-app.use('/api/document', documentRoutes)
+// Attach all API route groups
 app.use('/api/activity', activityRoutes)
 app.use('/api/aggregated', aggregatedActivityRoutes)
-app.use('/api/notification', notificationRoutes)
-app.use('/api/user', userRoutes)
-app.use('/api/user-company', userCompanyRoutes)
+app.use('/api/company', companyRoutes)
+app.use('/api/contract', contractRoutes)
 app.use('/api/dashboard', dashboardRoutes)
+app.use('/api/document', documentRoutes)
+app.use('/api/notification', notificationRoutes)
+app.use('/api/trade', tradeRoutes)
+app.use('/api/user-company', userCompanyRoutes)
+app.use('/api/user', userRoutes)
+app.use('/api/wallet', walletRoutes)
+
+// -------------------- Swagger --------------------
+setupSwagger(app)
 
 // -------------------- HTTP Server & WebSocket --------------------
-/** Server port from environment or default 5000 */
 const PORT = process.env.PORT || 5000
 
-/** HTTP server for Express app */
+/** Create HTTP server to attach both Express and WebSocket */
 const server = http.createServer(app)
 
 /**
- * @description Initialize WebSocket server for real-time notifications
- * @type {import('ws').WebSocketServer}
+ * Initialize WebSocket server for real-time notifications
  */
 export const wss = initNotificationWS(server)
 
 // -------------------- Start Server --------------------
 server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`)
+  console.log(`🚀 Server running on http://localhost:${PORT}`)
 })
+
+export default app

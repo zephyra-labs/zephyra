@@ -10,7 +10,6 @@ import type { KYC, KYCLogEntry } from "../../types/Kyc";
 jest.mock("../../config/firebase", () => {
   const dataStore: Record<string, any> = {};
   const logsStore: Record<string, any> = {};
-  let idCounter = 1;
 
   const mockCollectionInstance = {
     filters: [] as ((item: any) => boolean)[],

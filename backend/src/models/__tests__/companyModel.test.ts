@@ -64,7 +64,6 @@ jest.mock("../../config/firebase", () => {
 // --- Tests ---
 describe("CompanyModel Full Coverage", () => {
   const collectionName = "companies";
-  const companyId = "test-company-id";
 
   const baseData: Partial<Company> = {
     name: "Zephyra Labs",

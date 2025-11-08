@@ -216,7 +216,6 @@ describe("ContractModel Full Coverage", () => {
   });
 
   it("should get contracts by user with roles", async () => {
-    const { db } = jest.requireMock("../../config/firebase");
     await ContractModel.addContractLog(logDeposit, contractAddress, {} as any);
 
     const exporter = await ContractModel.getContractsByUser("0xuser1");
