@@ -173,7 +173,7 @@ describe("TradeController", () => {
 
       await TradeController.getMyTrades(mockReq, mockRes);
 
-      expect(failure).toHaveBeenCalledWith(mockRes, "Unauthorized", 401);
+      expect(failure).toHaveBeenCalledWith(mockres, "Missing or invalid Authorization header", 401);
     });
   });
 });

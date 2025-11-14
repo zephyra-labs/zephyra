@@ -22,6 +22,16 @@ const router = Router();
  * @swagger
  * components:
  *   schemas:
+ *     ErrorResponse:
+ *       type: object
+ *       properties:
+ *         success:
+ *           type: boolean
+ *           example: false
+ *         message:
+ *           type: string
+ *           example: "An error occurred"
+ * 
  *     CreateWalletLogDTO:
  *       type: object
  *       required:
@@ -112,11 +122,45 @@ const router = Router();
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/CreateWalletLogDTO'
+ *             example:
+ *               account: "0x123abc..."
+ *               action: "connect"
+ *               timestamp: 1699286400000
+ *               meta:
+ *                 ip: "192.168.1.1"
+ *                 device: "Chrome on Windows"
+ *
  *       400:
- *         description: Invalid request
+ *         description: Invalid request — Missing required fields or invalid data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Account parameter is required"
+ *
+ *       401:
+ *         description: Unauthorized — Missing or invalid bearer token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Missing or invalid Authorization header"
+ *
+ *       500:
+ *         description: Server error while logging wallet activity
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Failed to log wallet login"
  */
 router.post("/log-login", authMiddleware, logWalletLogin);
-
 /**
  * Log wallet disconnect
  * @swagger
@@ -139,8 +183,43 @@ router.post("/log-login", authMiddleware, logWalletLogin);
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/CreateWalletLogDTO'
+ *             example:
+ *               account: "0x123abc..."
+ *               action: "disconnect"
+ *               timestamp: 1699286400000
+ *               meta:
+ *                 ip: "192.168.1.1"
+ *                 device: "Chrome on Windows"
+ *
  *       400:
- *         description: Invalid request
+ *         description: Invalid request — Missing required fields or invalid data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Account parameter is required"
+ *
+ *       401:
+ *         description: Unauthorized — Missing or invalid bearer token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Missing or invalid Authorization header"
+ *
+ *       500:
+ *         description: Server error while logging wallet disconnect
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Failed to log wallet disconnect"
  */
 router.post("/log-disconnect", authMiddleware, logWalletDisconnect);
 
@@ -162,6 +241,39 @@ router.post("/log-disconnect", authMiddleware, logWalletDisconnect);
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/CreateWalletLogDTO'
+ *             example:
+ *               - account: "0x123abc..."
+ *                 action: "connect"
+ *                 timestamp: 1699286400000
+ *                 meta:
+ *                   ip: "192.168.1.1"
+ *                   device: "Chrome on Windows"
+ *               - account: "0x456def..."
+ *                 action: "disconnect"
+ *                 timestamp: 1699372800000
+ *                 meta:
+ *                   ip: "192.168.1.2"
+ *                   device: "MetaMask Mobile"
+ *
+ *       401:
+ *         description: Unauthorized — Missing or invalid bearer token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Missing or invalid Authorization header"
+ *
+ *       500:
+ *         description: Server error while fetching wallet logs
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Failed to fetch wallet logs"
  */
 router.get("/logs", authMiddleware, adminMiddleware, getAllWalletLogs);
 
@@ -190,8 +302,49 @@ router.get("/logs", authMiddleware, adminMiddleware, getAllWalletLogs);
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/CreateWalletLogDTO'
+ *             example:
+ *               - account: "0x123abc..."
+ *                 action: "connect"
+ *                 timestamp: 1699286400000
+ *                 meta:
+ *                   ip: "192.168.1.1"
+ *                   device: "Chrome on Windows"
+ *               - account: "0x123abc..."
+ *                 action: "disconnect"
+ *                 timestamp: 1699372800000
+ *                 meta:
+ *                   ip: "192.168.1.1"
+ *                   device: "Chrome on Windows"
+ *
+ *       401:
+ *         description: Unauthorized — Missing or invalid bearer token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Missing or invalid Authorization header"
+ *
  *       404:
  *         description: Account not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Wallet logs not found"
+ *
+ *       500:
+ *         description: Server error while fetching wallet logs
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Failed to fetch wallet logs for account"
  */
 router.get("/:account/logs", authMiddleware, getWalletLogs);
 
@@ -210,6 +363,7 @@ router.get("/:account/logs", authMiddleware, getWalletLogs);
  *         required: true
  *         schema:
  *           type: string
+ *         description: Wallet account address
  *     responses:
  *       200:
  *         description: Wallet state
@@ -217,18 +371,52 @@ router.get("/:account/logs", authMiddleware, getWalletLogs);
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/WalletStateResponse'
+ *             example:
+ *               account: "0x123abc..."
+ *               chainId: 31337
+ *               provider: "metamask"
+ *               sessionId: "session_001"
+ *               lastActiveAt: 1699372800000
+ *
+ *       401:
+ *         description: Unauthorized — Missing or invalid bearer token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Missing or invalid Authorization header"
+ *
  *       404:
- *         description: State not found
+ *         description: Wallet state not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Wallet state not found"
+ *
+ *       500:
+ *         description: Server error while fetching wallet state
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Failed to fetch wallet state"
  */
 router.get("/:account/state", authMiddleware, getWalletState);
 
 /**
- * Update wallet state for a specific account
  * @swagger
  * /api/wallet/{account}/state:
  *   patch:
  *     tags: [Wallet]
  *     summary: Update wallet state
+ *     description: Update the state of a wallet for a specific account. Requires authentication.
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -237,21 +425,74 @@ router.get("/:account/state", authMiddleware, getWalletState);
  *         required: true
  *         schema:
  *           type: string
+ *         description: Wallet account address
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/UpdateWalletStateDTO'
+ *           example:
+ *             account: "0x123abc..."
+ *             chainId: 31337
+ *             provider: "metamask"
+ *             sessionId: "session_001"
  *     responses:
  *       200:
- *         description: Wallet state updated
+ *         description: Wallet state updated successfully
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/MessageResponse'
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Wallet state updated"
+ *             examples:
+ *               success:
+ *                 summary: Wallet state updated
+ *                 value:
+ *                   message: "Wallet state updated"
+ *
  *       400:
- *         description: Validation failed
+ *         description: Validation failed or missing account parameter
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Account parameter is required"
+ *
+ *       401:
+ *         description: Unauthorized — Missing or invalid bearer token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Missing or invalid Authorization header"
+ *
+ *       404:
+ *         description: Wallet state not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Wallet state not found"
+ *
+ *       500:
+ *         description: Server error while updating wallet state
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Failed to update wallet state"
  */
 router.patch("/:account/state", authMiddleware, updateWalletStateController);
 
@@ -270,6 +511,7 @@ router.patch("/:account/state", authMiddleware, updateWalletStateController);
  *         required: true
  *         schema:
  *           type: string
+ *         description: Wallet account address
  *     responses:
  *       200:
  *         description: Wallet data deleted successfully
@@ -277,8 +519,48 @@ router.patch("/:account/state", authMiddleware, updateWalletStateController);
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/MessageResponse'
+ *             example:
+ *               message: "Wallet data deleted"
+ * 
+ *       400:
+ *         description: Validation failed or missing account parameter
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Account parameter is required"
+ *
+ *       401:
+ *         description: Unauthorized — Missing or invalid bearer token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Missing or invalid Authorization header"
+ *
  *       404:
  *         description: Account not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Account not found"
+ *
+ *       500:
+ *         description: Server error while deleting wallet data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Failed to delete wallet data"
  */
 router.delete("/:account", authMiddleware, adminMiddleware, deleteWalletController);
 

@@ -14,6 +14,16 @@ const router = Router();
  * @swagger
  * components:
  *   schemas:
+ *     ErrorResponse:
+ *       type: object
+ *       properties:
+ *         success:
+ *           type: boolean
+ *           example: false
+ *         message:
+ *           type: string
+ *           example: "An error occurred"
+ * 
  *     DashboardWallet:
  *       type: object
  *       properties:
@@ -112,6 +122,7 @@ const router = Router();
  *   get:
  *     tags: [Dashboard]
  *     summary: Get system-wide dashboard data (Admin only)
+ *     description: Retrieve dashboard metrics for admin users, including total wallets, contracts, documents, and recent entries.
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -121,6 +132,98 @@ const router = Router();
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/DashboardData'
+ *             examples:
+ *               success:
+ *                 summary: Example admin dashboard response
+ *                 value:
+ *                   success: true
+ *                   data:
+ *                     totalWallets: 12
+ *                     totalContracts: 8
+ *                     totalDocuments: 25
+ *                     wallets:
+ *                       - address: "0xabc123..."
+ *                         balance: 1000000000
+ *                       - address: "0xdef456..."
+ *                         balance: 500000000
+ *                     recentContracts:
+ *                       - address: "0xContractAddress1"
+ *                         owner: "0xOwner1"
+ *                         createdAt: "2025-11-10T08:00:00Z"
+ *                         lastAction:
+ *                           action: "created"
+ *                           account: "0xOwner1"
+ *                           timestamp: 1699603200000
+ *                       - address: "0xContractAddress2"
+ *                         owner: "0xOwner2"
+ *                         createdAt: "2025-11-11T09:30:00Z"
+ *                         lastAction:
+ *                           action: "shipped"
+ *                           account: "0xLogistics1"
+ *                           timestamp: 1699689600000
+ *                     recentDocuments:
+ *                       - id: "doc-123"
+ *                         tokenId: 1
+ *                         owner: "0xOwner1"
+ *                         title: "Contract Agreement"
+ *                         docType: "PDF"
+ *                         status: "active"
+ *                         createdAt: 1699599600000
+ *                         updatedAt: 1699603200000
+ *                         lastAction:
+ *                           action: "uploaded"
+ *                           account: "0xOwner1"
+ *                           timestamp: 1699603200000
+ *
+ *       400:
+ *         description: Bad request — malformed input or parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Invalid request format"
+ *
+ *       401:
+ *         description: Unauthorized — missing or invalid token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Missing or invalid Authorization header"
+ *
+ *       404:
+ *         description: Dashboard data not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Dashboard data not found"
+ *
+ *       422:
+ *         description: Validation failed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ValidationErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Limit must be a number"
+ *
+ *       500:
+ *         description: Server error while fetching dashboard
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Failed to fetch admin dashboard"
  */
 router.get("/admin", authMiddleware, adminMiddleware, DashboardController.getDashboard);
 
@@ -130,6 +233,7 @@ router.get("/admin", authMiddleware, adminMiddleware, DashboardController.getDas
  *   get:
  *     tags: [Dashboard]
  *     summary: Get personalized dashboard data for the current user
+ *     description: Retrieve dashboard metrics for the authenticated user, including their wallets, contracts, and documents.
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -139,6 +243,94 @@ router.get("/admin", authMiddleware, adminMiddleware, DashboardController.getDas
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/DashboardData'
+ *             examples:
+ *               success:
+ *                 summary: Example user dashboard response
+ *                 value:
+ *                   success: true
+ *                   data:
+ *                     totalWallets: 3
+ *                     totalContracts: 2
+ *                     totalDocuments: 5
+ *                     wallets:
+ *                       - address: "0xUserWallet1"
+ *                         balance: 500000000
+ *                       - address: "0xUserWallet2"
+ *                         balance: 250000000
+ *                     recentContracts:
+ *                       - address: "0xContractUser1"
+ *                         owner: "0xUserWallet1"
+ *                         createdAt: "2025-11-12T10:00:00Z"
+ *                         lastAction:
+ *                           action: "approved"
+ *                           account: "0xUserWallet1"
+ *                           timestamp: 1700000000000
+ *                     recentDocuments:
+ *                       - id: "doc-201"
+ *                         tokenId: 101
+ *                         owner: "0xUserWallet1"
+ *                         title: "User Contract"
+ *                         docType: "PDF"
+ *                         status: "active"
+ *                         createdAt: 1700000000000
+ *                         updatedAt: 1700003600000
+ *                         lastAction:
+ *                           action: "uploaded"
+ *                           account: "0xUserWallet1"
+ *                           timestamp: 1700003600000
+ *
+ *       400:
+ *         description: Bad request — malformed input or parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Invalid request format"
+ *
+ *       401:
+ *         description: Unauthorized — missing or invalid token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Unauthorized: missing user address"
+ *
+ *       404:
+ *         description: User dashboard not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "User dashboard data not found"
+ *
+ *       422:
+ *         description: Validation failed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ValidationErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Validation error"
+ *               errors:
+ *                 - field: "wallet"
+ *                   message: "Invalid wallet address format"
+ *
+ *       500:
+ *         description: Server error while fetching user dashboard
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Failed to fetch user dashboard"
  */
 router.get("/user", authMiddleware, DashboardController.getUserDashboard);
 

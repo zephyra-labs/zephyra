@@ -42,7 +42,7 @@ export class NotificationController {
 
       return success(res, notif, 201);
     } catch (err) {
-      return handleError(res, err, "Failed to create notification");
+      return handleError(res, err, "Failed to create notification", 500);
     }
   }
 
@@ -56,9 +56,9 @@ export class NotificationController {
   static async getAll(_req: Request, res: Response) {
     try {
       const notifications = await NotificationModel.getAll();
-      return success(res, notifications);
-    } catch (err) {
-      return handleError(res, err, "Failed to fetch notifications");
+      return success(res, notifications, 200);
+    } catch (err: unknown) {
+      return handleError(res, err, "Failed to fetch notifications", 500);
     }
   }
 
@@ -72,12 +72,14 @@ export class NotificationController {
   static async getByUser(req: Request, res: Response) {
     try {
       const { userId } = req.params;
-      if (!userId) return failure(res, "userId is required", 400);
+      if (!userId) return failure(res, "Missing userId parameter", 422);
 
       const notifications = await NotificationModel.getByUser(userId);
-      return success(res, notifications);
-    } catch (err) {
-      return handleError(res, err, "Failed to fetch user notifications");
+      if (!notifications.length) return failure(res, "No notifications found for user", 404);
+
+      return success(res, notifications, 200);
+    } catch (err: unknown) {
+      return handleError(res, err, "Failed to fetch user notifications", 500);
     }
   }
 
@@ -91,12 +93,14 @@ export class NotificationController {
   static async getById(req: Request, res: Response) {
     try {
       const { id } = req.params;
+      if (!id) return failure(res, "Missing id parameter", 422);
+
       const notification = await NotificationModel.getById(id);
       if (!notification) return failure(res, "Notification not found", 404);
 
-      return success(res, notification);
-    } catch (err) {
-      return handleError(res, err, "Failed to fetch notification");
+      return success(res, notification, 200);
+    } catch (err: unknown) {
+      return handleError(res, err, "Failed to fetch notification", 500);
     }
   }
 
@@ -110,12 +114,14 @@ export class NotificationController {
   static async markAsRead(req: Request, res: Response) {
     try {
       const { id } = req.params;
+      if (!id) return failure(res, "Missing id parameter", 422);
+
       const result = await NotificationModel.markAsRead(id);
       if (!result) return failure(res, "Notification not found", 404);
 
-      return success(res, { message: "Notification marked as read" });
-    } catch (err) {
-      return handleError(res, err, "Failed to mark notification as read");
+      return success(res, { message: "Notification marked as read" }, 200);
+    } catch (err: unknown) {
+      return handleError(res, err, "Failed to mark notification as read", 500);
     }
   }
 
@@ -129,12 +135,14 @@ export class NotificationController {
   static async delete(req: Request, res: Response) {
     try {
       const { id } = req.params;
+      if (!id) return failure(res, "Missing id parameter", 422);
+
       const result = await NotificationModel.delete(id);
       if (!result) return failure(res, "Notification not found", 404);
 
-      return success(res, { message: "Notification deleted successfully" });
-    } catch (err) {
-      return handleError(res, err, "Failed to delete notification");
+      return success(res, { message: "Notification deleted successfully" }, 200);
+    } catch (err: unknown) {
+      return handleError(res, err, "Failed to delete notification", 500);
     }
   }
 }

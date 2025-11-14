@@ -55,9 +55,9 @@ export class ContractController {
   static async fetchDeployedContracts(_req: Request, res: Response) {
     try {
       const contracts = await ContractService.getAllContracts()
-      return success(res, contracts)
-    } catch (err) {
-      return handleError(res, err, "Failed to fetch deployed contracts")
+      return success(res, contracts, 200)
+    } catch (err: unknown) {
+      return handleError(res, err, "Failed to fetch deployed contracts", 500)
     }
   }
 
@@ -92,10 +92,15 @@ export class ContractController {
         verifyOnChain,
       } = req.body as Partial<ContractLogDTO>
 
+      // 400: missing required fields
       if (!contractAddress || !action || !txHash || !account) {
-        return failure(res, "Missing required fields (contractAddress, action, txHash, account)")
+        return failure(
+          res,
+          "Missing required fields: contractAddress, action, txHash, account",
+          400
+        )
       }
-
+      
       let onChainInfo
       if (verifyOnChain) {
         onChainInfo = await verifyTransaction(txHash)
@@ -139,11 +144,16 @@ export class ContractController {
   static async getContractDetails(req: Request, res: Response) {
     try {
       const { address } = req.params
+
+      // 400: missing contract address
+      if (!address) return failure(res, "Contract address is required", 400)
+
       const contract = await ContractService.getContractById(address)
       if (!contract) return failure(res, "Contract not found", 404)
-      return success(res, contract)
-    } catch (err) {
-      return handleError(res, err, "Failed to fetch contract details")
+
+      return success(res, contract, 200)
+    } catch (err: unknown) {
+      return handleError(res, err, "Failed to fetch contract details", 500)
     }
   }
 
@@ -158,11 +168,16 @@ export class ContractController {
   static async getContractStep(req: Request, res: Response) {
     try {
       const { address } = req.params
+
+      // 400: missing contract address
+      if (!address) return failure(res, "Contract address is required", 400)
+
       const result = await ContractService.getContractStepStatus(address)
       if (!result) return failure(res, "Contract not found", 404)
-      return success(res, result)
-    } catch (err) {
-      return handleError(res, err, "Failed to fetch contract step")
+
+      return success(res, result, 200)
+    } catch (err: unknown) {
+      return handleError(res, err, "Failed to fetch contract step", 500)
     }
   }
 
@@ -177,12 +192,14 @@ export class ContractController {
   static async getUserContracts(req: AuthRequest, res: Response) {
     try {
       const user = req.user
-      if (!user) return failure(res, "Unauthorized", 401)
+      
+      // 401: user not authenticated
+      if (!user) return failure(res, "Missing or invalid Authorization header", 401)
 
       const contracts = await ContractService.getContractsByUser(user.address)
-      return success(res, contracts)
-    } catch (err) {
-      return handleError(res, err, "Failed to fetch user contracts")
+      return success(res, contracts, 200)
+    } catch (err: unknown) {
+      return handleError(res, err, "Failed to fetch user contracts", 500)
     }
   }
 }

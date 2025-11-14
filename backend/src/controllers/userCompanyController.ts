@@ -27,7 +27,7 @@ export class UserCompanyController {
       const relation = await UserCompanyService.createUserCompany(data);
       return success(res, relation, 201);
     } catch (err) {
-      return handleError(res, err, "Failed to create user-company relation", 400);
+      return handleError(res, err, "Failed to create user-company relation", 500);
     }
   }
 
@@ -62,11 +62,14 @@ export class UserCompanyController {
   static async getById(req: Request, res: Response) {
     try {
       const { id } = req.params;
+      if (!id) return failure(res, "Missing id parameter", 422);
+
       const relation = await UserCompanyService.getById(id);
       if (!relation) return failure(res, "Relation not found", 404);
-      return success(res, relation);
+
+      return success(res, relation, 200);
     } catch (err) {
-      return handleError(res, err, "Failed to fetch relation");
+      return handleError(res, err, "Failed to fetch relation", 500);
     }
   }
 
@@ -79,10 +82,14 @@ export class UserCompanyController {
   static async getByUser(req: Request, res: Response) {
     try {
       const { address } = req.params;
+      if (!address) return failure(res, "Missing user address", 422);
+
       const relations = await UserCompanyService.getByUser(address);
-      return success(res, relations);
+      if (!relations.length) return failure(res, "No relations found for user", 404);
+
+      return success(res, relations, 200);
     } catch (err) {
-      return handleError(res, err, "Failed to fetch user relations");
+      return handleError(res, err, "Failed to fetch user relations", 500);
     }
   }
 
@@ -95,10 +102,14 @@ export class UserCompanyController {
   static async getByCompany(req: Request, res: Response) {
     try {
       const { companyId } = req.params;
+      if (!companyId) return failure(res, "Missing companyId parameter", 422);
+
       const relations = await UserCompanyService.getByCompany(companyId);
-      return success(res, relations);
+      if (!relations.length) return failure(res, "No relations found for company", 404);
+
+      return success(res, relations, 200);
     } catch (err) {
-      return handleError(res, err, "Failed to fetch company relations");
+      return handleError(res, err, "Failed to fetch company relations", 500);
     }
   }
 
@@ -111,11 +122,13 @@ export class UserCompanyController {
   static async update(req: Request, res: Response) {
     try {
       const { id } = req.params;
+      if (!id) return failure(res, "Missing id parameter", 422);
+
       const data = req.body as UpdateUserCompanyDTO;
       const updated = await UserCompanyService.updateUserCompany(id, data);
-      return success(res, updated);
+      return success(res, updated, 200);
     } catch (err) {
-      return handleError(res, err, "Failed to update relation", 400);
+      return handleError(res, err, "Failed to update relation", 500);
     }
   }
 
@@ -128,10 +141,12 @@ export class UserCompanyController {
   static async delete(req: Request, res: Response) {
     try {
       const { id } = req.params;
+      if (!id) return failure(res, "Missing id parameter", 422);
+
       await UserCompanyService.deleteUserCompany(id);
-      return success(res, { message: "Relation deleted successfully" });
+      return success(res, { message: "Relation deleted successfully" }, 200);
     } catch (err) {
-      return handleError(res, err, "Failed to delete relation", 400);
+      return handleError(res, err, "Failed to delete relation", 500);
     }
   }
 
@@ -144,7 +159,7 @@ export class UserCompanyController {
   static async getMyCompany(req: AuthRequest, res: Response) {
     try {
       const userAddress = req.user?.address;
-      if (!userAddress) return failure(res, "Unauthorized", 401);
+      if (!userAddress) return failure(res, "Missing or invalid Authorization header", 401);
 
       const relations = await UserCompanyService.getByUser(userAddress);
       const relation = relations[0];
@@ -153,9 +168,9 @@ export class UserCompanyController {
       const company = await CompanyService.getCompanyById(relation.companyId);
       if (!company) return failure(res, "Company not found", 404);
 
-      return success(res, company);
+      return success(res, company, 200);
     } catch (err) {
-      return handleError(res, err, "Failed to fetch user's company");
+      return handleError(res, err, "Failed to fetch user's company", 500);
     }
   }
 
@@ -168,7 +183,7 @@ export class UserCompanyController {
   static async updateMyCompany(req: AuthRequest, res: Response) {
     try {
       const userAddress = req.user?.address;
-      if (!userAddress) return failure(res, "Unauthorized", 401);
+      if (!userAddress) return failure(res, "Missing or invalid Authorization header", 401);
 
       const relations = await UserCompanyService.getByUser(userAddress);
       const relation = relations.find(r => r.userAddress === userAddress);
@@ -176,9 +191,9 @@ export class UserCompanyController {
       if (relation.role !== "owner") return failure(res, "Only company owner can update company data", 403);
 
       const updatedCompany = await CompanyService.updateCompany(relation.companyId, req.body, userAddress);
-      return success(res, updatedCompany);
+      return success(res, updatedCompany, 200);
     } catch (err) {
-      return handleError(res, err, "Failed to update company");
+      return handleError(res, err, "Failed to update company", 500);
     }
   }
 }

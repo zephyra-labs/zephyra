@@ -21,14 +21,20 @@ export const addAggregatedActivity = async (req: Request, res: Response) => {
   try {
     const data: Partial<AggregatedActivityLog> = req.body
 
+    // 400: missing account
     if (!data || !data.account) {
-      return failure(res, 'Missing required field: account')
+      return failure(res, 'Missing required field: account', 400)
+    }
+
+    // 422: optional additional validation
+    if (data.action && typeof data.action !== 'string') {
+      return failure(res, 'Action must be a string', 422)
     }
 
     const log = await aggregatedActivityModel.add(data)
     return success(res, log, 201)
   } catch (err: unknown) {
-    return handleError(res, err, 'Failed to create aggregated activity', 400)
+    return handleError(res, err, 'Failed to create aggregated activity', 500)
   }
 }
 
@@ -43,14 +49,14 @@ export const addAggregatedActivity = async (req: Request, res: Response) => {
 export const getAggregatedActivityById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params
-    if (!id) return failure(res, 'Missing ID parameter')
+    if (!id) return failure(res, 'Missing ID parameter', 400)
 
     const log = await aggregatedActivityModel.getById(id)
-    if (!log) return failure(res, 'Log not found', 404)
+    if (!log) return failure(res, 'Aggregated activity log not found', 404)
 
     return success(res, log)
   } catch (err: unknown) {
-    return handleError(res, err, 'Failed to fetch aggregated activity')
+    return handleError(res, err, 'Failed to fetch aggregated activity', 500)
   }
 }
 
@@ -81,6 +87,14 @@ export const getAggregatedActivities = async (req: Request, res: Response) => {
         : undefined,
     }
 
+    // 400: validate limit/startAfterTimestamp
+    if (req.query.limit && isNaN(Number(req.query.limit))) {
+      return failure(res, 'limit must be a number', 400)
+    }
+    if (req.query.startAfterTimestamp && isNaN(Number(req.query.startAfterTimestamp))) {
+      return failure(res, 'startAfterTimestamp must be a number', 400)
+    }
+
     const result = await aggregatedActivityModel.getAll(filter)
 
     return success(res, {
@@ -89,7 +103,7 @@ export const getAggregatedActivities = async (req: Request, res: Response) => {
       nextStartAfterTimestamp: result.nextStartAfterTimestamp ?? null,
     })
   } catch (err: unknown) {
-    return handleError(res, err, 'Failed to fetch aggregated activities')
+    return handleError(res, err, 'Failed to fetch aggregated activities', 500)
   }
 }
 
@@ -106,13 +120,16 @@ export const addAggregatedTag = async (req: Request, res: Response) => {
     const { id } = req.params
     const { tag } = req.body
 
-    if (!id) return failure(res, 'Missing ID parameter')
-    if (!tag || typeof tag !== 'string') return failure(res, 'Tag is required and must be a string')
+    if (!id) return failure(res, 'Missing ID parameter', 400)
+    if (!tag || typeof tag !== 'string') return failure(res, 'Tag is required and must be a string', 400)
+
+    const logExists = await aggregatedActivityModel.getById(id)
+    if (!logExists) return failure(res, 'Aggregated activity log not found', 404)
 
     await aggregatedActivityModel.addTag(id, tag)
     return success(res, { tag, message: 'Tag added successfully' })
   } catch (err: unknown) {
-    return handleError(res, err, 'Failed to add tag to aggregated activity')
+    return handleError(res, err, 'Failed to add tag to aggregated activity', 500)
   }
 }
 
@@ -129,12 +146,15 @@ export const removeAggregatedTag = async (req: Request, res: Response) => {
     const { id } = req.params
     const tag = req.query.tag as string
 
-    if (!id) return failure(res, 'Missing ID parameter')
-    if (!tag || typeof tag !== 'string') return failure(res, 'Tag is required and must be a string')
+    if (!id) return failure(res, 'Missing ID parameter', 400)
+    if (!tag || typeof tag !== 'string') return failure(res, 'Tag is required and must be a string', 400)
+
+    const logExists = await aggregatedActivityModel.getById(id)
+    if (!logExists) return failure(res, 'Aggregated activity log not found', 404)
 
     await aggregatedActivityModel.removeTag(id, tag)
     return success(res, { tag, message: 'Tag removed successfully' })
   } catch (err: unknown) {
-    return handleError(res, err, 'Failed to remove tag from aggregated activity')
+    return handleError(res, err, 'Failed to remove tag from aggregated activity', 500)
   }
 }

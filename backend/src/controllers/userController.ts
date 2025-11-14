@@ -19,7 +19,7 @@ import { success, failure, handleError } from "../utils/responseHelper";
 export async function walletConnectHandler(req: Request, res: Response) {
   try {
     const { user, token } = await UserService.walletConnect(req.body);
-    return success(res, { data: user, token });
+    return success(res, { data: user, token }, 201);
   } catch (err) {
     return handleError(res, err, "Wallet connect failed", 400);
   }
@@ -37,9 +37,9 @@ export async function getCurrentUserHandler(req: AuthRequest, res: Response) {
   try {
     const user = req.user;
     if (!user) return failure(res, "User not authenticated", 401);
-    return success(res, user);
+    return success(res, user, 200);
   } catch (err) {
-    return handleError(res, err, "Failed to fetch current user");
+    return handleError(res, err, "Failed to fetch current user", 500);
   }
 }
 
@@ -54,9 +54,9 @@ export async function getCurrentUserHandler(req: AuthRequest, res: Response) {
 export async function getAllUsersHandler(_req: Request, res: Response) {
   try {
     const users = await UserService.getAllUsers();
-    return success(res, users);
+    return success(res, users, 200);
   } catch (err) {
-    return handleError(res, err, "Failed to fetch users");
+    return handleError(res, err, "Failed to fetch users", 500);
   }
 }
 
@@ -72,9 +72,9 @@ export async function getUserHandler(req: Request, res: Response) {
   try {
     const user = await UserService.getUser(req.params.address);
     if (!user) return failure(res, "User not found", 404);
-    return success(res, user);
+    return success(res, user, 200);
   } catch (err) {
-    return handleError(res, err, "Failed to fetch user");
+    return handleError(res, err, "Failed to fetch user", 500);
   }
 }
 
@@ -90,7 +90,7 @@ export async function updateUserHandler(req: Request, res: Response) {
   try {
     const updated = await UserService.updateUser(req.params.address, req.body);
     if (!updated) return failure(res, "User not found", 404);
-    return success(res, updated);
+    return success(res, updated, 200);
   } catch (err) {
     return handleError(res, err, "Failed to update user", 400);
   }
@@ -107,11 +107,11 @@ export async function updateUserHandler(req: Request, res: Response) {
 export async function updateMeHandler(req: AuthRequest, res: Response) {
   try {
     const user = req.user;
-    if (!user) return failure(res, "Unauthorized", 401);
+    if (!user) return failure(res, "Missing or invalid Authorization header", 401);
 
     const updated = await UserService.updateUser(user.address, req.body);
     if (!updated) return failure(res, "User not found", 404);
-    return success(res, updated);
+    return success(res, updated, 200);
   } catch (err) {
     return handleError(res, err, "Failed to update profile", 400);
   }
@@ -129,8 +129,9 @@ export async function deleteUserHandler(req: Request, res: Response) {
   try {
     const deleted = await UserService.deleteUser(req.params.address);
     if (!deleted) return failure(res, "User not found", 404);
-    return success(res, { message: "User deleted successfully" });
+    return success(res, { message: "User deleted successfully" }, 200);
   } catch (err) {
-    return handleError(res, err, "Failed to delete user");
+    return handleError(res, err, "Failed to delete user", 500);
   }
 }
+
