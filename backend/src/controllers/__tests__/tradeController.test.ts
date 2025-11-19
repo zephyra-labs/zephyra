@@ -39,7 +39,7 @@ describe("TradeController", () => {
       await TradeController.fetchAllTrades({} as Request, mockRes);
 
       expect(TradeService.getAllTrades).toHaveBeenCalled();
-      expect(success).toHaveBeenCalledWith(mockRes, mockTrades);
+      expect(success).toHaveBeenCalledWith(mockRes, mockTrades, 200);
     });
 
     it("should handle errors", async () => {
@@ -48,7 +48,7 @@ describe("TradeController", () => {
 
       await TradeController.fetchAllTrades({} as Request, mockRes);
 
-      expect(handleError).toHaveBeenCalledWith(mockRes, err, "Failed to fetch trades");
+      expect(handleError).toHaveBeenCalledWith(mockRes, err, "Failed to fetch trades", 500);
     });
   });
 
@@ -59,7 +59,7 @@ describe("TradeController", () => {
       await TradeController.getTradeById({ params: { id: "trade1" } } as unknown as Request, mockRes);
 
       expect(TradeService.getTradeById).toHaveBeenCalledWith("trade1");
-      expect(success).toHaveBeenCalledWith(mockRes, mockTrade);
+      expect(success).toHaveBeenCalledWith(mockRes, mockTrade, 200);
     });
 
     it("should return 404 if trade not found", async () => {
@@ -84,7 +84,7 @@ describe("TradeController", () => {
     it("should fail if participants missing", async () => {
       await TradeController.createTrade({ body: {} } as unknown as Request, mockRes);
 
-      expect(failure).toHaveBeenCalledWith(mockRes, "Participants are required");
+      expect(failure).toHaveBeenCalledWith(mockRes, "Participants are required", 400);
     });
   });
 
@@ -98,7 +98,7 @@ describe("TradeController", () => {
       );
 
       expect(TradeService.addParticipant).toHaveBeenCalledWith("trade1", { address: "0xUSER2" });
-      expect(success).toHaveBeenCalledWith(mockRes, mockTrade);
+      expect(success).toHaveBeenCalledWith(mockRes, mockTrade, 200);
     });
 
     it("should fail if participant missing", async () => {
@@ -107,7 +107,7 @@ describe("TradeController", () => {
         mockRes
       );
 
-      expect(failure).toHaveBeenCalledWith(mockRes, "Participant data is required");
+      expect(failure).toHaveBeenCalledWith(mockRes, "Participant data is required", 400);
     });
   });
 
@@ -121,7 +121,7 @@ describe("TradeController", () => {
       );
 
       expect(TradeService.assignRole).toHaveBeenCalledWith("trade1", "0xUSER1", "approver");
-      expect(success).toHaveBeenCalledWith(mockRes, mockTrade.participants);
+      expect(success).toHaveBeenCalledWith(mockRes, mockTrade.participants, 200);
     });
 
     it("should fail if address or role missing", async () => {
@@ -130,7 +130,7 @@ describe("TradeController", () => {
         mockRes
       );
 
-      expect(failure).toHaveBeenCalledWith(mockRes, "Participant address and role are required");
+      expect(failure).toHaveBeenCalledWith(mockRes, "Participant address and role are required", 400);
     });
   });
 
@@ -144,7 +144,7 @@ describe("TradeController", () => {
       );
 
       expect(TradeService.updateStatus).toHaveBeenCalledWith("trade1", "completed");
-      expect(success).toHaveBeenCalledWith(mockRes, mockTrade);
+      expect(success).toHaveBeenCalledWith(mockRes, mockTrade, 200);
     });
 
     it("should fail if status missing", async () => {
@@ -153,7 +153,7 @@ describe("TradeController", () => {
         mockRes
       );
 
-      expect(failure).toHaveBeenCalledWith(mockRes, "Status is required");
+      expect(failure).toHaveBeenCalledWith(mockRes, "Status is required", 400);
     });
   });
 
@@ -165,7 +165,7 @@ describe("TradeController", () => {
       await TradeController.getMyTrades(mockReq, mockRes);
 
       expect(TradeService.getTradesByParticipant).toHaveBeenCalledWith("0xUSER1");
-      expect(success).toHaveBeenCalledWith(mockRes, mockTrades);
+      expect(success).toHaveBeenCalledWith(mockRes, mockTrades, 200);
     });
 
     it("should fail if user not authenticated", async () => {
@@ -173,7 +173,7 @@ describe("TradeController", () => {
 
       await TradeController.getMyTrades(mockReq, mockRes);
 
-      expect(failure).toHaveBeenCalledWith(mockres, "Missing or invalid Authorization header", 401);
+      expect(failure).toHaveBeenCalledWith(mockRes, "Missing or invalid Authorization header", 401);
     });
   });
 });

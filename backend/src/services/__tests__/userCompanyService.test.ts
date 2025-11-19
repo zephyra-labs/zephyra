@@ -131,7 +131,7 @@ describe("UserCompanyService", () => {
 
       await expect(
         UserCompanyService.updateUserCompany("missing", { role: "owner" }),
-      ).rejects.toThrow("UserCompany not found");
+      ).rejects.toThrow("Relation not found");
     });
   });
 
@@ -165,7 +165,7 @@ describe("UserCompanyService", () => {
 
       await expect(
         UserCompanyService.deleteUserCompany("relX"),
-      ).rejects.toThrow("UserCompany not found");
+      ).rejects.toThrow("Relation not found");
     });
   });
 

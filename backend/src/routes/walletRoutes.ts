@@ -161,6 +161,7 @@ const router = Router();
  *               message: "Failed to log wallet login"
  */
 router.post("/log-login", authMiddleware, logWalletLogin);
+
 /**
  * Log wallet disconnect
  * @swagger

@@ -84,7 +84,7 @@ describe("documentController", () => {
       } as unknown as Request;
 
       await documentController.attachDocument(req, mockRes);
-      expect(handleError).toHaveBeenCalledWith(mockRes, err, "Failed to attach document");
+      expect(handleError).toHaveBeenCalledWith(mockRes, err, "Failed to attach document", 500);
     });
   });
 
@@ -95,7 +95,7 @@ describe("documentController", () => {
       await documentController.getAllDocuments({} as Request, mockRes);
 
       expect(DocumentService.getAllDocuments).toHaveBeenCalled();
-      expect(success).toHaveBeenCalledWith(mockRes, mockDocs);
+      expect(success).toHaveBeenCalledWith(mockRes, mockDocs, 200);
     });
 
     it("should handle errors", async () => {
@@ -104,7 +104,7 @@ describe("documentController", () => {
 
       await documentController.getAllDocuments({} as Request, mockRes);
 
-      expect(handleError).toHaveBeenCalledWith(mockRes, err, "Failed to fetch documents");
+      expect(handleError).toHaveBeenCalledWith(mockRes, err, "Failed to fetch documents", 500);
     });
   });
 
@@ -117,7 +117,7 @@ describe("documentController", () => {
       await documentController.getDocument(req, mockRes);
 
       expect(DocumentService.getDocumentById).toHaveBeenCalledWith(1);
-      expect(success).toHaveBeenCalledWith(mockRes, mockDoc);
+      expect(success).toHaveBeenCalledWith(mockRes, mockDoc, 200);
     });
 
     it("should return 404 if document not found", async () => {
@@ -138,7 +138,7 @@ describe("documentController", () => {
 
       await documentController.getDocument(req, mockRes);
 
-      expect(handleError).toHaveBeenCalledWith(mockRes, err, "Failed to fetch document");
+      expect(handleError).toHaveBeenCalledWith(mockRes, err, "Failed to fetch document", 500);
     });
   });
 
@@ -151,7 +151,7 @@ describe("documentController", () => {
       await documentController.getDocumentsByOwner(req, mockRes);
 
       expect(DocumentService.getDocumentsByOwner).toHaveBeenCalledWith("owner1");
-      expect(success).toHaveBeenCalledWith(mockRes, mockDocs);
+      expect(success).toHaveBeenCalledWith(mockRes, mockDocs, 200);
     });
   });
 
@@ -164,7 +164,7 @@ describe("documentController", () => {
       await documentController.getDocumentsByContract(req, mockRes);
 
       expect(DocumentService.getDocumentsByContract).toHaveBeenCalledWith("0x123");
-      expect(success).toHaveBeenCalledWith(mockRes, mockDocs);
+      expect(success).toHaveBeenCalledWith(mockRes, mockDocs, 200);
     });
   });
 
@@ -177,7 +177,7 @@ describe("documentController", () => {
 
       await documentController.getDocumentLogs(req, mockRes);
 
-      expect(success).toHaveBeenCalledWith(mockRes, ["log1"]);
+      expect(success).toHaveBeenCalledWith(mockRes, ["log1"], 200);
     });
 
     it("should return 404 if no document", async () => {
@@ -213,7 +213,7 @@ describe("documentController", () => {
       await documentController.updateDocument(req, mockRes);
 
       expect(DocumentService.updateDocument).toHaveBeenCalled();
-      expect(success).toHaveBeenCalledWith(mockRes, mockDoc);
+      expect(success).toHaveBeenCalledWith(mockRes, mockDoc, 200);
     });
 
     it("should fail if action/account missing", async () => {
@@ -234,7 +234,7 @@ describe("documentController", () => {
       await documentController.deleteDocument(req, mockRes);
 
       expect(DocumentService.deleteDocument).toHaveBeenCalledWith(1, "acc", "del", undefined);
-      expect(success).toHaveBeenCalledWith(mockRes, { message: "Document deleted successfully" });
+      expect(success).toHaveBeenCalledWith(mockRes, { message: "Document deleted successfully" }, 200);
     });
 
     it("should return 404 if document not found", async () => {

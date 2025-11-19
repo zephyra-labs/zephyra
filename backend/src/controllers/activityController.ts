@@ -25,7 +25,7 @@ export const createActivity = async (req: Request, res: Response) => {
     // 422: missing required field
     if (!payload.account) return failure(res, 'Missing required field: account', 422)
     if (!payload.action) return failure(res, 'Missing required field: action', 422)
-    if (!payload.timestamp) return failure(res, 'Missing required field: timestamp', 422)
+    if (!payload.timestamp) payload.timestamp = Date.now()
 
     // Validate timestamp is a number
     if (isNaN(Number(payload.timestamp))) return failure(res, 'timestamp must be a number', 422)
@@ -109,10 +109,6 @@ export const getActivityByAccountController = async (req: Request, res: Response
       limit: limit ? parseInt(limit) : undefined,
       startAfterTimestamp: startAfterTimestamp ? parseInt(startAfterTimestamp) : undefined,
     })
-
-    // 404: no logs for this account
-    if (!logs || logs.length === 0)
-      return failure(res, 'Account not found or no logs exist', 404)
 
     return success(res, {
       account,

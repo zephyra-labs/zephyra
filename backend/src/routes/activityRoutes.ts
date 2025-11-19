@@ -129,11 +129,11 @@ const router = Router();
  *                 value:
  *                   success: false
  *                   message: "Missing required field: account"
- *               invalidTimestamp:
- *                 summary: Invalid timestamp field
+ *               missingAction:
+ *                 summary: Missing action field
  *                 value:
  *                   success: false
- *                   message: "timestamp must be a number"
+ *                   message: "Missing required field: action"
  *
  *       500:
  *         description: Server error while creating activity log
@@ -348,15 +348,6 @@ router.get('/', authMiddleware, getActivities);
  *             example:
  *               success: false
  *               message: "Missing or invalid Authorization header"
- *       404:
- *         description: Account not found or no logs exist
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *             example:
- *               success: false
- *               message: "Account not found or no logs exist"
  *       500:
  *         description: Server error while retrieving activities
  *         content:

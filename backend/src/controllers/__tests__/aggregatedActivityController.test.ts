@@ -115,6 +115,7 @@ describe("aggregatedActivityController", () => {
   // --- addAggregatedTag ---
   describe("addAggregatedTag", () => {
     it("should add tag successfully", async () => {
+      (aggregatedActivityModel.getById as jest.Mock).mockResolvedValue({ id: "1" });
       (aggregatedActivityModel.addTag as jest.Mock).mockResolvedValue(true);
 
       await addAggregatedTag({ params: { id: "1" }, body: { tag: "urgent" } } as unknown as Request, res);
@@ -141,6 +142,7 @@ describe("aggregatedActivityController", () => {
   // --- removeAggregatedTag ---
   describe("removeAggregatedTag", () => {
     it("should remove tag successfully", async () => {
+      (aggregatedActivityModel.getById as jest.Mock).mockResolvedValue({ id: "1" });
       (aggregatedActivityModel.removeTag as jest.Mock).mockResolvedValue(true);
 
       await removeAggregatedTag({ params: { id: "1" }, query: { tag: "urgent" } } as unknown as Request, res);

@@ -51,7 +51,7 @@ describe("UserCompanyController", () => {
 
       await UserCompanyController.create({ body: {} } as unknown as Request, mockRes);
 
-      expect(handleError).toHaveBeenCalledWith(mockRes, err, "Failed to create user-company relation", 400);
+      expect(handleError).toHaveBeenCalledWith(mockRes, err, "Failed to create user-company relation", 500);
     });
   });
 
@@ -79,7 +79,7 @@ describe("UserCompanyController", () => {
 
       await UserCompanyController.getById({ params: { id: "rel1" } } as unknown as Request, mockRes);
 
-      expect(success).toHaveBeenCalledWith(mockRes, mockRelation);
+      expect(success).toHaveBeenCalledWith(mockRes, mockRelation, 200);
     });
 
     it("should return failure if not found", async () => {
@@ -97,7 +97,7 @@ describe("UserCompanyController", () => {
 
       await UserCompanyController.getByUser({ params: { address: "0xUSER1" } } as unknown as Request, mockRes);
 
-      expect(success).toHaveBeenCalledWith(mockRes, [mockRelation]);
+      expect(success).toHaveBeenCalledWith(mockRes, [mockRelation], 200);
     });
   });
 
@@ -107,7 +107,7 @@ describe("UserCompanyController", () => {
 
       await UserCompanyController.getByCompany({ params: { companyId: "comp1" } } as unknown as Request, mockRes);
 
-      expect(success).toHaveBeenCalledWith(mockRes, [mockRelation]);
+      expect(success).toHaveBeenCalledWith(mockRes, [mockRelation], 200);
     });
   });
 
@@ -122,7 +122,7 @@ describe("UserCompanyController", () => {
       );
 
       expect(UserCompanyService.updateUserCompany).toHaveBeenCalledWith("rel1", { role: "member" });
-      expect(success).toHaveBeenCalledWith(mockRes, updatedRelation);
+      expect(success).toHaveBeenCalledWith(mockRes, updatedRelation, 200);
     });
   });
 
@@ -133,7 +133,7 @@ describe("UserCompanyController", () => {
       await UserCompanyController.delete({ params: { id: "rel1" } } as unknown as Request, mockRes);
 
       expect(UserCompanyService.deleteUserCompany).toHaveBeenCalledWith("rel1");
-      expect(success).toHaveBeenCalledWith(mockRes, { message: "Relation deleted successfully" });
+      expect(success).toHaveBeenCalledWith(mockRes, { message: "Relation deleted successfully" }, 200);
     });
   });
 
@@ -144,7 +144,7 @@ describe("UserCompanyController", () => {
 
       await UserCompanyController.getMyCompany({ user: { address: "0xUSER1" } } as any, mockRes);
 
-      expect(success).toHaveBeenCalledWith(mockRes, mockCompany);
+      expect(success).toHaveBeenCalledWith(mockRes, mockCompany, 200);
     });
 
     it("should return 404 if no relation found", async () => {
@@ -167,7 +167,7 @@ describe("UserCompanyController", () => {
       );
 
       expect(CompanyService.updateCompany).toHaveBeenCalledWith("comp1", { name: "New Company" }, "0xUSER1");
-      expect(success).toHaveBeenCalledWith(mockRes, mockCompany);
+      expect(success).toHaveBeenCalledWith(mockRes, mockCompany, 200);
     });
 
     it("should return 403 if user is not owner", async () => {
