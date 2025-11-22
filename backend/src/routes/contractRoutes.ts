@@ -460,7 +460,7 @@ router.get("/", authMiddleware, ContractController.fetchDeployedContracts)
  *   post:
  *     tags: [Contracts]
  *     summary: Add a new contract log and update its state
- *     description: Add a new log entry to a smart contract and optionally update its state. Required fields: `contractAddress`, `action`, `txHash`, `account`.
+ *     description: "Add a new log entry to a smart contract and optionally update its state. Required fields: \"contractAddress\", \"action\", \"txHash\", \"account\"."
  *     security:
  *       - bearerAuth: []
  *     requestBody:

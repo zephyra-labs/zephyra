@@ -153,7 +153,7 @@ const router = Router();
  *               message: "Missing or invalid Authorization header"
  * 
  *       403:
- *         description: Forbidden — forbidden: admins only
+ *         description: "Forbidden — forbidden: admins only"
  *         content:
  *           application/json:
  *             schema:

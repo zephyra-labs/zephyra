@@ -26,6 +26,7 @@ import userRoutes from './routes/userRoutes'
 import userCompanyRoutes from './routes/userCompanyRoutes'
 import dashboardRoutes from './routes/dashboardRoutes'
 import tradeRoutes from './routes/tradeRoutes'
+import reportRoutes from './routes/reportRoutes'
 
 // -------------------- Environment --------------------
 dotenv.config()
@@ -60,6 +61,7 @@ app.use('/api/contract', contractRoutes)
 app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/document', documentRoutes)
 app.use('/api/notification', notificationRoutes)
+app.use('/api/reports', reportRoutes)
 app.use('/api/trade', tradeRoutes)
 app.use('/api/user-company', userCompanyRoutes)
 app.use('/api/user', userRoutes)

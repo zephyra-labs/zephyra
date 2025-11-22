@@ -471,7 +471,7 @@ router.delete("/:id", authMiddleware, NotificationController.delete);
  *                 description: Target user ID
  *               executorId:
  *                 type: string
- *                 description: User ID who triggers the notification (default: "system")
+ *                 description: "User ID who triggers the notification (default: \"system\")"
  *               type:
  *                 type: string
  *                 enum: ["kyc", "document", "transaction", "system", "agreement", "user", "user_company"]
