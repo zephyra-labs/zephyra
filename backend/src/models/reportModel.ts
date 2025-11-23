@@ -1,5 +1,5 @@
 /**
- * @file ReportModel.ts
+ * @file reportModel.ts
  * @description Firestore model for reporting endpoints: main report, performance metrics, trade history.
  */
 

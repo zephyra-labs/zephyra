@@ -110,7 +110,12 @@ export class DashboardService {
     const userContracts: DashboardContract[] = [];
     for (const c of contracts) {
       const lastAction = c.history?.[c.history.length - 1] ?? null;
-      const roles = await getContractRoles(c.id);
+      let roles;
+      try {
+        roles = await getContractRoles(c.id);
+      } catch {
+        roles = { exporter: "", importer: "", logistics: "" }; // fallback jika throw
+      }
       if (
         roles.exporter === normalizedAddress ||
         roles.importer === normalizedAddress ||
@@ -135,7 +140,12 @@ export class DashboardService {
       let linkedToUser = false;
       if (doc.linkedContracts?.length) {
         for (const c of doc.linkedContracts) {
-          const roles = await getContractRoles(c);
+          let roles;
+          try {
+            roles = await getContractRoles(c);
+          } catch {
+            roles = { exporter: "", importer: "", logistics: "" }; // fallback
+          }
           if (
             roles.exporter === normalizedAddress ||
             roles.importer === normalizedAddress ||
@@ -162,9 +172,12 @@ export class DashboardService {
       }
     }
 
-    userDocuments.sort(
-      (a, b) => (b.lastAction?.timestamp ?? b.createdAt ?? 0) - (a.lastAction?.timestamp ?? a.createdAt ?? 0)
-    );
+    // --- Documents ---
+    userDocuments.sort((a, b) => {
+      const aTime = a.lastAction?.timestamp ?? a.createdAt ?? 0;
+      const bTime = b.lastAction?.timestamp ?? b.createdAt ?? 0;
+      return bTime - aTime;
+    });
 
     return new DashboardDTO({
       totalWallets: userWallets.length,
