@@ -90,15 +90,16 @@ export const getActivities = async (req: Request, res: Response) => {
  * @returns {Promise<Response>} JSON response with activity logs for the account.
  */
 export const getActivityByAccountController = async (req: Request, res: Response) => {
+  const { account } = req.params
+
+  // 400: missing or invalid account
+  if (!account) return failure(res, 'Account parameter is required', 400)
+
   try {
-    const { account } = req.params
     const { limit, startAfterTimestamp } = req.query as {
       limit?: string
       startAfterTimestamp?: string
     }
-
-    // 400: missing or invalid account
-    if (!account) return failure(res, 'Account parameter is required', 400)
 
     // 400: validate query params
     if (limit && isNaN(Number(limit))) return failure(res, 'limit must be a number', 400)

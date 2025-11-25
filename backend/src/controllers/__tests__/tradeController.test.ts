@@ -176,4 +176,123 @@ describe("TradeController", () => {
       expect(failure).toHaveBeenCalledWith(mockRes, "Missing or invalid Authorization header", 401);
     });
   });
+  
+  describe("TradeController error handling", () => {
+    let mockRes: jest.Mocked<import("express").Response>;
+
+    beforeEach(() => {
+      mockRes = createMockResponse() as jest.Mocked<import("express").Response>;
+      jest.clearAllMocks();
+    });
+
+    it("fetchAllTrades should handle service error", async () => {
+      const err = new Error("fail");
+      (TradeService.getAllTrades as jest.Mock).mockRejectedValue(err);
+
+      await TradeController.fetchAllTrades({} as Request, mockRes);
+
+      expect(handleError).toHaveBeenCalledWith(mockRes, err, "Failed to fetch trades", 500);
+    });
+
+    it("getTradeById should handle service error", async () => {
+      const err = new Error("fail");
+      (TradeService.getTradeById as jest.Mock).mockRejectedValue(err);
+
+      await TradeController.getTradeById({ params: { id: "trade1" } } as unknown as Request, mockRes);
+
+      expect(handleError).toHaveBeenCalledWith(mockRes, err, "Failed to fetch trade", 500);
+    });
+
+    it("createTrade should handle service error", async () => {
+      const err = new Error("fail");
+      (TradeService.createTrade as jest.Mock).mockRejectedValue(err);
+
+      await TradeController.createTrade({ body: { participants: ["0xUSER1"] } } as unknown as Request, mockRes);
+
+      expect(handleError).toHaveBeenCalledWith(mockRes, err, "Failed to create trade", 500);
+    });
+
+    it("addParticipant should handle service error", async () => {
+      const err = new Error("fail");
+      (TradeService.addParticipant as jest.Mock).mockRejectedValue(err);
+
+      await TradeController.addParticipant(
+        { params: { id: "trade1" }, body: { address: "0xUSER2" } } as unknown as Request,
+        mockRes
+      );
+
+      expect(handleError).toHaveBeenCalledWith(mockRes, err, "Failed to add participant", 500);
+    });
+
+    it("updateStatus should handle service error", async () => {
+      const err = new Error("fail");
+      (TradeService.updateStatus as jest.Mock).mockRejectedValue(err);
+
+      await TradeController.updateStatus(
+        { params: { id: "trade1" }, body: { status: "completed" } } as unknown as Request,
+        mockRes
+      );
+
+      expect(handleError).toHaveBeenCalledWith(mockRes, err, "Failed to update trade status", 500);
+    });
+
+    it("getMyTrades should handle service error", async () => {
+      const err = new Error("fail");
+      const mockReq = { user: { address: "0xUSER1" } } as AuthRequest;
+      (TradeService.getTradesByParticipant as jest.Mock).mockRejectedValue(err);
+
+      await TradeController.getMyTrades(mockReq, mockRes);
+
+      expect(handleError).toHaveBeenCalledWith(mockRes, err, "Failed to fetch user trades", 500);
+    });
+    
+    it("assignRole should handle service error", async () => {
+      const err = new Error("fail");
+      (TradeService.assignRole as jest.Mock).mockRejectedValue(err);
+
+      await TradeController.assignRole(
+        { params: { id: "trade1" }, body: { address: "0xUSER1", role: "approver" } } as unknown as Request,
+        mockRes
+      );
+
+      expect(handleError).toHaveBeenCalledWith(mockRes, err, "Failed to assign role", 500);
+    });
+  });
+  
+  describe("TradeController missing parameter handling", () => {
+    let mockRes: jest.Mocked<import("express").Response>;
+
+    beforeEach(() => {
+      mockRes = createMockResponse() as jest.Mocked<import("express").Response>;
+      jest.clearAllMocks();
+    });
+
+    it("getTradeById should return 422 if id missing", async () => {
+      await TradeController.getTradeById({ params: {} } as unknown as Request, mockRes);
+      expect(failure).toHaveBeenCalledWith(mockRes, "Missing id parameter", 422);
+    });
+
+    it("addParticipant should return 422 if id missing", async () => {
+      await TradeController.addParticipant({ params: {}, body: { address: "0xUSER" } } as unknown as Request, mockRes);
+      expect(failure).toHaveBeenCalledWith(mockRes, "Missing trade id parameter", 422);
+    });
+
+    it("assignRole should return 422 if id missing", async () => {
+      await TradeController.assignRole({ params: {}, body: { address: "0xUSER", role: "approver" } } as unknown as Request, mockRes);
+      expect(failure).toHaveBeenCalledWith(mockRes, "Missing trade id parameter", 422);
+    });
+
+    it("updateStatus should return 422 if id missing", async () => {
+      await TradeController.updateStatus({ params: {}, body: { status: "completed" } } as unknown as Request, mockRes);
+      expect(failure).toHaveBeenCalledWith(mockRes, "Missing trade id parameter", 422);
+    });
+
+    it("getMyTrades should return 404 if no trades found", async () => {
+      const mockReq = { user: { address: "0xUSER1" } } as AuthRequest;
+      (TradeService.getTradesByParticipant as jest.Mock).mockResolvedValue([]);
+
+      await TradeController.getMyTrades(mockReq, mockRes);
+      expect(failure).toHaveBeenCalledWith(mockRes, "No trades found for user", 404);
+    });
+  });
 });

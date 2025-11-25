@@ -24,7 +24,7 @@ const publicClient = createPublicClient({
  * @param {string} txHash - Transaction hash to verify.
  * @returns {Promise<{status: "success"|"failed"; blockNumber: number; confirmations: number} | undefined>}
  */
-const verifyTransaction = async (txHash: string) => {
+export const verifyTransaction = async (txHash: string) => {
   try {
     const receipt = await publicClient.getTransactionReceipt({
       hash: txHash as `0x${string}`,

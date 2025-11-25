@@ -69,6 +69,26 @@ describe("NotificationController", () => {
 
       expect(handleError).toHaveBeenCalledWith(mockRes, err, "Failed to create notification", 500);
     });
+    
+    it("should handle executorId if provided", async () => {
+      (NotificationService.notify as jest.Mock).mockResolvedValue(mockNotif);
+
+      const req = {
+        body: { userId: "user1", executorId: "executor1", type: "info", title: "Test", message: "Hello" }
+      } as Request;
+
+      await NotificationController.createInternal(req, mockRes);
+
+      expect(NotificationService.notify).toHaveBeenCalledWith(
+        "user1",
+        "executor1",
+        "info",
+        "Test",
+        "Hello",
+        undefined
+      );
+      expect(success).toHaveBeenCalledWith(mockRes, mockNotif, 201);
+    });
   });
 
   describe("getAll", () => {
@@ -115,6 +135,14 @@ describe("NotificationController", () => {
 
       expect(handleError).toHaveBeenCalledWith(mockRes, err, "Failed to fetch user notifications", 500);
     });
+    
+    it("should return 404 if user has no notifications", async () => {
+      (NotificationModel.getByUser as jest.Mock).mockResolvedValue([]);
+
+      await NotificationController.getByUser({ params: { userId: "user1" } } as unknown as Request, mockRes);
+
+      expect(failure).toHaveBeenCalledWith(mockRes, "No notifications found for user", 404);
+    });
   });
 
   describe("getById", () => {
@@ -142,6 +170,11 @@ describe("NotificationController", () => {
       await NotificationController.getById({ params: { id: "notif1" } } as unknown as Request, mockRes);
 
       expect(handleError).toHaveBeenCalledWith(mockRes, err, "Failed to fetch notification", 500);
+    });
+    
+    it("should fail getById if id missing", async () => {
+      await NotificationController.getById({ params: {} } as unknown as Request, mockRes);
+      expect(failure).toHaveBeenCalledWith(mockRes, "Missing id parameter", 422);
     });
   });
 
@@ -171,6 +204,11 @@ describe("NotificationController", () => {
 
       expect(handleError).toHaveBeenCalledWith(mockRes, err, "Failed to mark notification as read", 500);
     });
+    
+    it("should fail markAsRead if id missing", async () => {
+      await NotificationController.markAsRead({ params: {} } as unknown as Request, mockRes);
+      expect(failure).toHaveBeenCalledWith(mockRes, "Missing id parameter", 422);
+    });
   });
 
   describe("delete", () => {
@@ -198,6 +236,11 @@ describe("NotificationController", () => {
       await NotificationController.delete({ params: { id: "notif1" } } as unknown as Request, mockRes);
 
       expect(handleError).toHaveBeenCalledWith(mockRes, err, "Failed to delete notification", 500);
+    });
+    
+    it("should fail delete if id missing", async () => {
+      await NotificationController.delete({ params: {} } as unknown as Request, mockRes);
+      expect(failure).toHaveBeenCalledWith(mockRes, "Missing id parameter", 422);
     });
   });
 });

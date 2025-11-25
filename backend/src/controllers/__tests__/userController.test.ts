@@ -1,207 +1,190 @@
 /**
- * @file walletController.test.ts
- * @description Unit tests for walletController endpoints
+ * @file userController.test.ts
+ * @description Unit tests for userController
  */
 
-import type { Request, Response } from "express";
-import * as WalletController from "../walletController";
-import * as WalletService from "../../services/walletService";
-import { CreateWalletLogDTO, UpdateWalletStateDTO } from "../../dtos/walletDTO";
+import { Request, Response } from "express";
+import type { AuthRequest } from "../../middlewares/authMiddleware";
+import * as UserController from "../userController";
+import { UserService } from "../../services/userService";
+import { success, failure, handleError } from "../../utils/responseHelper";
 
-jest.mock("../../services/walletService");
+jest.mock("../../services/userService");
+jest.mock("../../utils/responseHelper");
 
-describe("WalletController", () => {
-  let mockRes: Partial<Response>;
+/** Helper untuk mock response */
+function createMockResponse(): jest.Mocked<Partial<Response>> {
+  return {
+    status: jest.fn().mockReturnThis(),
+    json: jest.fn().mockReturnThis(),
+  } as unknown as jest.Mocked<Response>;
+}
+
+describe("UserController", () => {
+  let res: jest.Mocked<Response>;
+  const mockUser = { address: "0xUSER1", name: "Alice" };
+  const mockUsers = [mockUser];
 
   beforeEach(() => {
-    mockRes = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn(),
-    };
+    res = createMockResponse() as jest.Mocked<Response>;
     jest.clearAllMocks();
   });
 
-  /**
-   * @group Wallet Login
-   */
-  describe("logWalletLogin", () => {
-    /**
-     * Should successfully log a wallet login event and return 201
-     */
-    it("should log wallet login", async () => {
-      const mockReq = { body: { account: "0xABC" } } as Request;
-      (WalletService.recordWalletActivity as jest.Mock).mockResolvedValue({ logId: "log123" });
+  describe("walletConnectHandler", () => {
+    it("should connect wallet and return user & token", async () => {
+      (UserService.walletConnect as jest.Mock).mockResolvedValue({ user: mockUser, token: "token123" });
 
-      await WalletController.logWalletLogin(mockReq, mockRes as Response);
+      await UserController.walletConnectHandler({ body: { address: "0xUSER1" } } as unknown as Request, res);
 
-      expect(WalletService.recordWalletActivity).toHaveBeenCalledWith(expect.any(CreateWalletLogDTO));
-      expect(mockRes.status).toHaveBeenCalledWith(201);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: true,
-        data: { logId: "log123" },
-      });
+      expect(UserService.walletConnect).toHaveBeenCalledWith({ address: "0xUSER1" });
+      expect(success).toHaveBeenCalledWith(res, { data: mockUser, token: "token123" }, 201);
     });
 
-    /**
-     * Should return failure response if account parameter is missing
-     */
-    it("should return failure if account missing", async () => {
-      const mockReq = { body: {} } as Request;
+    it("should handle error", async () => {
+      const err = new Error("fail");
+      (UserService.walletConnect as jest.Mock).mockRejectedValue(err);
 
-      await WalletController.logWalletLogin(mockReq, mockRes as Response);
+      await UserController.walletConnectHandler({ body: {} } as Request, res);
 
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: false,
-        message: "Account parameter is required",
-      });
+      expect(handleError).toHaveBeenCalledWith(res, err, "Wallet connect failed", 400);
     });
   });
 
-  /**
-   * @group Wallet Disconnect
-   */
-  describe("logWalletDisconnect", () => {
-    /**
-     * Should successfully log a wallet disconnect event and return 201
-     */
-    it("should log wallet disconnect", async () => {
-      const mockReq = { body: { account: "0xDEF" } } as Request;
-      (WalletService.recordWalletActivity as jest.Mock).mockResolvedValue({ logId: "log456" });
+  describe("getCurrentUserHandler", () => {
+    it("should return current user", async () => {
+      const req = { user: mockUser } as unknown as AuthRequest;
+      await UserController.getCurrentUserHandler(req, res);
+      expect(success).toHaveBeenCalledWith(res, mockUser, 200);
+    });
 
-      await WalletController.logWalletDisconnect(mockReq, mockRes as Response);
+    it("should fail if no user", async () => {
+      const req = { user: null } as unknown as AuthRequest;
+      await UserController.getCurrentUserHandler(req, res);
+      expect(failure).toHaveBeenCalledWith(res, "User not authenticated", 401);
+    });
 
-      expect(WalletService.recordWalletActivity).toHaveBeenCalledWith(expect.any(CreateWalletLogDTO));
-      expect(mockRes.status).toHaveBeenCalledWith(201);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: true,
-        data: { logId: "log456" },
-      });
+    it("should handle service error", async () => {
+      const err = new Error("fail");
+      const req = { 
+        get user() { throw err; }
+      } as unknown as AuthRequest;
+
+      await UserController.getCurrentUserHandler(req, res);
+
+      expect(handleError).toHaveBeenCalledWith(res, err, "Failed to fetch current user", 500);
     });
   });
 
-  /**
-   * @group Wallet Logs
-   */
-  describe("getAllWalletLogs", () => {
-    /**
-     * Should fetch all wallet logs and return them
-     */
-    it("should return all logs", async () => {
-      const logs = [{ id: "1" }];
-      (WalletService.fetchAllWalletLogs as jest.Mock).mockResolvedValue(logs);
+  describe("getAllUsersHandler", () => {
+    it("should return all users", async () => {
+      (UserService.getAllUsers as jest.Mock).mockResolvedValue(mockUsers);
+      await UserController.getAllUsersHandler({} as Request, res);
+      expect(UserService.getAllUsers).toHaveBeenCalled();
+      expect(success).toHaveBeenCalledWith(res, mockUsers, 200);
+    });
 
-      await WalletController.getAllWalletLogs({} as Request, mockRes as Response);
-
-      expect(WalletService.fetchAllWalletLogs).toHaveBeenCalled();
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: true,
-        data: logs,
-      });
+    it("should handle error", async () => {
+      const err = new Error("fail");
+      (UserService.getAllUsers as jest.Mock).mockRejectedValue(err);
+      await UserController.getAllUsersHandler({} as Request, res);
+      expect(handleError).toHaveBeenCalledWith(res, err, "Failed to fetch users", 500);
     });
   });
 
-  describe("getWalletLogs", () => {
-    /**
-     * Should fetch wallet logs for a specific account
-     */
-    it("should fetch logs by account", async () => {
-      const mockExecutor = "0xABC";
-      const logs = [{ id: "2" }];
-      const mockReq = { params: { account: mockExecutor } } as unknown as Request;
-      (WalletService.fetchWalletLogsByAccount as jest.Mock).mockResolvedValue(logs);
+  describe("getUserHandler", () => {
+    it("should return a user by address", async () => {
+      (UserService.getUser as jest.Mock).mockResolvedValue(mockUser);
+      await UserController.getUserHandler({ params: { address: "0xUSER1" } } as unknown as Request, res);
+      expect(UserService.getUser).toHaveBeenCalledWith("0xUSER1");
+      expect(success).toHaveBeenCalledWith(res, mockUser, 200);
+    });
 
-      await WalletController.getWalletLogs(mockReq, mockRes as Response);
+    it("should return 404 if user not found", async () => {
+      (UserService.getUser as jest.Mock).mockResolvedValue(null);
+      await UserController.getUserHandler({ params: { address: "0xUSER999" } } as unknown as Request, res);
+      expect(failure).toHaveBeenCalledWith(res, "User not found", 404);
+    });
 
-      expect(WalletService.fetchWalletLogsByAccount).toHaveBeenCalledWith(mockExecutor);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: true,
-        data: logs,
-      });
+    it("should handle error", async () => {
+      const err = new Error("fail");
+      (UserService.getUser as jest.Mock).mockRejectedValue(err);
+      await UserController.getUserHandler({ params: { address: "0xUSER1" } } as unknown as Request, res);
+      expect(handleError).toHaveBeenCalledWith(res, err, "Failed to fetch user", 500);
     });
   });
 
-  /**
-   * @group Wallet State
-   */
-  describe("getWalletState", () => {
-    /**
-     * Should return the current wallet state for a specific account
-     */
-    it("should return wallet state", async () => {
-      const mockExecutor = "0xABC123";
-      const state = { account: mockExecutor, chainId: 1 };
-      const mockReq = { params: { account: mockExecutor } } as unknown as Request;
-      (WalletService.fetchWalletState as jest.Mock).mockResolvedValue(state);
-
-      await WalletController.getWalletState(mockReq, mockRes as Response);
-
-      expect(WalletService.fetchWalletState).toHaveBeenCalledWith(mockExecutor);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: true,
-        data: state,
-      });
+  describe("updateUserHandler", () => {
+    it("should update a user", async () => {
+      (UserService.updateUser as jest.Mock).mockResolvedValue(mockUser);
+      await UserController.updateUserHandler({ params: { address: "0xUSER1" }, body: { name: "Bob" } } as unknown as Request, res);
+      expect(UserService.updateUser).toHaveBeenCalledWith("0xUSER1", { name: "Bob" });
+      expect(success).toHaveBeenCalledWith(res, mockUser, 200);
     });
 
-    /**
-     * Should return 404 if wallet state not found
-     */
-    it("should return 404 if state not found", async () => {
-      const mockExecutor = "0xABC123";
-      const mockReq = { params: { account: mockExecutor } } as unknown as Request;
-      (WalletService.fetchWalletState as jest.Mock).mockResolvedValue(null);
+    it("should return 404 if user not found", async () => {
+      (UserService.updateUser as jest.Mock).mockResolvedValue(null);
+      await UserController.updateUserHandler({ params: { address: "0xUSER999" }, body: {} } as unknown as Request, res);
+      expect(failure).toHaveBeenCalledWith(res, "User not found", 404);
+    });
 
-      await WalletController.getWalletState(mockReq, mockRes as Response);
-
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: false,
-        message: "Wallet state not found",
-      });
+    it("should handle error", async () => {
+      const err = new Error("fail");
+      (UserService.updateUser as jest.Mock).mockRejectedValue(err);
+      await UserController.updateUserHandler({ params: { address: "0xUSER1" }, body: {} } as unknown as Request, res);
+      expect(handleError).toHaveBeenCalledWith(res, err, "Failed to update user", 400);
     });
   });
 
-  /**
-   * @group Update Wallet State
-   */
-  describe("updateWalletStateController", () => {
-    /**
-     * Should update wallet state for a specific account
-     */
-    it("should update wallet state", async () => {
-      const mockReq = {
-        params: { account: "0xAAA" },
-        body: { chainId: 1 },
-      } as unknown as Request;
-      (WalletService.updateWalletState as jest.Mock).mockResolvedValue(undefined);
+  describe("updateMeHandler", () => {
+    it("should update own profile", async () => {
+      const req = { user: mockUser, body: { name: "Bob" } } as unknown as AuthRequest;
+      (UserService.updateUser as jest.Mock).mockResolvedValue(mockUser);
+      await UserController.updateMeHandler(req, res);
+      expect(UserService.updateUser).toHaveBeenCalledWith("0xUSER1", { name: "Bob" });
+      expect(success).toHaveBeenCalledWith(res, mockUser, 200);
+    });
 
-      await WalletController.updateWalletStateController(mockReq, mockRes as Response);
+    it("should return 401 if no auth", async () => {
+      const req = { user: null, body: {} } as unknown as AuthRequest;
+      await UserController.updateMeHandler(req, res);
+      expect(failure).toHaveBeenCalledWith(res, "Missing or invalid Authorization header", 401);
+    });
 
-      expect(WalletService.updateWalletState).toHaveBeenCalledWith(expect.any(UpdateWalletStateDTO));
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: true,
-        data: { message: "Wallet state updated" },
-      });
+    it("should return 404 if user not found", async () => {
+      const req = { user: mockUser, body: {} } as unknown as AuthRequest;
+      (UserService.updateUser as jest.Mock).mockResolvedValue(null);
+      await UserController.updateMeHandler(req, res);
+      expect(failure).toHaveBeenCalledWith(res, "User not found", 404);
+    });
+
+    it("should handle error", async () => {
+      const err = new Error("fail");
+      const req = { user: mockUser, body: {} } as unknown as AuthRequest;
+      (UserService.updateUser as jest.Mock).mockRejectedValue(err);
+      await UserController.updateMeHandler(req, res);
+      expect(handleError).toHaveBeenCalledWith(res, err, "Failed to update profile", 400);
     });
   });
 
-  /**
-   * @group Delete Wallet
-   */
-  describe("deleteWalletController", () => {
-    /**
-     * Should delete wallet data for a specific account
-     */
-    it("should delete wallet data", async () => {
-      const mockExecutor = "0xAAA";
-      const mockReq = { params: { account: mockExecutor } } as unknown as Request;
-      (WalletService.purgeWalletData as jest.Mock).mockResolvedValue(undefined);
+  describe("deleteUserHandler", () => {
+    it("should delete a user", async () => {
+      (UserService.deleteUser as jest.Mock).mockResolvedValue(true);
+      await UserController.deleteUserHandler({ params: { address: "0xUSER1" } } as unknown as Request, res);
+      expect(UserService.deleteUser).toHaveBeenCalledWith("0xUSER1");
+      expect(success).toHaveBeenCalledWith(res, { message: "User deleted successfully" }, 200);
+    });
 
-      await WalletController.deleteWalletController(mockReq, mockRes as Response);
+    it("should return 404 if user not found", async () => {
+      (UserService.deleteUser as jest.Mock).mockResolvedValue(false);
+      await UserController.deleteUserHandler({ params: { address: "0xUSER999" } } as unknown as Request, res);
+      expect(failure).toHaveBeenCalledWith(res, "User not found", 404);
+    });
 
-      expect(WalletService.purgeWalletData).toHaveBeenCalledWith(mockExecutor);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: true,
-        data: { message: "Wallet data deleted" },
-      });
+    it("should handle error", async () => {
+      const err = new Error("fail");
+      (UserService.deleteUser as jest.Mock).mockRejectedValue(err);
+      await UserController.deleteUserHandler({ params: { address: "0xUSER1" } } as unknown as Request, res);
+      expect(handleError).toHaveBeenCalledWith(res, err, "Failed to delete user", 500);
     });
   });
 });
