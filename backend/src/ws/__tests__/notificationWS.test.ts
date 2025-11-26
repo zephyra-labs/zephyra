@@ -19,20 +19,22 @@ jest.mock('ws', () => {
 
 describe('notificationWS', () => {
   let server: Partial<HTTPServer>
+  let consoleLogSpy: jest.SpyInstance
 
   beforeEach(() => {
     server = {}
     ;(WebSocketServer as unknown as jest.Mock).mockClear()
     clients.clear()
+    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {})
+    process.env.NODE_ENV = 'test'
   })
 
-  /**
-   * @test Initialize WebSocket server and handle connection with userId
-   * Ensures userId is stored in clients map
-   */
-  it('should initialize WebSocket server and handle connection with userId', () => {
-    const wsMock: any = { on: jest.fn(), close: jest.fn() }
+  afterEach(() => {
+    consoleLogSpy.mockRestore()
+  })
 
+  it('should initialize WS server and store userId', () => {
+    const wsMock: any = { on: jest.fn(), close: jest.fn() }
     const wssMock = {
       on: jest.fn((event: string, cb: Function) => {
         if (event === 'connection') {
@@ -40,7 +42,6 @@ describe('notificationWS', () => {
         }
       }),
     }
-
     ;(WebSocketServer as unknown as jest.Mock).mockImplementation(() => wssMock)
 
     const wss = initNotificationWS(server as HTTPServer)
@@ -49,10 +50,7 @@ describe('notificationWS', () => {
     expect(clients.has('USER123')).toBe(true)
   })
 
-  /**
-   * @test Close connection if host header is missing
-   */
-  it('should close connection if host header is missing', () => {
+  it('should close connection if host header missing', () => {
     const wsMock: any = { on: jest.fn(), close: jest.fn() }
     const wssMock = { on: jest.fn((event: string, cb: Function) => cb(wsMock, { headers: {} })) }
     ;(WebSocketServer as unknown as jest.Mock).mockImplementation(() => wssMock)
@@ -61,10 +59,7 @@ describe('notificationWS', () => {
     expect(wsMock.close).toHaveBeenCalledWith(1011, 'Missing host header')
   })
 
-  /**
-   * @test Close connection if userId is missing
-   */
-  it('should close connection if userId is missing', () => {
+  it('should close connection if userId missing', () => {
     const wsMock: any = { on: jest.fn(), close: jest.fn() }
     const wssMock = {
       on: jest.fn((event: string, cb: Function) =>
@@ -77,18 +72,11 @@ describe('notificationWS', () => {
     expect(wsMock.close).toHaveBeenCalledWith(1008, 'Missing userId')
   })
 
-  /**
-   * @test Remove client from map on close
-   */
-  it('should remove client from map on close', () => {
+  it('should remove client on close', () => {
     let closeCb: Function
-    const wsMock: any = {
-      on: jest.fn((event: string, cb: Function) => { if (event === 'close') closeCb = cb }),
-      close: jest.fn(),
-    }
-
+    const wsMock: any = { on: jest.fn((e, cb) => e === 'close' && (closeCb = cb)), close: jest.fn() }
     const wssMock = {
-      on: jest.fn((event: string, cb: Function) =>
+      on: jest.fn((event, cb) =>
         cb(wsMock, { headers: { host: 'localhost' }, url: '/ws/notifications?userId=USER123' })
       ),
     }
@@ -100,45 +88,62 @@ describe('notificationWS', () => {
     expect(clients.has('USER123')).toBe(false)
   })
 
-  /**
-   * @test Send notification if WebSocket is open
-   */
-  it('should send notification if WebSocket is open', () => {
+  it('should log connection and disconnection if NODE_ENV !== test', () => {
+    process.env.NODE_ENV = 'production'
+    let closeCb: Function
+    const wsMock: any = { on: jest.fn((e, cb) => e === 'close' && (closeCb = cb)), close: jest.fn() }
+    const wssMock = {
+      on: jest.fn((event, cb) =>
+        cb(wsMock, { headers: { host: 'localhost' }, url: '/ws/notifications?userId=USERLOG' })
+      ),
+    }
+    ;(WebSocketServer as unknown as jest.Mock).mockImplementation(() => wssMock)
+
+    initNotificationWS(server as HTTPServer)
+    expect(consoleLogSpy).toHaveBeenCalledWith('User USERLOG connected via WS')
+    closeCb!()
+    expect(consoleLogSpy).toHaveBeenCalledWith('User USERLOG disconnected')
+  })
+
+  it('broadcast sends notification if WS is open', () => {
     const sendMock = jest.fn()
-    const wsMock: any = { readyState: 1, send: sendMock } // 1 = OPEN
+    const wsMock: any = { readyState: 1, send: sendMock }
     clients.set('USER123', wsMock)
 
-    const notif: NotificationPayload = {
-      id: 'notif1',
-      executorId: 'executor1',
-      type: 'system',
-      createdAt: Date.now(),
-      title: 'Hello',
-      message: 'World',
-    }
-
+    const notif: NotificationPayload = { id: 'n1', executorId: 'e1', type: 'system', createdAt: Date.now(), title: 'T', message: 'M' }
     broadcastNotificationToUser('USER123', notif)
     expect(sendMock).toHaveBeenCalledWith(JSON.stringify({ event: 'notification', data: notif }))
   })
 
-  /**
-   * @test Do not send notification if WebSocket is not open
-   */
-  it('should not send notification if WebSocket is not open', () => {
+  it('broadcast does nothing if WS not open', () => {
     const sendMock = jest.fn()
-    const wsMock: any = { readyState: 0, send: sendMock } // 0 = CONNECTING
+    const wsMock: any = { readyState: 0, send: sendMock }
     clients.set('USER123', wsMock)
 
-    const notif: NotificationPayload = {
-      id: 'notif1',
-      executorId: 'executor1',
-      type: 'system',
-      createdAt: Date.now(),
-      title: 'Hello',
-      message: 'World',
-    }
-
+    const notif: NotificationPayload = { id: 'n1', executorId: 'e1', type: 'system', createdAt: Date.now(), title: 'T', message: 'M' }
     broadcastNotificationToUser('USER123', notif)
     expect(sendMock).not.toHaveBeenCalled()
+  })
+
+  it('broadcast does nothing if userId not in clients map', () => {
+    const notif: NotificationPayload = { id: 'n2', executorId: 'e2', type: 'system', createdAt: Date.now(), title: 'X', message: 'Y' }
+    broadcastNotificationToUser('UNKNOWN', notif) // should not throw
+  })
+
+  it('handles multiple connections', () => {
+    const ws1: any = { on: jest.fn(), close: jest.fn() }
+    const ws2: any = { on: jest.fn(), close: jest.fn() }
+    const wssMock = {
+      on: jest.fn((event, cb) => {
+        if (event === 'connection') {
+          cb(ws1, { headers: { host: 'localhost' }, url: '/ws/notifications?userId=U1' })
+          cb(ws2, { headers: { host: 'localhost' }, url: '/ws/notifications?userId=U2' })
+        }
+      }),
+    }
+    ;(WebSocketServer as unknown as jest.Mock).mockImplementation(() => wssMock)
+    initNotificationWS(server as HTTPServer)
+    expect(clients.has('U1')).toBe(true)
+    expect(clients.has('U2')).toBe(true)
   })
 })
