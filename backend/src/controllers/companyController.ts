@@ -19,12 +19,19 @@ import { success, failure, handleError } from '../utils/responseHelper'
 export const createCompany = async (req: Request, res: Response) => {
   try {
     const { executor, ...data } = req.body
-    if (!executor) return failure(res, 'Executor is required')
+
+    // 400: executor missing
+    if (!executor) return failure(res, 'Executor is required', 400)
+
+    // 422: validate required company fields (example: name)
+    if (!data.name || typeof data.name !== 'string') {
+      return failure(res, 'Company name is required and must be a string', 422)
+    }
 
     const company = await CompanyService.createCompany(data, executor)
     return success(res, company, 201)
-  } catch (err) {
-    return handleError(res, err, 'Failed to create company')
+  } catch (err: unknown) {
+    return handleError(res, err, 'Failed to create company', 500)
   }
 }
 
@@ -39,9 +46,9 @@ export const createCompany = async (req: Request, res: Response) => {
 export const getCompanies = async (_req: Request, res: Response) => {
   try {
     const companies = await CompanyService.getAllCompanies()
-    return success(res, companies)
-  } catch (err) {
-    return handleError(res, err, 'Failed to fetch companies')
+    return success(res, companies, 200)
+  } catch (err: unknown) {
+    return handleError(res, err, 'Failed to fetch companies', 500)
   }
 }
 
@@ -55,11 +62,16 @@ export const getCompanies = async (_req: Request, res: Response) => {
  */
 export const getCompanyById = async (req: Request, res: Response) => {
   try {
-    const company = await CompanyService.getCompanyById(req.params.id)
+    const { id } = req.params
+
+    // 400: missing ID
+    if (!id) return failure(res, 'Company ID is required', 400)
+
+    const company = await CompanyService.getCompanyById(id)
     if (!company) return failure(res, 'Company not found', 404)
-    return success(res, company)
-  } catch (err) {
-    return handleError(res, err, 'Failed to fetch company details')
+    return success(res, company, 200)
+  } catch (err: unknown) {
+    return handleError(res, err, 'Failed to fetch company details', 500)
   }
 }
 
@@ -73,13 +85,23 @@ export const getCompanyById = async (req: Request, res: Response) => {
  */
 export const updateCompany = async (req: Request, res: Response) => {
   try {
+    const { id } = req.params
     const { executor, ...data } = req.body
-    if (!executor) return failure(res, 'Executor is required')
 
-    const updated = await CompanyService.updateCompany(req.params.id, data, executor)
-    return success(res, updated)
-  } catch (err) {
-    return handleError(res, err, 'Failed to update company')
+    // 400: missing ID or executor
+    if (!id) return failure(res, 'Company ID is required', 400)
+    if (!executor) return failure(res, 'Executor is required', 400)
+
+    // 422: optional validation for fields
+    if (data.name && typeof data.name !== 'string') {
+      return failure(res, 'Company name must be a string', 422)
+    }
+
+    const updated = await CompanyService.updateCompany(id, data, executor)
+    if (!updated) return failure(res, 'Company not found', 404)
+    return success(res, updated, 200)
+  } catch (err: unknown) {
+    return handleError(res, err, 'Failed to update company', 500)
   }
 }
 
@@ -93,12 +115,18 @@ export const updateCompany = async (req: Request, res: Response) => {
  */
 export const deleteCompany = async (req: Request, res: Response) => {
   try {
+    const { id } = req.params
     const executor = req.body.executor || req.headers['x-executor']?.toString()
-    if (!executor) return failure(res, 'Executor is required')
 
-    await CompanyService.deleteCompany(req.params.id, executor)
-    return success(res, { message: 'Company deleted successfully' })
-  } catch (err) {
-    return handleError(res, err, 'Failed to delete company')
+    // 400: missing ID or executor
+    if (!id) return failure(res, 'Company ID is required', 400)
+    if (!executor) return failure(res, 'Executor is required', 400)
+
+    const deleted = await CompanyService.deleteCompany(id, executor)
+    if (!deleted) return failure(res, 'Company not found', 404)
+
+    return success(res, { message: 'Company deleted successfully' }, 200)
+  } catch (err: unknown) {
+    return handleError(res, err, 'Failed to delete company', 500)
   }
 }

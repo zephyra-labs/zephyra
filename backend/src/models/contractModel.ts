@@ -6,6 +6,7 @@
 import admin from "firebase-admin";
 import { db } from "../config/firebase";
 import type { ContractLogs, ContractLogEntry, ContractState } from "../types/Contract";
+import { getContractRoles } from "../utils/getContractRoles";
 
 /** Firestore collection reference for contract logs */
 const collection = db.collection("contractLogs");
@@ -93,9 +94,8 @@ export class ContractModel {
 
     for (const doc of snapshot.docs) {
       const data = doc.data() as ContractLogs;
-      const roles =
-        data.state ??
-        (await import("../utils/getContractRoles").then((m) => m.getContractRoles(doc.id)));
+
+      const roles = await getContractRoles(doc.id);
 
       if (roles.exporter === userAddress) {
         contracts.push({ ...data, contractAddress: doc.id, role: "Exporter" });
@@ -179,7 +179,7 @@ export class ContractModel {
   ): Promise<ContractState> {
     const docRef = collection.doc(contractAddress);
     const doc = await docRef.get();
-    if (!doc.exists) throw new Error("Contract not found");
+    if (!doc.exists) throw new Error("Contract does not exist");
 
     const currentState = (doc.data() as ContractLogs).state ?? {};
     const mergedState: ContractState = {

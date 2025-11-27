@@ -1,5 +1,5 @@
 /**
- * @file CompanyDTO.ts
+ * @file companyDTO.ts
  * @description Data Transfer Object for Company entity.
  */
 

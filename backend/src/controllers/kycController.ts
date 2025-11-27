@@ -41,7 +41,7 @@ export const createKYC = [
 
       return success(res, created, 201);
     } catch (err: unknown) {
-      return handleError(res, err, "Failed to create KYC", 400);
+      return handleError(res, err, "Failed to create KYC", 500);
     }
   },
 ];
@@ -63,11 +63,15 @@ export const updateKYC = async (req: Request, res: Response) => {
 
     if (!action) return failure(res, "Missing action field", 400);
     if (!executor) return failure(res, "Missing executor field", 400);
+    if (!tokenId) return failure(res, "Missing tokenId parameter", 422);
 
     const updated = await KYCService.updateKYC(tokenId, updateData, action, txHash, executor);
-    return success(res, updated);
+
+    if (!updated) return failure(res, "KYC not found", 404);
+
+    return success(res, updated, 200);
   } catch (err: unknown) {
-    return handleError(res, err, "Failed to update KYC");
+    return handleError(res, err, "Failed to update KYC", 500);
   }
 };
 
@@ -88,11 +92,14 @@ export const deleteKYC = async (req: Request, res: Response) => {
 
     if (!action) return failure(res, "Missing action field", 400);
     if (!executor) return failure(res, "Missing executor field", 400);
+    if (!tokenId) return failure(res, "Missing tokenId parameter", 422);
 
-    await KYCService.deleteKYC(tokenId, action, txHash, executor);
-    return success(res, { message: "KYC deleted successfully" });
+    const deleted = await KYCService.deleteKYC(tokenId, action, txHash, executor);
+    if (!deleted) return failure(res, "KYC not found", 404);
+
+    return success(res, { message: "KYC deleted successfully" }, 200);
   } catch (err: unknown) {
-    return handleError(res, err, "Failed to delete KYC");
+    return handleError(res, err, "Failed to delete KYC", 500);
   }
 };
 
@@ -108,9 +115,9 @@ export const deleteKYC = async (req: Request, res: Response) => {
 export const getAllKYCs = async (_req: Request, res: Response) => {
   try {
     const kycs = await KYCService.getAllKYC();
-    return success(res, kycs);
+    return success(res, kycs, 200);
   } catch (err: unknown) {
-    return handleError(res, err, "Failed to fetch KYCs");
+    return handleError(res, err, "Failed to fetch KYCs", 500);
   }
 };
 
@@ -125,11 +132,15 @@ export const getAllKYCs = async (_req: Request, res: Response) => {
  */
 export const getKYCById = async (req: Request, res: Response) => {
   try {
-    const kyc = await KYCService.getKYCById(req.params.tokenId);
+    const tokenId = req.params.tokenId;
+    if (!tokenId) return failure(res, "Missing tokenId parameter", 422);
+
+    const kyc = await KYCService.getKYCById(tokenId);
     if (!kyc) return failure(res, "KYC not found", 404);
-    return success(res, kyc);
+
+    return success(res, kyc, 200);
   } catch (err: unknown) {
-    return handleError(res, err, "Failed to fetch KYC by ID");
+    return handleError(res, err, "Failed to fetch KYC by ID", 500);
   }
 };
 
@@ -144,10 +155,14 @@ export const getKYCById = async (req: Request, res: Response) => {
  */
 export const getKYCsByOwner = async (req: Request, res: Response) => {
   try {
-    const kycs = await KYCService.getKYCByOwner(req.params.owner);
-    return success(res, kycs);
+    const owner = req.params.owner;
+    if (!owner) return failure(res, "Missing owner parameter", 422);
+
+    const kycs = await KYCService.getKYCByOwner(owner);
+    if (!kycs.length) return failure(res, "No KYC records found for owner", 404);
+    return success(res, kycs, 200);
   } catch (err: unknown) {
-    return handleError(res, err, "Failed to fetch KYCs for owner");
+    return handleError(res, err, "Failed to fetch KYCs for owner", 500);
   }
 };
 
@@ -162,11 +177,15 @@ export const getKYCsByOwner = async (req: Request, res: Response) => {
  */
 export const getKYCLogs = async (req: Request, res: Response) => {
   try {
-    const kyc = await KYCService.getKYCById(req.params.tokenId);
-    if (!kyc) return failure(res, "No logs found", 404);
-    return success(res, kyc.history ?? []);
+    const tokenId = req.params.tokenId;
+    if (!tokenId) return failure(res, "Missing tokenId parameter", 422);
+
+    const kyc = await KYCService.getKYCById(tokenId);
+    if (!kyc || !kyc.history?.length) return failure(res, "No logs found", 404);
+
+    return success(res, kyc.history, 200);
   } catch (err: unknown) {
-    return handleError(res, err, "Failed to fetch KYC logs");
+    return handleError(res, err, "Failed to fetch KYC logs", 500);
   }
 };
 
@@ -186,6 +205,7 @@ export const updateKYCInternal = async (req: Request, res: Response) => {
     const { status, reviewedBy, signature, txHash, remarks } = body;
 
     if (!status) return failure(res, "Missing status field", 400);
+    if (!tokenId) return failure(res, "Missing tokenId parameter", 422);
 
     const updated = await KYCService.updateKYCInternal(tokenId, {
       status,
@@ -195,8 +215,10 @@ export const updateKYCInternal = async (req: Request, res: Response) => {
       remarks,
     });
 
-    return success(res, updated);
+    if (!updated) return failure(res, "KYC not found", 404);
+
+    return success(res, updated, 200);
   } catch (err: unknown) {
-    return handleError(res, err, "Failed to update KYC status");
+    return handleError(res, err, "Failed to update KYC status", 500);
   }
 };

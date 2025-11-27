@@ -1,124 +1,200 @@
 /**
  * @file activityController.test.ts
- * @description Unit tests for activityController
+ * @description 100% coverage unit tests for activityController
  */
 
-import {
-  createActivity,
-  getActivities,
-  getActivityByAccountController,
-} from "../activityController";
-import * as activityModel from "../../models/activityModel";
-import type { Request, Response } from "express";
+import type { Request, Response } from "express"
+import * as activityController from "../activityController"
+import * as activityModel from "../../models/activityModel"
+import { success, failure, handleError } from "../../utils/responseHelper"
 
-// --- Helper: Mock Response Type-safe ---
-function createMockResponse(): jest.Mocked<Response> {
+// --- Mock helpers ---
+jest.mock("../../utils/responseHelper", () => ({
+  success: jest.fn(),
+  failure: jest.fn(),
+  handleError: jest.fn(),
+}))
+jest.mock("../../models/activityModel")
+
+function mockRes(): jest.Mocked<Response> {
   return {
     status: jest.fn().mockReturnThis(),
     json: jest.fn().mockReturnThis(),
-    send: jest.fn().mockReturnThis(),
     sendStatus: jest.fn().mockReturnThis(),
-    end: jest.fn().mockReturnThis(),
-    set: jest.fn().mockReturnThis(),
-    get: jest.fn(),
-    cookie: jest.fn().mockReturnThis(),
-    clearCookie: jest.fn().mockReturnThis(),
-  } as unknown as jest.Mocked<Response>;
+  } as any
 }
 
-// --- Mock activityModel ---
-jest.mock("../../models/activityModel");
-
-describe("activityController", () => {
-  let res: jest.Mocked<Response>;
+describe("activityController FULL COVERAGE", () => {
+  let res: jest.Mocked<Response>
 
   beforeEach(() => {
-    res = createMockResponse();
-    jest.clearAllMocks();
-  });
+    jest.clearAllMocks()
+    res = mockRes()
+  })
 
-  // --- createActivity ---
+  // -----------------------------
+  // createActivity
+  // -----------------------------
   describe("createActivity", () => {
-    const reqBody = { account: "0x123", action: "deploy" };
-
-    it("should create an activity", async () => {
-      const saved = { id: "1", ...reqBody };
-      (activityModel.addActivityLog as jest.Mock).mockResolvedValue(saved);
-
-      await createActivity({ body: reqBody } as unknown as Request, res);
-      expect(res.status).toHaveBeenCalledWith(201);
-      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ data: saved }));
-    });
+    it("should fail if body missing", async () => {
+      await activityController.createActivity({} as Request, res)
+      expect(failure).toHaveBeenCalledWith(res, "Request body is required", 400)
+    })
 
     it("should fail if account missing", async () => {
-      await createActivity({ body: {} } as unknown as Request, res);
-      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: false }));
-    });
+      await activityController.createActivity({ body: { action: "deploy" } } as Request, res)
+      expect(failure).toHaveBeenCalledWith(res, "Missing required field: account", 422)
+    })
 
-    it("should handle service errors", async () => {
-      (activityModel.addActivityLog as jest.Mock).mockRejectedValue(new Error("fail"));
-      await createActivity({ body: reqBody } as unknown as Request, res);
-      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: false }));
-    });
-  });
+    it("should fail if action missing", async () => {
+      await activityController.createActivity({ body: { account: "0x123" } } as Request, res)
+      expect(failure).toHaveBeenCalledWith(res, "Missing required field: action", 422)
+    })
 
-  // --- getActivities ---
+    it("should fail if timestamp invalid", async () => {
+      await activityController.createActivity(
+        { body: { account: "0x123", action: "deploy", timestamp: "bad" } } as any,
+        res,
+      )
+      expect(failure).toHaveBeenCalledWith(res, "timestamp must be a number", 422)
+    })
+
+    it("should create activity successfully", async () => {
+      const mockActivity = { account: "0x123", action: "deploy" } as any
+      ;(activityModel.addActivityLog as jest.Mock).mockResolvedValue(mockActivity)
+      await activityController.createActivity(
+        { body: { account: "0x123", action: "deploy" } } as Request,
+        res,
+      )
+      expect(success).toHaveBeenCalledWith(res, mockActivity, 201)
+    })
+
+    it("should handle model error", async () => {
+      (activityModel.addActivityLog as jest.Mock).mockRejectedValue(new Error("fail"))
+      await activityController.createActivity(
+        { body: { account: "0x1", action: "deploy" } } as any,
+        res,
+      )
+      expect(handleError).toHaveBeenCalled()
+    })
+  })
+
+  // -----------------------------
+  // getActivities
+  // -----------------------------
   describe("getActivities", () => {
-    it("should return filtered activities", async () => {
-      const logs = [{ id: "1", account: "0x123" }];
-      (activityModel.getAllActivities as jest.Mock).mockResolvedValue(logs);
+    it("should fail if limit invalid", async () => {
+      await activityController.getActivities({ query: { limit: "bad" } } as any, res)
+      expect(failure).toHaveBeenCalledWith(res, "limit must be a number", 400)
+    })
 
-      const reqQuery = { account: "0x123", limit: "10" };
-      await getActivities({ query: reqQuery } as unknown as Request, res);
+    it("should fail if startAfterTimestamp invalid", async () => {
+      await activityController.getActivities({ query: { startAfterTimestamp: "bad" } } as any, res)
+      expect(failure).toHaveBeenCalledWith(res, "startAfterTimestamp must be a number", 400)
+    })
 
-      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-        data: { count: 1, items: logs },
-      }));
-    });
+    it("should return logs successfully", async () => {
+      const logs = [{ account: "0x123" }] as any
+      ;(activityModel.getAllActivities as jest.Mock).mockResolvedValue(logs)
+      await activityController.getActivities({ query: { account: "0x123" } } as any, res)
+      expect(success).toHaveBeenCalledWith(res, { count: logs.length, items: logs })
+    })
 
-    it("should handle errors", async () => {
-      (activityModel.getAllActivities as jest.Mock).mockRejectedValue(new Error("fail"));
-      await getActivities({ query: {} } as unknown as Request, res);
-      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: false }));
-    });
-  });
+    it("should handle model error", async () => {
+      (activityModel.getAllActivities as jest.Mock).mockRejectedValue(new Error("fail"))
+      await activityController.getActivities({ query: {} } as any, res)
+      expect(handleError).toHaveBeenCalled()
+    })
+    
+    it("should return logs with numeric limit and startAfterTimestamp", async () => {
+      const logs = [{ account: "0x123" }] as any
+      ;(activityModel.getAllActivities as jest.Mock).mockResolvedValue(logs)
 
-  // --- getActivityByAccountController ---
+      await activityController.getActivities(
+        { query: { limit: "10", startAfterTimestamp: "1690000000000" } } as any,
+        res,
+      )
+
+      expect(activityModel.getAllActivities).toHaveBeenCalledWith({
+        account: undefined,
+        txHash: undefined,
+        limit: 10,
+        startAfterTimestamp: 1690000000000,
+      })
+      expect(success).toHaveBeenCalledWith(res, { count: logs.length, items: logs })
+    })
+  })
+
+  // -----------------------------
+  // getActivityByAccountController
+  // -----------------------------
   describe("getActivityByAccountController", () => {
-    it("should return activities for account", async () => {
-      const logs = [{ id: "1", account: "0x123" }];
-      (activityModel.getActivityByAccount as jest.Mock).mockResolvedValue(logs);
+    it("should fail if account param missing", async () => {
+      await activityController.getActivityByAccountController({ params: {} } as any, res)
+      expect(failure).toHaveBeenCalledWith(res, "Account parameter is required", 400)
+    })
 
-      const req = { params: { account: "0x123" }, query: { limit: "10" } } as unknown as Request;
-      await getActivityByAccountController(req, res);
+    it("should fail if limit invalid", async () => {
+      await activityController.getActivityByAccountController(
+        { params: { account: "0x123" }, query: { limit: "bad" } } as any,
+        res,
+      )
+      expect(failure).toHaveBeenCalledWith(res, "limit must be a number", 400)
+    })
 
-      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-        data: {
-          account: "0x123",
-          count: 1,
-          items: logs,
-        },
-      }));
-    });
+    it("should fail if startAfterTimestamp invalid", async () => {
+      await activityController.getActivityByAccountController(
+        { params: { account: "0x123" }, query: { startAfterTimestamp: "bad" } } as any,
+        res,
+      )
+      expect(failure).toHaveBeenCalledWith(res, "startAfterTimestamp must be a number", 400)
+    })
 
-    it("should return empty array if no logs", async () => {
-      (activityModel.getActivityByAccount as jest.Mock).mockResolvedValue([]);
+    it("should return empty logs", async () => {
+      ;(activityModel.getActivityByAccount as jest.Mock).mockResolvedValue([])
+      await activityController.getActivityByAccountController(
+        { params: { account: "0x123" }, query: {} } as any,
+        res,
+      )
+      expect(success).toHaveBeenCalledWith(res, { account: "0x123", count: 0, items: [] })
+    })
 
-      const req = { params: { account: "0x123" }, query: {} } as unknown as Request;
-      await getActivityByAccountController(req, res);
+    it("should return logs", async () => {
+      const logs = [{ account: "0x123" }] as any
+      ;(activityModel.getActivityByAccount as jest.Mock).mockResolvedValue(logs)
+      await activityController.getActivityByAccountController(
+        { params: { account: "0x123" }, query: { limit: "5" } } as any,
+        res,
+      )
+      expect(success).toHaveBeenCalledWith(res, { account: "0x123", count: logs.length, items: logs })
+    })
 
-      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-        data: { account: "0x123", count: 0, items: [] },
-      }));
-    });
+    it("should handle model error", async () => {
+      (activityModel.getActivityByAccount as jest.Mock).mockRejectedValue(new Error("fail"))
+      await activityController.getActivityByAccountController(
+        { params: { account: "0x123" }, query: {} } as any,
+        res,
+      )
+      expect(handleError).toHaveBeenCalled()
+    })
+    
+    it("should return logs with numeric limit and startAfterTimestamp", async () => {
+      const logs = [{ account: "0x123" }] as any
+      ;(activityModel.getActivityByAccount as jest.Mock).mockResolvedValue(logs)
 
-    it("should handle service errors", async () => {
-      (activityModel.getActivityByAccount as jest.Mock).mockRejectedValue(new Error("fail"));
+      await activityController.getActivityByAccountController(
+        {
+          params: { account: "0x123" },
+          query: { limit: "5", startAfterTimestamp: "1690000000000" },
+        } as any,
+        res,
+      )
 
-      const req = { params: { account: "0x123" }, query: {} } as unknown as Request;
-      await getActivityByAccountController(req, res);
-
-      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: false }));
-    });
-  });
-});
+      expect(activityModel.getActivityByAccount).toHaveBeenCalledWith("0x123", {
+        limit: 5,
+        startAfterTimestamp: 1690000000000,
+      })
+      expect(success).toHaveBeenCalledWith(res, { account: "0x123", count: logs.length, items: logs })
+    })
+  })
+})

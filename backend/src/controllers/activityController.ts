@@ -19,14 +19,21 @@ import { success, failure, handleError } from '../utils/responseHelper'
 export const createActivity = async (req: Request, res: Response) => {
   try {
     const payload = req.body
-    if (!payload || !payload.account) {
-      return failure(res, 'Missing required field: account')
-    }
+    // 400: missing payload
+    if (!payload) return failure(res, 'Request body is required', 400)
+
+    // 422: missing required field
+    if (!payload.account) return failure(res, 'Missing required field: account', 422)
+    if (!payload.action) return failure(res, 'Missing required field: action', 422)
+    if (!payload.timestamp) payload.timestamp = Date.now()
+
+    // Validate timestamp is a number
+    if (isNaN(Number(payload.timestamp))) return failure(res, 'timestamp must be a number', 422)
 
     const entry = await addActivityLog(payload)
     return success(res, entry, 201)
   } catch (err: unknown) {
-    return handleError(res, err, 'Failed to create activity', 400)
+    return handleError(res, err, 'Failed to create activity', 500)
   }
 }
 
@@ -51,13 +58,16 @@ export const getActivities = async (req: Request, res: Response) => {
       startAfterTimestamp?: string
     }
 
+    // 400: validate limit/startAfterTimestamp if provided
+    if (limit && isNaN(Number(limit))) return failure(res, 'limit must be a number', 400)
+    if (startAfterTimestamp && isNaN(Number(startAfterTimestamp)))
+      return failure(res, 'startAfterTimestamp must be a number', 400)
+
     const logs = await getAllActivities({
       account,
       txHash,
       limit: limit ? parseInt(limit) : undefined,
-      startAfterTimestamp: startAfterTimestamp
-        ? parseInt(startAfterTimestamp)
-        : undefined,
+      startAfterTimestamp: startAfterTimestamp ? parseInt(startAfterTimestamp) : undefined,
     })
 
     return success(res, {
@@ -65,7 +75,7 @@ export const getActivities = async (req: Request, res: Response) => {
       items: logs,
     })
   } catch (err: unknown) {
-    return handleError(res, err, 'Failed to fetch activities')
+    return handleError(res, err, 'Failed to fetch activities', 500)
   }
 }
 
@@ -80,26 +90,33 @@ export const getActivities = async (req: Request, res: Response) => {
  * @returns {Promise<Response>} JSON response with activity logs for the account.
  */
 export const getActivityByAccountController = async (req: Request, res: Response) => {
+  const { account } = req.params
+
+  // 400: missing or invalid account
+  if (!account) return failure(res, 'Account parameter is required', 400)
+
   try {
-    const { account } = req.params
     const { limit, startAfterTimestamp } = req.query as {
       limit?: string
       startAfterTimestamp?: string
     }
 
+    // 400: validate query params
+    if (limit && isNaN(Number(limit))) return failure(res, 'limit must be a number', 400)
+    if (startAfterTimestamp && isNaN(Number(startAfterTimestamp)))
+      return failure(res, 'startAfterTimestamp must be a number', 400)
+
     const logs = await getActivityByAccount(account, {
       limit: limit ? parseInt(limit) : undefined,
-      startAfterTimestamp: startAfterTimestamp
-        ? parseInt(startAfterTimestamp)
-        : undefined,
+      startAfterTimestamp: startAfterTimestamp ? parseInt(startAfterTimestamp) : undefined,
     })
 
     return success(res, {
       account,
-      count: logs?.length || 0,
-      items: logs || [],
+      count: logs.length,
+      items: logs,
     })
   } catch (err: unknown) {
-    return handleError(res, err, 'Failed to fetch activities for this account')
+    return handleError(res, err, 'Failed to fetch activities for this account', 500)
   }
 }

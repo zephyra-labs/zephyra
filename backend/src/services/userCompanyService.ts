@@ -47,7 +47,7 @@ export class UserCompanyService {
    */
   static async updateUserCompany(id: string, data: UpdateUserCompanyDTO): Promise<UserCompany> {
     const updated = await UserCompanyModel.update(id, data);
-    if (!updated) throw new Error("UserCompany not found");
+    if (!updated) throw new Error("Relation not found");
 
     await notifyWithAdmins(updated.userAddress, {
       type: "user_company",
@@ -67,7 +67,7 @@ export class UserCompanyService {
    */
   static async deleteUserCompany(id: string): Promise<boolean> {
     const existing = await UserCompanyModel.getById(id);
-    if (!existing) throw new Error("UserCompany not found");
+    if (!existing) throw new Error("Relation not found");
 
     const deleted = await UserCompanyModel.delete(id);
     if (deleted) {

@@ -21,7 +21,7 @@ import { success, failure, handleError } from '../utils/responseHelper';
  */
 export const logWalletLogin = async (req: Request, res: Response) => {
   try {
-    if (!req.body.account) return failure(res, 'Account parameter is required');
+    if (!req.body.account) return failure(res, 'Account parameter is required', 400);
     
     const dto = new CreateWalletLogDTO(req.body);
     dto.action = WalletAction.CONNECT;
@@ -30,7 +30,7 @@ export const logWalletLogin = async (req: Request, res: Response) => {
     const result = await WalletService.recordWalletActivity(dto);
     return success(res, result, 201);
   } catch (err) {
-    return handleError(res, err, 'Failed to log wallet login');
+    return handleError(res, err, 'Failed to log wallet login', 500);
   }
 };
 
@@ -46,7 +46,7 @@ export const logWalletLogin = async (req: Request, res: Response) => {
  */
 export const logWalletDisconnect = async (req: Request, res: Response) => {
   try {
-    if (!req.body.account) return failure(res, 'Account parameter is required');
+    if (!req.body.account) return failure(res, 'Account parameter is required', 400);
     
     const dto = new CreateWalletLogDTO(req.body);
     dto.action = WalletAction.DISCONNECT;
@@ -55,9 +55,9 @@ export const logWalletDisconnect = async (req: Request, res: Response) => {
     const result = await WalletService.recordWalletActivity(dto);
     return success(res, result, 201);
   } catch (err) {
-    return handleError(res, err, 'Failed to log wallet disconnect');
+    return handleError(res, err, 'Failed to log wallet disconnect', 500);
   }
-};
+}
 
 /**
  * Retrieve all wallet logs
@@ -70,9 +70,9 @@ export const logWalletDisconnect = async (req: Request, res: Response) => {
 export const getAllWalletLogs = async (_req: Request, res: Response) => {
   try {
     const logs = await WalletService.fetchAllWalletLogs();
-    return success(res, logs);
+    return success(res, logs, 200);
   } catch (err) {
-    return handleError(res, err, 'Failed to fetch wallet logs');
+    return handleError(res, err, 'Failed to fetch wallet logs', 500);
   }
 };
 
@@ -88,12 +88,13 @@ export const getAllWalletLogs = async (_req: Request, res: Response) => {
 export const getWalletLogs = async (req: Request, res: Response) => {
   try {
     const { account } = req.params;
-    if (!account) return failure(res, 'Account parameter is required');
+    if (!account) return failure(res, 'Account parameter is required', 400);
 
     const logs = await WalletService.fetchWalletLogsByAccount(account);
-    return success(res, logs);
+    if (!logs) return failure(res, 'Wallet logs not found', 404);
+    return success(res, logs, 200);
   } catch (err) {
-    return handleError(res, err, 'Failed to fetch wallet logs for account');
+    return handleError(res, err, 'Failed to fetch wallet logs for account', 500);
   }
 };
 
@@ -109,14 +110,14 @@ export const getWalletLogs = async (req: Request, res: Response) => {
 export const getWalletState = async (req: Request, res: Response) => {
   try {
     const { account } = req.params;
-    if (!account) return failure(res, 'Account parameter is required');
+    if (!account) return failure(res, 'Account parameter is required', 400);
 
     const state = await WalletService.fetchWalletState(account);
     if (!state) return failure(res, 'Wallet state not found', 404);
 
-    return success(res, state);
+    return success(res, state, 200);
   } catch (err) {
-    return handleError(res, err, 'Failed to fetch wallet state');
+    return handleError(res, err, 'Failed to fetch wallet state', 500);
   }
 };
 
@@ -136,15 +137,15 @@ export const getWalletState = async (req: Request, res: Response) => {
 export const updateWalletStateController = async (req: Request, res: Response) => {
   try {
     const { account } = req.params;
-    if (!account) return failure(res, 'Account parameter is required');
+    if (!account) return failure(res, 'Account parameter is required', 400);
 
     const dto = new UpdateWalletStateDTO({ ...req.body, account });
     dto.validate();
 
     await WalletService.updateWalletState(dto);
-    return success(res, { message: 'Wallet state updated' });
+    return success(res, { message: 'Wallet state updated' }, 200);
   } catch (err) {
-    return handleError(res, err, 'Failed to update wallet state');
+    return handleError(res, err, 'Failed to update wallet state', 500);
   }
 };
 
@@ -160,11 +161,11 @@ export const updateWalletStateController = async (req: Request, res: Response) =
 export const deleteWalletController = async (req: Request, res: Response) => {
   try {
     const { account } = req.params;
-    if (!account) return failure(res, 'Account parameter is required');
+    if (!account) return failure(res, 'Account parameter is required', 400);
 
     await WalletService.purgeWalletData(account);
-    return success(res, { message: 'Wallet data deleted' });
+    return success(res, { message: 'Wallet data deleted' }, 200);
   } catch (err) {
-    return handleError(res, err, 'Failed to delete wallet data');
+    return handleError(res, err, 'Failed to delete wallet data', 500);
   }
 };

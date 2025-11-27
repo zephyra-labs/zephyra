@@ -57,6 +57,17 @@ describe("aggregatedActivityController", () => {
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: false }));
     });
 
+    it("should fail if body is missing", async () => {
+      await addAggregatedActivity({} as unknown as Request, res);
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: false }));
+    });
+
+    it("should fail if action is not a string", async () => {
+      const reqBodyInvalid = { account: "0x123", action: 123 };
+      await addAggregatedActivity({ body: reqBodyInvalid } as unknown as Request, res);
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: false }));
+    });
+
     it("should handle service errors", async () => {
       (aggregatedActivityModel.add as jest.Mock).mockRejectedValue(new Error("fail"));
       await addAggregatedActivity({ body: reqBody } as unknown as Request, res);
@@ -85,27 +96,105 @@ describe("aggregatedActivityController", () => {
       await getAggregatedActivityById({ params: {} } as unknown as Request, res);
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: false }));
     });
+
+    it("should handle service errors", async () => {
+      (aggregatedActivityModel.getById as jest.Mock).mockRejectedValue(new Error("fail"));
+      await getAggregatedActivityById({ params: { id: "1" } } as unknown as Request, res);
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: false }));
+    });
   });
 
   // --- getAggregatedActivities ---
   describe("getAggregatedActivities", () => {
     it("should return filtered activities", async () => {
-      const result = { data: [{ id: "1" }], nextStartAfterTimestamp: 12345 };
+      const result: { data: { id: string }[]; nextStartAfterTimestamp: number } = {
+        data: [{ id: "1" }],
+        nextStartAfterTimestamp: 12345,
+      };
       (aggregatedActivityModel.getAll as jest.Mock).mockResolvedValue(result);
 
       const reqQuery = { account: "0x123", limit: "10" };
       await getAggregatedActivities({ query: reqQuery } as unknown as Request, res);
 
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-        data: expect.objectContaining({
-          count: 1,
-          items: [{ id: "1" }],
-          nextStartAfterTimestamp: 12345,
-        }),
+        data: { count: 1, items: [{ id: "1" }], nextStartAfterTimestamp: 12345 },
       }));
     });
 
-    it("should handle errors", async () => {
+    it("should return activities with numeric limit and startAfterTimestamp", async () => {
+      const result = { data: [{ id: "1" }], nextStartAfterTimestamp: 12345 };
+      (aggregatedActivityModel.getAll as jest.Mock).mockResolvedValue(result);
+
+      await getAggregatedActivities(
+        { query: { limit: "10", startAfterTimestamp: "1690000000000" } } as unknown as Request,
+        res,
+      );
+
+      expect(aggregatedActivityModel.getAll).toHaveBeenCalledWith({
+        account: undefined,
+        txHash: undefined,
+        contractAddress: undefined,
+        tags: undefined,
+        limit: 10,
+        startAfterTimestamp: 1690000000000,
+      });
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+        data: { count: 1, items: [{ id: "1" }], nextStartAfterTimestamp: 12345 },
+      }));
+    });
+    
+    it("should parse tags query into array", async () => {
+      (aggregatedActivityModel.getAll as jest.Mock).mockResolvedValue({
+        data: [],
+        nextStartAfterTimestamp: 123,
+      });
+
+      const req = {
+        query: {
+          tags: "urgent,contract,audit",
+        },
+      } as unknown as Request;
+
+      await getAggregatedActivities(req, res);
+
+      expect(aggregatedActivityModel.getAll).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tags: ["urgent", "contract", "audit"],
+        })
+      );
+    });
+    
+    it("should set nextStartAfterTimestamp to null when service returns undefined", async () => {
+      (aggregatedActivityModel.getAll as jest.Mock).mockResolvedValue({
+        data: [{ id: "1" }],
+        nextStartAfterTimestamp: undefined, // <-- intentionally undefined
+      });
+
+      const req = { query: {} } as Request;
+      await getAggregatedActivities(req, res);
+
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: {
+            count: 1,
+            items: [{ id: "1" }],
+            nextStartAfterTimestamp: null,
+          },
+        })
+      );
+    });
+
+    it("should fail if limit is not a number", async () => {
+      await getAggregatedActivities({ query: { limit: "abc" } } as unknown as Request, res);
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: false }));
+    });
+
+    it("should fail if startAfterTimestamp is not a number", async () => {
+      await getAggregatedActivities({ query: { startAfterTimestamp: "abc" } } as unknown as Request, res);
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: false }));
+    });
+
+    it("should handle service errors", async () => {
       (aggregatedActivityModel.getAll as jest.Mock).mockRejectedValue(new Error("fail"));
       await getAggregatedActivities({ query: {} } as unknown as Request, res);
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: false }));
@@ -115,6 +204,7 @@ describe("aggregatedActivityController", () => {
   // --- addAggregatedTag ---
   describe("addAggregatedTag", () => {
     it("should add tag successfully", async () => {
+      (aggregatedActivityModel.getById as jest.Mock).mockResolvedValue({ id: "1" });
       (aggregatedActivityModel.addTag as jest.Mock).mockResolvedValue(true);
 
       await addAggregatedTag({ params: { id: "1" }, body: { tag: "urgent" } } as unknown as Request, res);
@@ -136,11 +226,19 @@ describe("aggregatedActivityController", () => {
       await addAggregatedTag({ params: { id: "1" }, body: { tag: "urgent" } } as unknown as Request, res);
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: false }));
     });
+    
+    it("should fail if logs not found", async () => {
+      (aggregatedActivityModel.getById as jest.Mock).mockResolvedValue(null);
+
+      await addAggregatedTag({ params: { id: "1" }, body: { tag: "urgent" } } as unknown as Request, res);
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: false }));
+    });
   });
 
   // --- removeAggregatedTag ---
   describe("removeAggregatedTag", () => {
     it("should remove tag successfully", async () => {
+      (aggregatedActivityModel.getById as jest.Mock).mockResolvedValue({ id: "1" });
       (aggregatedActivityModel.removeTag as jest.Mock).mockResolvedValue(true);
 
       await removeAggregatedTag({ params: { id: "1" }, query: { tag: "urgent" } } as unknown as Request, res);
@@ -159,6 +257,13 @@ describe("aggregatedActivityController", () => {
 
     it("should handle service errors", async () => {
       (aggregatedActivityModel.removeTag as jest.Mock).mockRejectedValue(new Error("fail"));
+      await removeAggregatedTag({ params: { id: "1" }, query: { tag: "urgent" } } as unknown as Request, res);
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: false }));
+    });
+    
+    it("should fail if logs not found", async () => {
+      (aggregatedActivityModel.getById as jest.Mock).mockResolvedValue(null);
+
       await removeAggregatedTag({ params: { id: "1" }, query: { tag: "urgent" } } as unknown as Request, res);
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: false }));
     });

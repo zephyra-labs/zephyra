@@ -112,7 +112,7 @@ jobs:
       NODE_ENV: test
       FIREBASE_PROJECT_ID: demo-project
       JWT_SECRET: test-secret
-      FIREBASE_CREDENTIALS: ${{ secrets.FIREBASE_CREDENTIALS }}
+      FIREBASE_CREDENTIALS: ${{ secrets.FIREBASE_TOKEN }}
 
     steps:
       - uses: actions/checkout@v4
