@@ -76,4 +76,14 @@ describe('responseHelper', () => {
     expect(res.json).toHaveBeenCalledWith({ success: false, message: 'Custom message' })
     consoleSpy.mockRestore()
   })
+  
+  it('should return "Internal Server Error" if err is not Error and no message provided', () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation()
+    const err = 12345
+    handleError(res as Response, err)
+    expect(consoleSpy).toHaveBeenCalledWith('❌ Error:', err)
+    expect(res.status).toHaveBeenCalledWith(500)
+    expect(res.json).toHaveBeenCalledWith({ success: false, message: 'Internal Server Error' })
+    consoleSpy.mockRestore()
+  })
 })

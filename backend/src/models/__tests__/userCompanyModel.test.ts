@@ -1,18 +1,17 @@
 /**
  * @file userCompanyModel.test.ts
  * @description Unit tests for UserCompanyModel with a robust in-memory Firestore mock.
- * @notes Covers create, read, update, delete, and filtered queries, with full TypeScript type safety.
+ * @notes Fully type-safe, covering create, read, update, delete, filtered queries, and edge cases.
  */
 
 import { UserCompanyModel } from "@/models/userCompanyModel";
-import type { CreateUserCompanyDTO } from "@/types/UserCompany";
+import type { CreateUserCompanyDTO, UserCompanyRole, UserCompanyStatus } from "@/types/UserCompany";
 
 // --- Mock Firestore dependency
 jest.mock("@/config/firebase", () => {
   const dataStore: Record<string, any> = {};
   let idCounter = 1;
 
-  // Shared collection instance to simulate Firestore collection
   const mockCollectionInstance = {
     filters: [] as ((item: any) => boolean)[],
     searchTerm: null as string | null,
@@ -88,7 +87,7 @@ jest.mock("@/config/firebase", () => {
       // Apply filters
       for (const filter of this.filters) items = items.filter(filter);
 
-      // Apply search term
+      // Apply search
       if (this.searchTerm) {
         items = items.filter(item => item.userAddress?.toLowerCase().includes(this.searchTerm!));
       }
@@ -115,7 +114,6 @@ jest.mock("@/config/firebase", () => {
       };
     }),
 
-    // Reset mock state between tests
     __reset: function () {
       this.filters = [];
       this.searchTerm = null;
@@ -126,28 +124,28 @@ jest.mock("@/config/firebase", () => {
     },
   };
 
-  const mockCollection = jest.fn(() => mockCollectionInstance);
-  return { db: { collection: mockCollection }, __dataStore: dataStore };
+  return { db: { collection: jest.fn(() => mockCollectionInstance) }, __dataStore: dataStore };
 });
 
-describe("UserCompanyModel", () => {
-  const now = Date.now();
+// --- Utility for tests
+const now = Date.now();
+const makeDTO = (overrides: Partial<CreateUserCompanyDTO> = {}): CreateUserCompanyDTO => ({
+  userAddress: "0xAAA",
+  companyId: "comp001",
+  role: "staff" as UserCompanyRole,
+  status: "pending" as UserCompanyStatus,
+  joinedAt: now,
+  ...overrides,
+});
 
-  // Utility to create DTOs with default values
-  const makeDTO = (overrides: Partial<CreateUserCompanyDTO> = {}): CreateUserCompanyDTO => ({
-    userAddress: "0xAAA",
-    companyId: "comp001",
-    joinedAt: now,
-    ...overrides,
-  });
+beforeEach(() => {
+  const mockFirebase = jest.requireMock("@/config/firebase");
+  Object.keys(mockFirebase.__dataStore).forEach(k => delete mockFirebase.__dataStore[k]);
+  mockFirebase.db.collection().__reset();
+});
 
-  beforeEach(() => {
-    // Reset in-memory store and collection state
-    const mockFirebase = jest.requireMock("@/config/firebase");
-    for (const key of Object.keys(mockFirebase.__dataStore)) delete mockFirebase.__dataStore[key];
-    mockFirebase.db.collection().__reset();
-  });
-
+// --- CRUD & Filter Tests
+describe("UserCompanyModel - CRUD & Filtering", () => {
   it("should create a new user-company relation", async () => {
     const result = await UserCompanyModel.create(makeDTO());
     expect(result).toMatchObject({ userAddress: "0xAAA", companyId: "comp001", role: "staff", status: "pending" });
@@ -198,7 +196,7 @@ describe("UserCompanyModel", () => {
   });
 
   it("should return null if updating non-existing relation", async () => {
-    const updated = await UserCompanyModel.update("fakeId", { role: "admin" });
+    const updated = await UserCompanyModel.update("fakeId", { role: "admin" as UserCompanyRole });
     expect(updated).toBeNull();
   });
 
@@ -239,5 +237,52 @@ describe("UserCompanyModel", () => {
 
     expect(result.data.length).toBe(1);
     expect(result.data[0].userAddress).toBe("0xABC111");
+  });
+});
+
+// --- Edge Case Tests
+describe("UserCompanyModel - edge cases", () => {
+  const makeEdgeDTO = (overrides: Partial<CreateUserCompanyDTO> = {}): CreateUserCompanyDTO => ({
+    userAddress: "0xEDGE",
+    companyId: "compEDGE",
+    role: "staff",
+    status: "pending",
+    joinedAt: Date.now(),
+    ...overrides,
+  });
+
+  it("should default joinedAt to current timestamp if missing", async () => {
+    const created = await UserCompanyModel.create(makeEdgeDTO({ joinedAt: undefined } as unknown as CreateUserCompanyDTO));
+    expect(created.joinedAt).toBeDefined();
+    expect(typeof created.joinedAt).toBe("number");
+  });
+
+  it("should filter by status correctly", async () => {
+    await UserCompanyModel.create(makeEdgeDTO({ userAddress: "0xAAA", status: "active" }));
+    await UserCompanyModel.create(makeEdgeDTO({ userAddress: "0xBBB", status: "pending" }));
+    await UserCompanyModel.create(makeEdgeDTO({ userAddress: "0xCCC", status: "pending" }));
+    
+    const result = await UserCompanyModel.getAllFiltered({ page: 1, limit: 10, status: "pending" });
+    expect(result.data.length).toBe(2);
+    expect(result.data.every(r => r.status === "pending")).toBe(true);
+  });
+
+  it("should default role to 'staff' if missing", async () => {
+    const dto = makeEdgeDTO({ role: undefined } as unknown as Partial<CreateUserCompanyDTO>);
+    const created = await UserCompanyModel.create(dto as CreateUserCompanyDTO);
+    expect(created.role).toBe("staff");
+  });
+
+  it("should default status to 'pending' if missing", async () => {
+    const dto = makeEdgeDTO({ status: undefined } as unknown as Partial<CreateUserCompanyDTO>);
+    const created = await UserCompanyModel.create(dto as CreateUserCompanyDTO);
+    expect(created.status).toBe("pending");
+  });
+
+  it("should default both role and status when both missing", async () => {
+    const dto = makeEdgeDTO({ role: undefined, status: undefined } as unknown as Partial<CreateUserCompanyDTO>);
+    const created = await UserCompanyModel.create(dto as CreateUserCompanyDTO);
+    expect(created.role).toBe("staff");
+    expect(created.status).toBe("pending");
   });
 });

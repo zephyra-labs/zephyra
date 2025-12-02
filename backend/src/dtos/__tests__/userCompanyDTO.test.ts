@@ -19,6 +19,8 @@ describe("UserCompanyDTO", () => {
     onchainJoinedAt: 3000,
   };
 
+  /* -------------------------- Constructor Tests -------------------------- */
+
   it("should throw if userAddress is missing", () => {
     expect(() => new UserCompanyDTO({ companyId: "comp1" } as any)).toThrow(/userAddress is required/);
   });
@@ -47,6 +49,8 @@ describe("UserCompanyDTO", () => {
     expect(typeof dto.joinedAt).toBe("number");
   });
 
+  /* ------------------------- toFirestore Tests --------------------------- */
+
   it("should convert to Firestore object", () => {
     const dto = new UserCompanyDTO(baseData);
     const fsObj = dto.toFirestore();
@@ -62,7 +66,9 @@ describe("UserCompanyDTO", () => {
     });
   });
 
-  it("should create from CreateUserCompanyDTO", () => {
+  /* ---------------------- fromCreateDTO Tests ---------------------------- */
+
+  it("should create from CreateUserCompanyDTO with provided values", () => {
     const createDto: CreateUserCompanyDTO = {
       userAddress: "0xabc",
       companyId: "comp1",
@@ -79,6 +85,22 @@ describe("UserCompanyDTO", () => {
     expect(dto.txHash).toBe("0xhash");
     expect(typeof dto.joinedAt).toBe("number");
   });
+
+  it("fromCreateDTO should apply default role/status/joinedAt when missing", () => {
+    const createDto: CreateUserCompanyDTO = {
+      userAddress: "0xabc",
+      companyId: "comp1",
+      txHash: "0xhash",
+      joinedAt: Date.now(),
+    };
+    const dto = UserCompanyDTO.fromCreateDTO(createDto);
+    expect(dto.role).toBe("staff");       // default applied
+    expect(dto.status).toBe("pending");   // default applied
+    expect(typeof dto.joinedAt).toBe("number"); // joinedAt defaulted
+    expect(dto.txHash).toBe("0xhash");
+  });
+
+  /* ---------------------- applyUpdate Tests ----------------------------- */
 
   it("should apply updates correctly", () => {
     const dto = new UserCompanyDTO(baseData);
@@ -97,11 +119,20 @@ describe("UserCompanyDTO", () => {
     expect(dto.updatedAt).toBe(5000);
   });
 
-  it("should apply updates with default updatedAt if missing", () => {
+  it("applyUpdate should apply updatedAt default if not provided", () => {
     const dto = new UserCompanyDTO(baseData);
     const updateDto: UpdateUserCompanyDTO = { role: "staff" };
     dto.applyUpdate(updateDto);
     expect(dto.role).toBe("staff");
-    expect(typeof dto.updatedAt).toBe("number");
+    expect(typeof dto.updatedAt).toBe("number"); // default timestamp applied
+  });
+
+  it("applyUpdate should not overwrite unspecified fields", () => {
+    const dto = new UserCompanyDTO(baseData);
+    const updateDto: UpdateUserCompanyDTO = { txHash: "0xnewhash" };
+    dto.applyUpdate(updateDto);
+    expect(dto.role).toBe("admin");        // original retained
+    expect(dto.status).toBe("active");     // original retained
+    expect(dto.txHash).toBe("0xnewhash");  // updated
   });
 });

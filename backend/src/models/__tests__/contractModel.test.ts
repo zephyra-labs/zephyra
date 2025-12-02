@@ -6,7 +6,6 @@
 import { ContractModel } from "../contractModel";
 import type { ContractLogs, ContractLogEntry, ContractState } from "../../types/Contract";
 
-// --- Mock Firebase Admin FieldValue.arrayUnion ---
 jest.mock("firebase-admin", () => ({
   firestore: {
     FieldValue: {
@@ -15,7 +14,6 @@ jest.mock("firebase-admin", () => ({
   },
 }));
 
-// Mock getContractRoles
 jest.mock("@/utils/getContractRoles", () => ({
   getContractRoles: jest.fn().mockResolvedValue({
     exporter: "0xuser1",
@@ -24,7 +22,6 @@ jest.mock("@/utils/getContractRoles", () => ({
   }),
 }));
 
-// --- Jest mock for Firebase ---
 jest.mock("../../config/firebase", () => {
   const __collections: Record<string, Record<string, ContractLogs>> = {};
 
@@ -67,7 +64,6 @@ jest.mock("../../config/firebase", () => {
   return { db: { collection: (name: string) => mockCollection(name), __collections } };
 });
 
-// --- Tests ---
 describe("ContractModel Full Coverage", () => {
   const collectionName = "contractLogs";
   const contractAddress = "0xabc123";
@@ -185,7 +181,7 @@ describe("ContractModel Full Coverage", () => {
     const stored = db.__collections[collectionName][contractAddress];
 
     expect(stored).toBeDefined();
-    expect(stored.history.length).toBe(1); // history tetap
+    expect(stored.history.length).toBe(1);
     expect(stored.state.status).toBe("deploy");
   });
 
@@ -225,5 +221,75 @@ describe("ContractModel Full Coverage", () => {
     expect(exporter[0].role).toBe("Exporter");
     expect(importer[0].role).toBe("Importer");
     expect(logistics[0].role).toBe("Logistics");
+  });
+
+  it("should return null lastAction if history is empty", async () => {
+    const { db } = jest.requireMock("../../config/firebase");
+    db.__collections[collectionName][contractAddress] = { contractAddress, history: [], state: {} };
+
+    const status = await ContractModel.getContractStepStatus(contractAddress);
+    expect(status?.lastAction).toBeNull();
+  });
+
+  it("should update state correctly even if state was initially undefined", async () => {
+    const { db } = jest.requireMock("../../config/firebase");
+    db.__collections[collectionName][contractAddress] = { contractAddress, history: [] };
+
+    const updatedState = { status: "deploy", currentStage: "2" };
+    const merged = await ContractModel.updateContractState(contractAddress, updatedState);
+
+    expect(merged.status).toBe("deploy");
+    expect(merged.currentStage).toBe("2");
+    expect(db.__collections[collectionName][contractAddress].state).toEqual(expect.objectContaining(updatedState));
+  });
+
+  it("should default history to empty array if undefined in getContractStepStatus", async () => {
+    const { db } = jest.requireMock("../../config/firebase");
+    db.__collections[collectionName][contractAddress] = { contractAddress, history: undefined, state: {} };
+
+    const status = await ContractModel.getContractStepStatus(contractAddress);
+
+    expect(status).toBeDefined();
+    expect(status?.lastAction).toBeNull();
+    expect(status?.stepStatus.deposit).toBe(false);
+  });
+
+  it("should include contract only if user has a role (covers if(role))", async () => {
+    const { db } = jest.requireMock("../../config/firebase");
+
+    const contractWithRole = "0xrole123";
+    db.__collections[collectionName][contractWithRole] = {
+      contractAddress: contractWithRole,
+      history: [],
+      state: {},
+    };
+
+    const contractNoRole = "0xnorole123";
+    db.__collections[collectionName][contractNoRole] = {
+      contractAddress: contractNoRole,
+      history: [],
+      state: {},
+    };
+
+    const { getContractRoles } = jest.requireMock("@/utils/getContractRoles");
+    (getContractRoles as jest.Mock)
+      .mockImplementationOnce(async () => ({
+        exporter: "0xuserWithRole",
+        importer: "0xother",
+        logistics: ["0xanother"],
+      }))
+      .mockImplementationOnce(async () => ({
+        exporter: "0xsomeoneElse",
+        importer: "0xother",
+        logistics: ["0xanother"],
+      }));
+
+    const contractsWithRole = await ContractModel.getContractsByUser("0xuserWithRole");
+    expect(contractsWithRole.length).toBe(1);
+    expect(contractsWithRole[0].contractAddress).toBe(contractWithRole);
+    expect(["Exporter", "Importer", "Logistics"]).toContain(contractsWithRole[0].role);
+
+    const contractsNoRole = await ContractModel.getContractsByUser("0xnoRoleUser");
+    expect(contractsNoRole.length).toBe(0);
   });
 });

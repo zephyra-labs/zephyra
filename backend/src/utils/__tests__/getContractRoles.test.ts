@@ -40,6 +40,34 @@ describe('getContractRoles', () => {
   });
 
   /**
+   * @test missing history field
+   * Should return empty roles if snapshot.docs[0].data().history is undefined
+   */
+  it('should return empty roles if history is missing', async () => {
+    mockQuery.get.mockResolvedValue({
+      empty: false,
+      docs: [{ data: () => ({ /* no history field */ }) }],
+    });
+
+    const result: ContractRoles = await getContractRoles('0xContract');
+    expect(result).toEqual({ importer: '', exporter: '', logistics: '' });
+  });
+
+  /**
+   * @test null history field
+   * Should return empty roles if snapshot.docs[0].data().history is null
+   */
+  it('should return empty roles if history is null', async () => {
+    mockQuery.get.mockResolvedValue({
+      empty: false,
+      docs: [{ data: () => ({ history: null }) }],
+    });
+
+    const result: ContractRoles = await getContractRoles('0xContract');
+    expect(result).toEqual({ importer: '', exporter: '', logistics: '' });
+  });
+
+  /**
    * @test deploy log missing
    * Should return empty roles if deploy log is missing
    */

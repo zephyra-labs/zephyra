@@ -94,15 +94,21 @@ export class ContractModel {
 
     for (const doc of snapshot.docs) {
       const data = doc.data() as ContractLogs;
-
       const roles = await getContractRoles(doc.id);
 
-      if (roles.exporter === userAddress) {
-        contracts.push({ ...data, contractAddress: doc.id, role: "Exporter" });
-      } else if (roles.importer === userAddress) {
-        contracts.push({ ...data, contractAddress: doc.id, role: "Importer" });
-      } else if (roles.logistics?.includes(userAddress)) {
-        contracts.push({ ...data, contractAddress: doc.id, role: "Logistics" });
+      const roleMap: Record<string, "Exporter" | "Importer" | "Logistics" | null> = {
+        [roles.exporter]: "Exporter",
+        [roles.importer]: "Importer",
+      };
+
+      let role: "Exporter" | "Importer" | "Logistics" | null = roleMap[userAddress] ?? null;
+
+      if (!role && roles.logistics?.includes(userAddress)) {
+        role = "Logistics";
+      }
+
+      if (role) {
+        contracts.push({ ...data, contractAddress: doc.id, role });
       }
     }
 

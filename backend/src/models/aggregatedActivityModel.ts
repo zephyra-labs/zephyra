@@ -1,5 +1,5 @@
 /**
- * @file aggregatedActivityLogsModel.ts
+ * @file aggregatedActivityModel.ts
  * @description Firestore model for managing aggregated activity logs with filtering, pagination, and tagging.
  */
 
@@ -18,20 +18,24 @@ export default {
    * @returns The newly created AggregatedActivityLog
    */
   add: async (data: Partial<AggregatedActivityLog>): Promise<AggregatedActivityLog> => {
-    const dto = new ActivityLogDTO(data)
+    // Assign timestamp default sebelum validasi
+    const dto = new ActivityLogDTO({
+      ...data,
+      timestamp: data.timestamp ?? Date.now(),
+    })
     dto.validate()
 
     const entry: AggregatedActivityLog = {
       id: `${dto.account}_${dto.timestamp}`,
-      timestamp: dto.timestamp ?? Date.now(),
+      timestamp: dto.timestamp,
       type: dto.type,
       action: dto.action,
       account: dto.account,
-      accountLower: dto.account,
+      accountLower: dto.account.toLowerCase(),
       txHash: dto.txHash,
-      txHashLower: dto.txHash,
+      txHashLower: dto.txHash?.toLowerCase(),
       contractAddress: dto.contractAddress,
-      contractLower: dto.contractAddress,
+      contractLower: dto.contractAddress?.toLowerCase(),
       extra: dto.extra ?? undefined,
       onChainInfo: dto.onChainInfo,
       tags: [],
@@ -67,26 +71,22 @@ export default {
   }): Promise<{ data: AggregatedActivityLog[]; nextStartAfterTimestamp: number | null }> => {
     let query: FirebaseFirestore.Query = collection.orderBy('timestamp', 'desc')
 
-    if (filter?.account) query = query.where('accountLower', '==', filter.account)
-    if (filter?.txHash) query = query.where('txHashLower', '==', filter.txHash)
-    if (filter?.contractAddress) query = query.where('contractLower', '==', filter.contractAddress)
+    if (filter?.account) query = query.where('accountLower', '==', filter.account.toLowerCase())
+    if (filter?.txHash) query = query.where('txHashLower', '==', filter.txHash.toLowerCase())
+    if (filter?.contractAddress) query = query.where('contractLower', '==', filter.contractAddress.toLowerCase())
 
-    // Filter by first tag for Firestore query
     if (filter?.tags?.length) query = query.where('tags', 'array-contains', filter.tags[0])
-
     if (filter?.startAfterTimestamp) query = query.startAfter(filter.startAfterTimestamp)
     if (filter?.limit) query = query.limit(filter.limit)
 
     const snapshot = await query.get()
     let data = snapshot.docs.map(doc => doc.data() as AggregatedActivityLog)
 
-    // Filter additional tags (AND logic)
     if (filter?.tags?.length && filter.tags.length > 1) {
       data = data.filter(log => filter.tags!.every(tag => log.tags!.includes(tag)))
     }
 
     const nextStartAfterTimestamp = data.length ? data[data.length - 1].timestamp : null
-
     return { data, nextStartAfterTimestamp }
   },
 

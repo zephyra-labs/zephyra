@@ -167,6 +167,18 @@ describe("UserCompanyService", () => {
         UserCompanyService.deleteUserCompany("relX"),
       ).rejects.toThrow("Relation not found");
     });
+    
+    it("should return false and not notify if delete fails", async () => {
+      const existingRelation = { ...mockRelation };
+      (UserCompanyModel.getById as jest.Mock).mockResolvedValue(existingRelation);
+      (UserCompanyModel.delete as jest.Mock).mockResolvedValue(false);
+
+      const result = await UserCompanyService.deleteUserCompany("rel1");
+
+      expect(result).toBe(false);
+      expect(UserCompanyModel.delete).toHaveBeenCalledWith("rel1");
+      expect(notifyWithAdmins).not.toHaveBeenCalled();
+    });
   });
 
   // ───────────────────────────────────────────────

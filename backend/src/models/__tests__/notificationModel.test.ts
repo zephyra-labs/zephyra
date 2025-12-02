@@ -187,4 +187,24 @@ describe("NotificationModel", () => {
     const result = await NotificationModel.delete("nope");
     expect(result).toBe(false);
   });
+  
+  it("should apply default values for optional fields if not provided", async () => {
+    const now = Date.now();
+    const notif = {
+      id: "n9",
+      userId: "userDefault",
+      type: "system" as NotificationType,
+      title: "Default Test",
+      message: "Testing defaults",
+      // intentionally omit executorId, read, createdAt, updatedAt, extraData
+    } as Partial<Notification>;
+
+    const created = await NotificationModel.create(notif as Notification);
+
+    expect(created.read).toBe(false);
+    expect(typeof created.createdAt).toBe("number");
+    expect(typeof created.updatedAt).toBe("number");
+    expect(created.extraData).toEqual({});
+    expect(created.executorId).toBeUndefined();
+  });
 });

@@ -17,14 +17,14 @@ import type { TradeRecord } from "../types/Trade";
 /* -------------------------------------------------------------------------- */
 
 export class MainReportDTO {
-  stats!: MainReportResponse["stats"];
-  trades!: MainReportResponse["trades"];
-  documents!: MainReportResponse["documents"];
-  contracts!: MainReportResponse["contracts"];
-  wallets!: MainReportResponse["wallets"];
-  activities!: MainReportResponse["activities"];
+  stats?: MainReportResponse["stats"];
+  trades?: MainReportResponse["trades"];
+  documents?: MainReportResponse["documents"];
+  contracts?: MainReportResponse["contracts"];
+  wallets?: MainReportResponse["wallets"];
+  activities?: MainReportResponse["activities"];
 
-  constructor(data: Partial<MainReportResponse>) {
+  constructor(data: Partial<MainReportResponse> = {}) {
     Object.assign(this, data);
   }
 
@@ -37,17 +37,15 @@ export class MainReportDTO {
     if (!this.activities) throw new Error("MainReport activities is required");
   }
 
-  /**
-   * Transform DTO to plain object for response
-   */
   toResponse(): MainReportResponse {
+    this.validate(); // pastikan semua ada sebelum dikembalikan
     return {
-      stats: this.stats,
-      trades: this.trades,
-      documents: this.documents,
-      contracts: this.contracts,
-      wallets: this.wallets,
-      activities: this.activities,
+      stats: this.stats!,
+      trades: this.trades!,
+      documents: this.documents!,
+      contracts: this.contracts!,
+      wallets: this.wallets!,
+      activities: this.activities!,
     };
   }
 }
@@ -58,9 +56,9 @@ export class MainReportDTO {
 
 export class TradeHistoryDTO {
   items: TradeRecord[] = [];
-  pagination!: TradeHistoryResponse["pagination"];
+  pagination?: TradeHistoryResponse["pagination"];
 
-  constructor(data: Partial<TradeHistoryResponse>) {
+  constructor(data: Partial<TradeHistoryResponse> = {}) {
     Object.assign(this, data);
   }
 
@@ -70,9 +68,10 @@ export class TradeHistoryDTO {
   }
 
   toResponse(): TradeHistoryResponse {
+    this.validate();
     return {
       items: this.items,
-      pagination: this.pagination,
+      pagination: this.pagination!,
     };
   }
 }
@@ -82,12 +81,12 @@ export class TradeHistoryDTO {
 /* -------------------------------------------------------------------------- */
 
 export class PerformanceReportDTO {
-  totals!: PerformanceReport["totals"];
-  metrics!: PerformanceReport["metrics"];
-  participants!: PerformanceReport["participants"];
-  timeline!: PerformanceReport["timeline"];
+  totals?: PerformanceReport["totals"];
+  metrics?: PerformanceReport["metrics"];
+  participants?: PerformanceReport["participants"];
+  timeline?: PerformanceReport["timeline"];
 
-  constructor(data: Partial<PerformanceReport>) {
+  constructor(data: Partial<PerformanceReport> = {}) {
     Object.assign(this, data);
   }
 
@@ -99,11 +98,12 @@ export class PerformanceReportDTO {
   }
 
   toResponse(): PerformanceReport {
+    this.validate();
     return {
-      totals: this.totals,
-      metrics: this.metrics,
-      participants: this.participants,
-      timeline: this.timeline,
+      totals: this.totals!,
+      metrics: this.metrics!,
+      participants: this.participants!,
+      timeline: this.timeline!,
     };
   }
 }

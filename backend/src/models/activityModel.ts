@@ -12,10 +12,22 @@ import ActivityLogDTO from '../dtos/activityDTO';
 const getActivityCollection = () => db.collection('activityLogs');
 const getAggregatedCollection = () => db.collection('aggregatedActivityLogs');
 
+/** Helper to apply pagination to a query */
+const applyPagination = (
+  query: FirebaseFirestore.Query,
+  options?: { limit?: number; startAfterTimestamp?: number }
+) => {
+  if (options?.startAfterTimestamp !== undefined) {
+    query = query.startAfter(options.startAfterTimestamp);
+  }
+  if (options?.limit !== undefined) {
+    query = query.limit(options.limit);
+  }
+  return query;
+};
+
 /**
  * Add a new activity log and automatically update aggregated logs
- * @param data Partial activity log data with optional tags
- * @returns The newly created ActivityLog
  */
 export const addActivityLog = async (
   data: Partial<ActivityLog> & { tags?: string[] }
@@ -62,7 +74,6 @@ export const addActivityLog = async (
 
 /**
  * Get all accounts that have activity logs
- * @returns Array of account strings
  */
 export const getAllAccounts = async (): Promise<string[]> => {
   const snapshot = await getActivityCollection().get();
@@ -71,9 +82,6 @@ export const getAllAccounts = async (): Promise<string[]> => {
 
 /**
  * Get activity logs for a specific account with pagination
- * @param account Account address
- * @param options Pagination options
- * @returns Array of ActivityLog
  */
 export const getActivityByAccount = async (
   account: string,
@@ -84,8 +92,7 @@ export const getActivityByAccount = async (
     .collection('history')
     .orderBy('timestamp', 'desc');
 
-  if (options?.startAfterTimestamp) query = query.startAfter(options.startAfterTimestamp);
-  if (options?.limit) query = query.limit(options.limit);
+  query = applyPagination(query, options);
 
   const snapshot = await query.get();
   return snapshot.docs.map(doc => doc.data() as ActivityLog);
@@ -93,9 +100,6 @@ export const getActivityByAccount = async (
 
 /**
  * Get all activity logs globally, with optional filters for account, txHash, or contract
- * Supports pagination by timestamp and limit
- * @param filter Optional filters and pagination
- * @returns Array of ActivityLog
  */
 export const getAllActivities = async (filter?: {
   account?: string;
@@ -115,8 +119,7 @@ export const getAllActivities = async (filter?: {
       .collection('history')
       .orderBy('timestamp', 'desc');
 
-    if (startAfter) query = query.startAfter(startAfter);
-    if (limit) query = query.limit(limit);
+    query = applyPagination(query, { limit, startAfterTimestamp: startAfter });
 
     const snapshot = await query.get();
     logs = snapshot.docs.map(doc => doc.data() as ActivityLog);
@@ -130,8 +133,7 @@ export const getAllActivities = async (filter?: {
         .collection('history')
         .orderBy('timestamp', 'desc');
 
-      if (startAfter) q = q.startAfter(startAfter);
-      if (limit) q = q.limit(limit);
+      q = applyPagination(q, { limit, startAfterTimestamp: startAfter });
 
       const snap = await q.get();
       return snap.docs.map(doc => doc.data() as ActivityLog);
@@ -146,15 +148,11 @@ export const getAllActivities = async (filter?: {
 
   logs.sort((a, b) => b.timestamp - a.timestamp);
 
-  if (logs.length > limit) logs = logs.slice(0, limit);
-
-  return logs;
+  return logs.slice(0, limit);
 };
 
 /**
  * Get aggregated logs globally with optional filtering and pagination
- * @param filter Optional filter object
- * @returns Array of AggregatedActivityLog
  */
 export const getAggregatedActivities = async (filter?: {
   account?: string;
@@ -170,8 +168,8 @@ export const getAggregatedActivities = async (filter?: {
   if (filter?.txHash) query = query.where('txHashLower', '==', filter.txHash?.toLowerCase());
   if (filter?.contractAddress) query = query.where('contractLower', '==', filter.contractAddress?.toLowerCase());
   if (filter?.tags?.length) query = query.where('tags', 'array-contains', filter.tags[0]);
-  if (filter?.startAfterTimestamp) query = query.startAfter(filter.startAfterTimestamp);
-  if (filter?.limit) query = query.limit(filter.limit);
+
+  query = applyPagination(query, { limit: filter?.limit, startAfterTimestamp: filter?.startAfterTimestamp });
 
   const snapshot = await query.get();
   let data = snapshot.docs.map(doc => doc.data() as AggregatedActivityLog);

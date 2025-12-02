@@ -119,6 +119,19 @@ describe("TradeService", () => {
       await expect(TradeService.updateStatus("tradeX", "completed"))
         .rejects.toThrow("Trade not found");
     });
+    
+    it("should update status without notifying if no participants", async () => {
+      const emptyTrade = { ...mockTrade, participants: [] };
+      (TradeModel.getTradeById as jest.Mock).mockResolvedValue(emptyTrade);
+      (TradeModel.updateTradeStatus as jest.Mock).mockResolvedValue(undefined);
+
+      const newStatus: TradeStatus = "inProgress";
+      const result = await TradeService.updateStatus("trade1", newStatus);
+
+      expect(result.status).toBe(newStatus);
+      expect(TradeModel.updateTradeStatus).toHaveBeenCalledWith("trade1", newStatus);
+      expect(notifyUsers).not.toHaveBeenCalled();
+    });
   });
 
   describe("getAllTrades", () => {

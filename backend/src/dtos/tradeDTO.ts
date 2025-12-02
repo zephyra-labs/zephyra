@@ -1,5 +1,5 @@
 /**
- * @file TradeDTO.ts
+ * @file tradeDTO.ts
  * @description DTO for TradeRecord entity including validation and transformation for storage.
  */
 
@@ -10,43 +10,46 @@ import type { TradeRecord, TradeParticipant, TradeStatus } from '../types/Trade'
  */
 export default class TradeDTO {
   /** Unique trade ID */
-  id!: string;
+  id: string;
 
   /** Optional smart contract address */
   contractAddress?: string;
 
   /** Participants in the trade */
-  participants: TradeParticipant[] = [];
+  participants: TradeParticipant[];
 
   /** Current trade status */
-  status!: TradeStatus;
+  status: TradeStatus;
 
   /** Optional current stage index */
   currentStage?: number;
 
   /** Timestamp of creation */
-  createdAt!: number;
+  createdAt: number;
 
   /** Optional timestamp of last update */
   updatedAt?: number;
 
   /**
    * Constructor for TradeDTO
-   * @param {Partial<TradeRecord> & { id?: string }} data Partial trade record data
+   * @param data Partial trade record data, may include id
    */
-  constructor(data: Partial<TradeRecord> & { id?: string }) {
-    Object.assign(this, data);
-    if (!this.createdAt) this.createdAt = Date.now();
-    if (!this.id) this.id = data.id ?? crypto.randomUUID();
+  constructor(data: Partial<TradeRecord> & { id?: string } = {}) {
+    this.id = data.id ?? crypto.randomUUID();
+    this.contractAddress = data.contractAddress;
+    this.participants = data.participants ?? [];
+    this.status = data.status!;
+    this.currentStage = data.currentStage;
+    this.createdAt = data.createdAt ?? Date.now();
+    this.updatedAt = data.updatedAt;
   }
 
   /**
    * Validate required fields
-   * @throws {Error} If id, participants, or status are missing or invalid
    */
   validate(): void {
     if (!this.id) throw new Error('TradeRecord id is required');
-    if (!this.participants || !Array.isArray(this.participants) || this.participants.length === 0) {
+    if (!Array.isArray(this.participants) || this.participants.length === 0) {
       throw new Error('At least one participant is required');
     }
     if (!this.status) throw new Error('Trade status is required');
@@ -54,17 +57,17 @@ export default class TradeDTO {
 
   /**
    * Transform DTO into a TradeRecord ready for storage
-   * @returns {TradeRecord} TradeRecord object
    */
   toTradeRecord(): TradeRecord {
+    this.validate(); // pastikan semua required fields valid
     return {
       id: this.id,
       contractAddress: this.contractAddress,
       participants: this.participants.map(p => ({
         address: p.address,
+        role: p.role,
         kycVerified: p.kycVerified ?? false,
         walletConnected: p.walletConnected ?? false,
-        role: p.role,
       })),
       status: this.status,
       currentStage: this.currentStage,

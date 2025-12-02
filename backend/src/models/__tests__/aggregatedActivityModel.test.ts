@@ -1,6 +1,6 @@
 /**
  * @file aggregatedActivityModel.test.ts
- * @description Full coverage tests for aggregatedActivityModel (patched types).
+ * @description Full coverage tests for aggregatedActivityModel with fully working Firestore mock.
  */
 
 import aggregatedActivityModel from "../aggregatedActivityModel"
@@ -24,19 +24,18 @@ jest.mock("../../config/firebase", () => {
   const applyFieldOps = (oldArr: any[] = [], ops: any) => {
     if (!ops) return oldArr
     if (ops.__op === "arrayUnion") return [...new Set([...(oldArr || []), ops.value])]
-    if (ops.__op === "arrayRemove") return (oldArr || []).filter((x) => x !== ops.value)
+    if (ops.__op === "arrayRemove") return (oldArr || []).filter(x => x !== ops.value)
     return oldArr
   }
 
   const filterDocs = (docs: any[], filters: any[]) => {
-    return docs.filter((doc) =>
+    return docs.filter(doc =>
       filters.every(({ field, op, val }) => {
         const dataVal = doc[field]
         if (op === "==") return dataVal === val
-        if (op === "array-contains")
-          return Array.isArray(dataVal) && dataVal.includes(val)
-        if (Array.isArray(val))
-          return Array.isArray(dataVal) && val.every((v: any) => dataVal.includes(v))
+        if (op === ">") return dataVal > val
+        if (op === "array-contains") return Array.isArray(dataVal) && dataVal.includes(val)
+        if (Array.isArray(val)) return Array.isArray(dataVal) && val.every(v => dataVal.includes(v))
         return true
       })
     )
@@ -45,24 +44,27 @@ jest.mock("../../config/firebase", () => {
   interface QueryMock {
     get: () => Promise<{ docs: { id: string; data: () => any }[] }>
     where: (field: string, op: string, val: any) => QueryMock
-    orderBy: (field: string, dir?: string) => QueryMock
+    orderBy: (field: string, dir?: "asc" | "desc") => QueryMock
     startAfter: (timestamp: number) => QueryMock
     limit: (n: number) => QueryMock
   }
 
-  const mockQuery = (col: string, baseData: any[], appliedFilters: any[] = []): QueryMock => ({
-    where: (field: string, op: string, val: any) =>
-      mockQuery(col, baseData, [...appliedFilters, { field, op, val }]),
-    orderBy: () => mockQuery(col, baseData, appliedFilters),
-    startAfter: () => mockQuery(col, baseData, appliedFilters),
-    limit: () => mockQuery(col, baseData, appliedFilters),
-    get: jest.fn(async () => {
-      const filtered = filterDocs(baseData, appliedFilters)
-      return {
-        docs: filtered.map((d) => ({ id: d.id || "", data: () => d })),
-      }
-    }),
-  })
+  const mockQuery = (col: string, baseData: any[], appliedFilters: any[] = []): QueryMock => {
+    const self: QueryMock = {
+      where: (field: string, op: string, val: any) =>
+        mockQuery(col, baseData, [...appliedFilters, { field, op, val }]),
+      orderBy: (field: string, dir?: "asc" | "desc") => self,
+      startAfter: (timestamp: number) =>
+        mockQuery(col, baseData, [...appliedFilters, { field: "timestamp", op: ">", val: timestamp }]),
+      limit: (n: number) => self,
+      get: jest.fn(async () => {
+        let filtered = filterDocs(baseData, appliedFilters)
+        filtered = filtered.sort((a, b) => b.timestamp - a.timestamp) // always desc
+        return { docs: filtered.map(d => ({ id: d.id || "", data: () => d })) }
+      }),
+    }
+    return self
+  }
 
   const mockDoc = (col: string, id: string) => ({
     set: jest.fn(async (data: any) => {
@@ -86,19 +88,21 @@ jest.mock("../../config/firebase", () => {
     }),
   })
 
-  const mockCollection = (col: string): any => ({
-    doc: (id: string) => mockDoc(col, id),
-    where: (field: string, op: string, val: any) => mockQuery(col, Object.values(__collections[col] || {}), [{ field, op, val }]),
-    orderBy: jest.fn(() => mockCollection(col)),
-    startAfter: jest.fn(() => mockCollection(col)),
-    limit: jest.fn(() => mockCollection(col)),
-    get: jest.fn(async () => ({
-      docs: Object.entries(__collections[col] || {}).map(([id, data]) => ({
-        id,
-        data: () => data,
+  const mockCollection = (col: string): any => {
+    const self = {
+      doc: (id: string) => mockDoc(col, id),
+      where: (field: string, op: string, val: any) =>
+        mockQuery(col, Object.values(__collections[col] || {}), [{ field, op, val }]),
+      orderBy: (field: string, dir?: "asc" | "desc") => self,
+      startAfter: (timestamp: number) =>
+        mockQuery(col, Object.values(__collections[col] || {}), [{ field: "timestamp", op: ">", val: timestamp }]),
+      limit: (n: number) => self,
+      get: jest.fn(async () => ({
+        docs: Object.entries(__collections[col] || {}).map(([id, data]) => ({ id, data: () => data })),
       })),
-    })),
-  })
+    }
+    return self
+  }
 
   return { db: { collection: (name: string) => mockCollection(name), __collections } }
 })
@@ -191,5 +195,43 @@ describe("aggregatedActivityModel", () => {
 
   it("should throw when updating tag on non-existing log", async () => {
     await expect(aggregatedActivityModel.addTag("invalid", "t")).rejects.toThrow()
+  })
+
+  it("should auto-assign timestamp if not provided", async () => {
+    const entry = await aggregatedActivityModel.add({
+      account: "0xAutoTs",
+      type: "onChain",
+      action: "deploy",
+      txHash: "0xTx",
+      contractAddress: "0xCA"
+    })
+    expect(entry.timestamp).toBeDefined()
+    expect(typeof entry.timestamp).toBe("number")
+  })
+
+  it("should respect startAfterTimestamp filter in getAll", async () => {
+    const now = Date.now()
+    const entry1 = await aggregatedActivityModel.add({ ...baseData, account: "0xStart1", timestamp: now - 1000 })
+    const entry2 = await aggregatedActivityModel.add({ ...baseData, account: "0xStart2", timestamp: now })
+
+    const res = await aggregatedActivityModel.getAll({ startAfterTimestamp: now - 500 })
+    expect(res.data.some(d => d.id === entry1.id)).toBe(false)
+    expect(res.data.some(d => d.id === entry2.id)).toBe(true)
+  })
+
+  it("should return correct nextStartAfterTimestamp", async () => {
+    const t1 = Date.now()
+    const t2 = t1 + 1000
+    await aggregatedActivityModel.add({ ...baseData, account: "0xNext1", timestamp: t1 })
+    await aggregatedActivityModel.add({ ...baseData, account: "0xNext2", timestamp: t2 })
+
+    const res = await aggregatedActivityModel.getAll({ limit: 2 })
+    expect(res.nextStartAfterTimestamp).toBe(t2)
+  })
+  
+  it("should return null nextStartAfterTimestamp when no logs match", async () => {
+    const res = await aggregatedActivityModel.getAll({ account: "nonexistent" })
+    expect(res.data).toHaveLength(0)
+    expect(res.nextStartAfterTimestamp).toBeNull()
   })
 })

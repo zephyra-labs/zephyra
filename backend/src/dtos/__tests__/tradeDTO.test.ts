@@ -1,38 +1,52 @@
 /**
  * @file tradeDTO.test.ts
- * @description Unit tests for TradeDTO
+ * @description Unit tests for TradeDTO covering constructor defaults, validation, and transformation
  */
 
 import TradeDTO from "../tradeDTO";
 import type { TradeParticipant, TradeRecord } from "../../types/Trade";
 
 describe("TradeDTO", () => {
-  const participants: TradeParticipant[] = [
+  const participantsFull: TradeParticipant[] = [
     { address: "0xabc", role: "exporter", kycVerified: true, walletConnected: true },
   ];
 
+  const participantsPartial = [
+    { address: "0xabc", role: "exporter" }, // missing kycVerified/walletConnected
+  ] as unknown as TradeParticipant[];
+
   const baseData: Partial<TradeRecord> = {
     contractAddress: "0xcontract",
-    participants,
+    participants: participantsFull,
     status: "draft",
     currentStage: 1,
   };
 
-  it("should generate id and createdAt if missing", () => {
-    const dto = new TradeDTO(baseData);
+  /* -------------------------------------------------------------------------- */
+  /*                             Constructor tests                               */
+  /* -------------------------------------------------------------------------- */
+
+  it("constructor should set defaults if called with no data", () => {
+    const dto = new TradeDTO();
     expect(dto.id).toBeDefined();
     expect(typeof dto.createdAt).toBe("number");
+    expect(dto.participants).toEqual([]);
   });
 
-  it("should preserve provided id and createdAt", () => {
+  it("constructor should preserve provided data", () => {
     const now = Date.now();
     const dto = new TradeDTO({ ...baseData, id: "trade123", createdAt: now });
     expect(dto.id).toBe("trade123");
     expect(dto.createdAt).toBe(now);
+    expect(dto.status).toBe("draft");
   });
 
+  /* -------------------------------------------------------------------------- */
+  /*                             Validate tests                                  */
+  /* -------------------------------------------------------------------------- */
+
   it("validate should throw if id is missing", () => {
-    const dto = new TradeDTO({ ...baseData } as any);
+    const dto = new TradeDTO(baseData as any);
     dto.id = "";
     expect(() => dto.validate()).toThrow(/TradeRecord id is required/);
   });
@@ -50,7 +64,11 @@ describe("TradeDTO", () => {
     expect(() => dto.validate()).toThrow(/Trade status is required/);
   });
 
-  it("toTradeRecord should transform DTO correctly", () => {
+  /* -------------------------------------------------------------------------- */
+  /*                             toTradeRecord tests                             */
+  /* -------------------------------------------------------------------------- */
+
+  it("toTradeRecord should transform DTO correctly with full participant fields", () => {
     const dto = new TradeDTO(baseData);
     const record = dto.toTradeRecord();
     expect(record.id).toBe(dto.id);
@@ -58,11 +76,23 @@ describe("TradeDTO", () => {
     expect(record.participants[0].address).toBe("0xabc");
     expect(record.participants[0].kycVerified).toBe(true);
     expect(record.participants[0].walletConnected).toBe(true);
+    expect(record.participants[0].role).toBe("exporter");
     expect(record.status).toBe("draft");
     expect(record.currentStage).toBe(1);
     expect(record.createdAt).toBe(dto.createdAt);
     expect(record.updatedAt).toBeUndefined();
   });
+
+  it("toTradeRecord should apply default false for missing participant kycVerified/walletConnected", () => {
+    const dto = new TradeDTO({ ...baseData, participants: participantsPartial });
+    const record = dto.toTradeRecord();
+    expect(record.participants[0].kycVerified).toBe(false);
+    expect(record.participants[0].walletConnected).toBe(false);
+  });
+
+  /* -------------------------------------------------------------------------- */
+  /*                               Touch test                                    */
+  /* -------------------------------------------------------------------------- */
 
   it("touch should update updatedAt timestamp", () => {
     const dto = new TradeDTO(baseData);

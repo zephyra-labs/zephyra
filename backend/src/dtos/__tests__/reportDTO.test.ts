@@ -1,6 +1,6 @@
 /**
  * @file reportDTO.test.ts
- * @description Unit tests for MainReportDTO, TradeHistoryDTO, PerformanceReportDTO
+ * @description Complete unit tests for MainReportDTO, TradeHistoryDTO, PerformanceReportDTO with full line and branch coverage.
  */
 
 import {
@@ -37,7 +37,11 @@ describe("MainReportDTO", () => {
     expect(dto.toResponse()).toEqual(base);
   });
 
-  // 🔥 Cover ALL 6 negative branches
+  it("should construct with empty input", () => {
+    const dto = new MainReportDTO();
+    expect(dto).toBeInstanceOf(MainReportDTO);
+  });
+
   test("validate() should throw error when stats missing", () => {
     const dto = new MainReportDTO({ ...base, stats: undefined as any });
     expect(() => dto.validate()).toThrow("MainReport stats is required");
@@ -91,14 +95,17 @@ describe("TradeHistoryDTO", () => {
     expect(dto.items.length).toBe(1);
   });
 
-  // 🔥 Covers error branch #1
+  it("should construct with empty input", () => {
+    const dto = new TradeHistoryDTO();
+    expect(dto).toBeInstanceOf(TradeHistoryDTO);
+  });
+
   it("should throw error if items is not array", () => {
     // @ts-expect-error
     const dto = new TradeHistoryDTO({ items: null, pagination });
     expect(() => dto.validate()).toThrow("TradeHistory items must be an array");
   });
 
-  // 🔥 Covers error branch #2
   it("should throw error if pagination is missing", () => {
     const dto = new TradeHistoryDTO({ items: mockItems });
     expect(() => dto.validate()).toThrow("TradeHistory pagination is required");
@@ -124,11 +131,15 @@ describe("PerformanceReportDTO", () => {
 
   it("should construct with data and output response", () => {
     const dto = new PerformanceReportDTO(base);
-    expect(dto.totals.totalTrades).toBe(5);
+    expect(dto.totals!.totalTrades).toBe(5);
     expect(dto.toResponse()).toEqual(base);
   });
 
-  // 🔥 Cover ALL 4 negative branches
+  it("should construct with empty input", () => {
+    const dto = new PerformanceReportDTO();
+    expect(dto).toBeInstanceOf(PerformanceReportDTO);
+  });
+
   test("validate() should throw when totals missing", () => {
     const dto = new PerformanceReportDTO({ ...base, totals: undefined as any });
     expect(() => dto.validate()).toThrow("Performance totals is required");

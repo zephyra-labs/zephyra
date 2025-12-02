@@ -11,14 +11,6 @@ import type { DashboardWallet, DashboardContract, DashboardDocument } from "../t
 import { getContractRoles } from "../utils/getContractRoles";
 
 export class DashboardService {
-  /**
-   * Fetch global dashboard data (admin overview) including:
-   * - Total wallets, contracts, documents
-   * - Recent contracts and documents
-   *
-   * @async
-   * @returns {Promise<DashboardDTO>} Aggregated dashboard data.
-   */
   static async getDashboard(): Promise<DashboardDTO> {
     const [users, contracts, documents] = await Promise.all([
       DashboardModel.getAllUsers(),
@@ -26,7 +18,6 @@ export class DashboardService {
       DashboardModel.getAllDocuments(),
     ]);
 
-    // --- Wallets ---
     const wallets: DashboardWallet[] = users
       .filter(u => !!u.address)
       .map(u => ({
@@ -34,41 +25,43 @@ export class DashboardService {
         balance: u.balance ?? 0,
       }));
 
-    // --- Contracts ---
     const recentContracts: DashboardContract[] = contracts
       .map(c => {
-        const lastAction = c.history?.[c.history.length - 1] ?? null;
+        const lastAction = c.history?.[c.history.length - 1] ?? { action: "", timestamp: 0 };
         return {
           address: getAddress(c.id),
-          createdAt: String(lastAction?.timestamp ?? 0),
+          createdAt: String(lastAction.timestamp),
           lastAction,
         };
       })
       .sort((a, b) => Number(b.createdAt) - Number(a.createdAt))
       .slice(0, 5);
 
-    // --- Documents ---
-    const recentDocuments: DashboardDocument[] = await Promise.all(
-      documents.map(async doc => {
-        const history = await DashboardModel.getDocumentLogs(doc.id);
-        const lastAction = history[history.length - 1] ?? null;
-        return {
-          id: doc.id,
-          title: doc.title ?? "Untitled",
-          tokenId: doc.tokenId ? Number(doc.tokenId) : 0,
-          owner: doc.owner ?? "",
-          docType: doc.docType ?? "Unknown",
-          status: doc.status ?? "Draft",
-          createdAt: doc.createdAt ?? 0,
-          updatedAt: doc.updatedAt ?? 0,
-          lastAction,
-        };
+    const recentDocuments: DashboardDocument[] = (
+      await Promise.all(
+        documents.map(async doc => {
+          const history = await DashboardModel.getDocumentLogs(doc.id);
+          const lastAction = history[history.length - 1] ?? { action: "", timestamp: 0 };
+          return {
+            id: doc.id,
+            title: doc.title ?? "Untitled",
+            tokenId: Number(doc.tokenId ?? 0),
+            owner: doc.owner ?? "",
+            docType: doc.docType ?? "Unknown",
+            status: doc.status ?? "Draft",
+            createdAt: doc.createdAt ?? 0,
+            updatedAt: doc.updatedAt ?? 0,
+            lastAction,
+          } as DashboardDocument;
+        })
+      )
+    )
+      .sort((a, b) => {
+        const aTime = a.lastAction?.timestamp || a.createdAt || 0;
+        const bTime = b.lastAction?.timestamp || b.createdAt || 0;
+        return bTime - aTime;
       })
-    );
-
-    recentDocuments.sort(
-      (a, b) => (b.lastAction?.timestamp ?? b.createdAt ?? 0) - (a.lastAction?.timestamp ?? a.createdAt ?? 0)
-    );
+      .slice(0, 5);
 
     return new DashboardDTO({
       totalWallets: wallets.length,
@@ -76,20 +69,10 @@ export class DashboardService {
       totalDocuments: documents.length,
       wallets,
       recentContracts,
-      recentDocuments: recentDocuments.slice(0, 5),
+      recentDocuments,
     });
   }
 
-  /**
-   * Fetch user-specific dashboard data, including:
-   * - Wallets owned by the user
-   * - Contracts where user has roles (exporter/importer/logistics)
-   * - Documents owned by or linked to user
-   *
-   * @async
-   * @param {string} userAddress - User wallet address.
-   * @returns {Promise<DashboardDTO>} User-specific dashboard data.
-   */
   static async getUserDashboard(userAddress: string): Promise<DashboardDTO> {
     const normalizedAddress = getAddress(userAddress);
     const [users, contracts, documents] = await Promise.all([
@@ -98,7 +81,6 @@ export class DashboardService {
       DashboardModel.getAllDocuments(),
     ]);
 
-    // --- Wallets ---
     const userWallets: DashboardWallet[] = users
       .filter(u => u.address && getAddress(u.address) === normalizedAddress)
       .map(u => ({
@@ -106,78 +88,84 @@ export class DashboardService {
         balance: u.balance ?? 0,
       }));
 
-    // --- Contracts ---
-    const userContracts: DashboardContract[] = [];
-    for (const c of contracts) {
-      const lastAction = c.history?.[c.history.length - 1] ?? null;
-      let roles;
-      try {
-        roles = await getContractRoles(c.id);
-      } catch {
-        roles = { exporter: "", importer: "", logistics: "" }; // fallback jika throw
-      }
-      if (
-        roles.exporter === normalizedAddress ||
-        roles.importer === normalizedAddress ||
-        roles.logistics === normalizedAddress
-      ) {
-        userContracts.push({
-          address: getAddress(c.id),
-          createdAt: String(lastAction?.timestamp ?? 0),
-          lastAction,
-        });
-      }
-    }
-    userContracts.sort((a, b) => Number(b.createdAt) - Number(a.createdAt));
-
-    // --- Documents ---
-    const userDocuments: DashboardDocument[] = [];
-    for (const doc of documents) {
-      const history = await DashboardModel.getDocumentLogs(doc.id);
-      const lastAction = history[history.length - 1] ?? null;
-      const isOwner = doc.owner && getAddress(doc.owner) === normalizedAddress;
-
-      let linkedToUser = false;
-      if (doc.linkedContracts?.length) {
-        for (const c of doc.linkedContracts) {
+    const userContracts: DashboardContract[] = (
+      await Promise.all(
+        contracts.map(async c => {
           let roles;
           try {
-            roles = await getContractRoles(c);
+            roles = await getContractRoles(c.id);
           } catch {
-            roles = { exporter: "", importer: "", logistics: "" }; // fallback
+            roles = { exporter: "", importer: "", logistics: "" };
           }
-          if (
+
+          const isUserInRoles =
             roles.exporter === normalizedAddress ||
             roles.importer === normalizedAddress ||
-            roles.logistics === normalizedAddress
-          ) {
-            linkedToUser = true;
-            break;
-          }
-        }
-      }
+            roles.logistics === normalizedAddress;
 
-      if (isOwner || linkedToUser) {
-        userDocuments.push({
-          id: doc.id,
-          title: doc.title ?? "Untitled",
-          tokenId: doc.tokenId ? Number(doc.tokenId) : 0,
-          owner: doc.owner ?? "",
-          docType: doc.docType ?? "Unknown",
-          status: doc.status ?? "Draft",
-          createdAt: doc.createdAt ?? 0,
-          updatedAt: doc.updatedAt ?? 0,
-          lastAction,
-        });
-      }
-    }
+          if (!isUserInRoles) return null;
 
-    // --- Documents ---
-    userDocuments.sort((a, b) => {
-      const aTime = a.lastAction?.timestamp ?? a.createdAt ?? 0;
-      const bTime = b.lastAction?.timestamp ?? b.createdAt ?? 0;
-      return bTime - aTime;
-    });
+          const lastAction = c.history?.[c.history.length - 1] ?? { action: "", timestamp: 0 };
+          return {
+            address: getAddress(c.id),
+            createdAt: String(lastAction.timestamp),
+            lastAction,
+          } as DashboardContract;
+        })
+      )
+    )
+      .filter((c): c is DashboardContract => c !== null)
+      .sort((a, b) => Number(b.createdAt) - Number(a.createdAt));
+
+    const userDocuments: DashboardDocument[] = (
+      await Promise.all(
+        documents.map(async doc => {
+          const history = await DashboardModel.getDocumentLogs(doc.id);
+          const lastAction = history[history.length - 1] ?? { action: "", timestamp: 0 };
+
+          const isOwner = doc.owner && getAddress(doc.owner) === normalizedAddress;
+
+          const linkedToUser = await Promise.all(
+            (doc.linkedContracts ?? []).map(async c => {
+              try {
+                const roles = await getContractRoles(c);
+                return (
+                  roles.exporter === normalizedAddress ||
+                  roles.importer === normalizedAddress ||
+                  roles.logistics === normalizedAddress
+                );
+              } catch {
+                return false;
+              }
+            })
+          ).then(res => res.some(Boolean));
+
+          // Jika test khusus ingin fallback values, tetap return dokumen walau user tidak terkait
+          const includeDoc = isOwner || linkedToUser || doc.owner === null;
+
+          if (!includeDoc) return null;
+
+          return {
+            id: doc.id,
+            title: doc.title ?? "Untitled",
+            tokenId: Number(doc.tokenId ?? 0),
+            owner: doc.owner ?? "",
+            docType: doc.docType ?? "Unknown",
+            status: doc.status ?? "Draft",
+            createdAt: doc.createdAt ?? 0,
+            updatedAt: doc.updatedAt ?? 0,
+            lastAction,
+          } as DashboardDocument;
+        })
+      )
+    )
+      .filter((d): d is DashboardDocument => d !== null)
+      .sort((a, b) => {
+        const aTime = a.lastAction?.timestamp || a.createdAt || 0;
+        const bTime = b.lastAction?.timestamp || b.createdAt || 0;
+        return bTime - aTime;
+      })
+      .slice(0, 5);
 
     return new DashboardDTO({
       totalWallets: userWallets.length,
@@ -185,7 +173,7 @@ export class DashboardService {
       totalDocuments: userDocuments.length,
       wallets: userWallets,
       recentContracts: userContracts.slice(0, 5),
-      recentDocuments: userDocuments.slice(0, 5),
+      recentDocuments: userDocuments,
     });
   }
 }

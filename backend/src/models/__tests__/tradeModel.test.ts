@@ -91,7 +91,6 @@ jest.mock("../../config/firebase", () => {
 
     get: jest.fn(async function () {
       let items = Object.values(dataStore);
-
       for (const filter of this.filters) items = items.filter(filter);
 
       if (this.orderField) {
@@ -127,9 +126,9 @@ jest.mock("../../config/firebase", () => {
   return { db: { collection: mockCollection }, __dataStore: dataStore };
 });
 
-describe("TradeModel", () => {
+// ------------------------- TESTS -------------------------
+describe("TradeModel - core operations", () => {
   const now = Date.now();
-
   const mockTrade: TradeRecord = {
     id: "trade1",
     participants: [
@@ -141,9 +140,9 @@ describe("TradeModel", () => {
     updatedAt: now,
   };
 
-  beforeEach(async () => {
+  beforeEach(() => {
     const mockFirebase = jest.requireMock("../../config/firebase");
-    for (const key of Object.keys(mockFirebase.__dataStore)) delete mockFirebase.__dataStore[key];
+    Object.keys(mockFirebase.__dataStore).forEach(k => delete mockFirebase.__dataStore[k]);
     mockFirebase.db.collection().__reset();
   });
 
@@ -154,11 +153,27 @@ describe("TradeModel", () => {
     expect(record?.participants.length).toBe(2);
   });
 
-  it("should update an existing trade record", async () => {
-    await TradeModel.upsertTradeRecord(mockTrade);
-    await TradeModel.updateTradeStatus("trade1", "inProgress" as TradeStatus);
-    const record = await TradeModel.getTradeById("trade1");
+  it("should update an existing trade record via upsertTradeRecord", async () => {
+    const existingTrade = { ...mockTrade, id: "trade_existing" };
+    await TradeModel.upsertTradeRecord(existingTrade);
+    await TradeModel.upsertTradeRecord({ ...existingTrade, status: "inProgress" });
+    const record = await TradeModel.getTradeById("trade_existing");
     expect(record?.status).toBe("inProgress");
+  });
+
+  it("should update trade status", async () => {
+    await TradeModel.upsertTradeRecord(mockTrade);
+    await TradeModel.updateTradeStatus("trade1", "completed");
+    const record = await TradeModel.getTradeById("trade1");
+    expect(record?.status).toBe("completed");
+  });
+
+  it("should update participant role", async () => {
+    await TradeModel.upsertTradeRecord(mockTrade);
+    const updatedParticipants = await TradeModel.updateParticipantRole("trade1", "0x123", "importer");
+    const record = await TradeModel.getTradeById("trade1");
+    expect(updatedParticipants.find(p => p.address === "0x123")?.role).toBe("importer");
+    expect(record?.participants.find(p => p.address === "0x123")?.role).toBe("importer");
   });
 
   it("should get all trades", async () => {
@@ -174,48 +189,44 @@ describe("TradeModel", () => {
     expect(trades[0].participants.map(p => p.address)).toContain("0x123");
   });
 
-  it("should update participant role", async () => {
-    await TradeModel.upsertTradeRecord(mockTrade);
-    const updatedRole: TradeParticipant["role"] = "importer";
-    const participants = await TradeModel.updateParticipantRole("trade1", "0x123", updatedRole);
-    const updatedRecord = await TradeModel.getTradeById("trade1");
-    expect(participants.find(p => p.address === "0x123")?.role).toBe(updatedRole);
-    expect(updatedRecord?.participants.find(p => p.address === "0x123")?.role).toBe(updatedRole);
-  });
-
-  it("should update trade status", async () => {
-    await TradeModel.upsertTradeRecord(mockTrade);
-    const newStatus: TradeStatus = "completed";
-    await TradeModel.updateTradeStatus("trade1", newStatus);
-    const updatedRecord = await TradeModel.getTradeById("trade1");
-    expect(updatedRecord?.status).toBe(newStatus);
-  });
-
   it("should throw error when updating non-existing trade", async () => {
-    await expect(
-        TradeModel.updateParticipantRole("nonexistent", "0x123", "exporter")
-    ).rejects.toThrow("TradeRecord not found");
+    await expect(TradeModel.updateParticipantRole("nonexistent", "0x123", "exporter"))
+      .rejects.toThrow("TradeRecord not found");
 
-    await expect(TradeModel.updateTradeStatus("nonexistent", "completed")).rejects.toThrow(
-        "TradeRecord not found"
-    );
+    await expect(TradeModel.updateTradeStatus("nonexistent", "completed"))
+      .rejects.toThrow("TradeRecord not found");
+  });
+});
+
+// ------------------------- EDGE CASES -------------------------
+describe("TradeModel - edge cases", () => {
+  it("should set updatedAt to null if missing when creating a new trade", async () => {
+    const trade: TradeRecord = { id: "trade_no_updatedAt", participants: [], status: "draft", createdAt: Date.now() };
+    await TradeModel.upsertTradeRecord(trade);
+    const stored = await TradeModel.getTradeById("trade_no_updatedAt");
+    expect(stored).not.toBeNull();
+    expect(stored?.updatedAt).toBeNull();
   });
 
-  it("should update an existing trade record via upsertTradeRecord", async () => {
-    const existingTrade: TradeRecord = {
-        id: "trade_existing",
-        participants: [],
-        status: "draft" as TradeStatus,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-    };
+  it("should overwrite updatedAt when upserting existing trade", async () => {
+    const trade: TradeRecord = { id: "trade_old", participants: [], status: "draft", createdAt: Date.now(), updatedAt: 12345 };
+    await TradeModel.upsertTradeRecord(trade);
+    await TradeModel.upsertTradeRecord({ ...trade, status: "inProgress" });
+    const stored = await TradeModel.getTradeById("trade_old");
+    expect(stored?.status).toBe("inProgress");
+    expect(stored?.updatedAt).not.toBe(12345);
+  });
 
-    await TradeModel.upsertTradeRecord(existingTrade);
+  it("getTradeById should return null if trade does not exist", async () => {
+    const record = await TradeModel.getTradeById("nonexistent");
+    expect(record).toBeNull();
+  });
 
-    const updatedTrade = { ...existingTrade, status: "inProgress" as TradeStatus };
-    await TradeModel.upsertTradeRecord(updatedTrade);
-
-    const record = await TradeModel.getTradeById("trade_existing");
-    expect(record?.status).toBe("inProgress");
+  it("getTradeById should return trade if it exists", async () => {
+    const trade: TradeRecord = { id: "trade_exists", participants: [], status: "draft", createdAt: Date.now(), updatedAt: Date.now() };
+    await TradeModel.upsertTradeRecord(trade);
+    const record = await TradeModel.getTradeById("trade_exists");
+    expect(record).not.toBeNull();
+    expect(record?.id).toBe("trade_exists");
   });
 });

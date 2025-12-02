@@ -73,6 +73,36 @@ describe("walletService", () => {
       expect(walletModel.upsertWalletState).toHaveBeenCalledWith(expect.objectContaining({ account: "0xABC123" }));
       expect(result).toEqual({ logId: mockLogId, state: expect.objectContaining({ account: "0xABC123" }) });
     });
+    
+    it("should handle missing meta gracefully", async () => {
+      (walletModel.createWalletLog as jest.Mock).mockResolvedValue(mockLogId);
+      (walletModel.upsertWalletState as jest.Mock).mockResolvedValue(undefined);
+
+      const result = await walletService.recordWalletActivity({
+        account: "0xABC123",
+        action: WalletAction.CONNECT,
+        meta: undefined, // meta explicitly undefined
+      });
+
+      expect(walletModel.createWalletLog).toHaveBeenCalled();
+      expect(walletModel.upsertWalletState).toHaveBeenCalledWith(
+        expect.objectContaining({ account: "0xABC123" })
+      );
+      expect(result.state?.account).toBe("0xABC123");
+    });
+
+    it("should handle null meta gracefully", async () => {
+      (walletModel.createWalletLog as jest.Mock).mockResolvedValue(mockLogId);
+      (walletModel.upsertWalletState as jest.Mock).mockResolvedValue(undefined);
+
+      const result = await walletService.recordWalletActivity({
+        account: "0xABC123",
+        action: WalletAction.CONNECT,
+        meta: null as any, // meta null
+      });
+
+      expect(result.state?.account).toBe("0xABC123");
+    });
   });
 
   // ───────────────────────────────────────────────

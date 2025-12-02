@@ -1,6 +1,6 @@
 /**
  * @file documentService.test.ts
- * @description Exhaustive unit tests for DocumentService to achieve full branch coverage.
+ * @description Unit tests for DocumentService with full branch coverage.
  */
 
 import { DocumentService } from '../documentService';
@@ -9,12 +9,10 @@ import { notifyWithAdmins, notifyUsers } from '../../utils/notificationHelper';
 import { getContractRoles } from '../../utils/getContractRoles';
 import DocumentDTO from '../../dtos/documentDTO';
 
-// Mock viem's getAddress to return input unchanged so assertions don't need checksummed addresses
-jest.mock('viem', () => ({
-  getAddress: (a: string) => a,
-}));
+// Mock viem getAddress to return input unchanged
+jest.mock('viem', () => ({ getAddress: (a: string) => a }));
 
-// Mock modules
+// -------------------- Mock modules --------------------
 jest.mock('../../models/documentModel', () => ({
   DocumentModel: {
     create: jest.fn(),
@@ -38,16 +36,16 @@ jest.mock('../../utils/getContractRoles', () => ({
   getContractRoles: jest.fn(),
 }));
 
-// Mock DocumentDTO: exposes linkedContracts, tokenId, signer, toFirestore
 jest.mock('../../dtos/documentDTO', () =>
   jest.fn().mockImplementation((data: any) => ({
-    linkedContracts: data.linkedContracts ?? data.linkedContracts === undefined ? data.linkedContracts : [],
+    linkedContracts: data.linkedContracts ?? [],
     tokenId: data.tokenId ?? 1,
     signer: data.signer ?? null,
     toFirestore: () => data,
   }))
 );
 
+// -------------------- Constants --------------------
 const MOCK_ADDRESS_1 = '0x1111111111111111111111111111111111111111';
 const MOCK_ADDRESS_2 = '0x2222222222222222222222222222222222222222';
 const MOCK_ADDRESS_3 = '0x3333333333333333333333333333333333333333';
@@ -68,7 +66,8 @@ const sampleDoc = {
   description: 'Test description',
 };
 
-describe('DocumentService - full coverage', () => {
+// -------------------- Tests --------------------
+describe('DocumentService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
@@ -91,172 +90,231 @@ describe('DocumentService - full coverage', () => {
   });
 
   // -------------------- createDocument --------------------
-  it('createDocument - successful creation, logs, and notifications', async () => {
-    // DocumentDTO will give linkedContracts [MOCK_ADDRESS_2] via data input
-    const input = { linkedContracts: [MOCK_ADDRESS_2], tokenId: 123, signer: MOCK_ADDRESS_3 };
-    const res = await DocumentService.createDocument(input as any, MOCK_ADDRESS_1, 'mintDocument', '0xTxHash');
+  describe('createDocument', () => {
+    it('creates document and notifies admins/users', async () => {
+      const input = { linkedContracts: [MOCK_ADDRESS_2], tokenId: 123, signer: MOCK_ADDRESS_3 };
+      const res = await DocumentService.createDocument(input as any, MOCK_ADDRESS_1, 'mintDocument', '0xTxHash');
 
-    expect(DocumentModel.create).toHaveBeenCalledWith(expect.any(Object));
-    // addLog called for each linked contract (1)
-    expect(DocumentModel.addLog).toHaveBeenCalledTimes(1);
-    // notifyWithAdmins called once
-    expect(notifyWithAdmins).toHaveBeenCalled();
-    // notifyUsers called, recipients should exclude the normalized actor (MOCK_ADDRESS_1)
-    expect(notifyUsers).toHaveBeenCalled();
-    expect(res).toEqual(sampleDoc);
-  });
-
-  it('createDocument - throws when linkedContracts missing/empty', async () => {
-    // DocumentDTO mock will get linkedContracts = [] if we pass that explicitly
-    const input = { linkedContracts: [] };
-    await expect(DocumentService.createDocument(input as any, MOCK_ADDRESS_1, 'mintDocument'))
-      .rejects.toThrow('Document must link to at least one contract');
-  });
-
-  it('createDocument - throws when contract has no roles', async () => {
-    (getContractRoles as jest.Mock).mockResolvedValue({ importer: null, exporter: null, logistics: null });
-    // DocumentDTO input will have linkedContracts with one contract id string '0xC'
-    const input = { linkedContracts: ['0xC'] };
-    await expect(DocumentService.createDocument(input as any, MOCK_ADDRESS_1, 'mintDocument'))
-      .rejects.toThrow('Contract 0xC has no assigned roles');
-  });
-
-  it('createDocument - throws when actor unauthorized for contract', async () => {
-    // roles are different addresses so normalized actor does not match any
-    (getContractRoles as jest.Mock).mockResolvedValue({
-      importer: MOCK_ADDRESS_4,
-      exporter: '0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef',
-      logistics: null,
+      expect(DocumentModel.create).toHaveBeenCalledWith(expect.any(Object));
+      expect(DocumentModel.addLog).toHaveBeenCalledTimes(1);
+      expect(notifyWithAdmins).toHaveBeenCalled();
+      expect(notifyUsers).toHaveBeenCalled();
+      expect(res).toEqual(sampleDoc);
     });
-    const input = { linkedContracts: [MOCK_ADDRESS_2] };
-    await expect(DocumentService.createDocument(input as any, MOCK_ADDRESS_1, 'mintDocument'))
-      .rejects.toThrow(`Unauthorized account for ${MOCK_ADDRESS_2}`);
-  });
-  
-  // -------------------- safeAddress branch coverage --------------------
-  it('createDocument - throws when account is null/undefined/empty', async () => {
-    const input = { linkedContracts: [MOCK_ADDRESS_2], tokenId: 1 };
 
-    // undefined account
-    await expect(DocumentService.createDocument(input as any, undefined as any, 'mintDocument'))
-      .rejects.toThrow('Address missing or invalid');
+    it('throws if linkedContracts empty', async () => {
+      await expect(DocumentService.createDocument({ linkedContracts: [] } as any, MOCK_ADDRESS_1, 'mintDocument'))
+        .rejects.toThrow('Document must link to at least one contract');
+    });
 
-    // null account
-    await expect(DocumentService.createDocument(input as any, null as any, 'mintDocument'))
-      .rejects.toThrow('Address missing or invalid');
+    it('throws if contract has no roles', async () => {
+      (getContractRoles as jest.Mock).mockResolvedValue({ importer: null, exporter: null, logistics: null });
+      await expect(DocumentService.createDocument({ linkedContracts: ['0xC'] } as any, MOCK_ADDRESS_1, 'mintDocument'))
+        .rejects.toThrow('Contract 0xC has no assigned roles');
+    });
 
-    // empty string account
-    await expect(DocumentService.createDocument(input as any, '', 'mintDocument'))
-      .rejects.toThrow('Address missing or invalid');
+    it('throws if actor unauthorized', async () => {
+      (getContractRoles as jest.Mock).mockResolvedValue({ importer: MOCK_ADDRESS_4, exporter: '0xdead', logistics: null });
+      await expect(DocumentService.createDocument({ linkedContracts: [MOCK_ADDRESS_2] } as any, MOCK_ADDRESS_1, 'mintDocument'))
+        .rejects.toThrow(`Unauthorized account for ${MOCK_ADDRESS_2}`);
+    });
+
+    it('throws if account invalid', async () => {
+      const input = { linkedContracts: [MOCK_ADDRESS_2], tokenId: 1 };
+      await expect(DocumentService.createDocument(input as any, undefined as any, 'mintDocument')).rejects.toThrow('Address missing or invalid');
+      await expect(DocumentService.createDocument(input as any, null as any, 'mintDocument')).rejects.toThrow('Address missing or invalid');
+      await expect(DocumentService.createDocument(input as any, '', 'mintDocument')).rejects.toThrow('Address missing or invalid');
+    });
+
+    it('defaults txHash to empty string if undefined', async () => {
+      const input = { linkedContracts: [MOCK_ADDRESS_2], tokenId: 999 };
+      await DocumentService.createDocument(input as any, MOCK_ADDRESS_1, 'mintDocument', undefined);
+      expect(DocumentModel.addLog).toHaveBeenCalledWith(expect.any(Number), expect.objectContaining({ txHash: '' }));
+    });
   });
 
   // -------------------- updateDocument --------------------
-  it('updateDocument - throws when document missing', async () => {
-    (DocumentModel.getById as jest.Mock).mockResolvedValue(null);
-    await expect(DocumentService.updateDocument(99, {}, MOCK_ADDRESS_1, 'reviewDocument'))
-      .rejects.toThrow('Document 99 not found');
-  });
-
-  it('updateDocument - throws when update fails (update returns falsy)', async () => {
-    (DocumentModel.getById as jest.Mock).mockResolvedValue(sampleDoc);
-    (DocumentModel.update as jest.Mock).mockResolvedValue(null);
-    await expect(DocumentService.updateDocument(sampleDoc.tokenId, { name: 'X' } as any, MOCK_ADDRESS_1, 'reviewDocument'))
-      .rejects.toThrow(`Failed to update document ${sampleDoc.tokenId}`);
-  });
-
-  it('updateDocument - success adds logs, resolves roles, and notifies', async () => {
-    (DocumentModel.getById as jest.Mock).mockResolvedValue(sampleDoc);
-    (getContractRoles as jest.Mock).mockResolvedValue({
-      importer: MOCK_ADDRESS_1,
-      exporter: MOCK_ADDRESS_2,
-      logistics: MOCK_ADDRESS_3,
+  describe('updateDocument', () => {
+    it('throws if document not found', async () => {
+      (DocumentModel.getById as jest.Mock).mockResolvedValue(null);
+      await expect(DocumentService.updateDocument(99, {}, MOCK_ADDRESS_1, 'reviewDocument'))
+        .rejects.toThrow('Document 99 not found');
     });
 
-    const updated = await DocumentService.updateDocument(sampleDoc.tokenId, { name: 'Updated' } as any, MOCK_ADDRESS_1, 'reviewDocument', '0xTx2');
+    it('throws if update fails', async () => {
+      (DocumentModel.update as jest.Mock).mockResolvedValue(null);
+      await expect(DocumentService.updateDocument(sampleDoc.tokenId, { name: 'X' } as any, MOCK_ADDRESS_1, 'reviewDocument'))
+        .rejects.toThrow(`Failed to update document ${sampleDoc.tokenId}`);
+    });
 
-    // Should add logs for each linked contract (1)
-    expect(DocumentModel.addLog).toHaveBeenCalledTimes(sampleDoc.linkedContracts.length);
-    // Should call notifyWithAdmins and notifyUsers
-    expect(notifyWithAdmins).toHaveBeenCalled();
-    expect(notifyUsers).toHaveBeenCalled();
-    expect(updated).toEqual(sampleDoc);
-  });
-  
-  it('updateDocument - throws when account is null/undefined/empty', async () => {
-    (DocumentModel.getById as jest.Mock).mockResolvedValue(sampleDoc);
+    it('logs, resolves roles, notifies on success', async () => {
+      const updated = await DocumentService.updateDocument(sampleDoc.tokenId, { name: 'Updated' } as any, MOCK_ADDRESS_1, 'reviewDocument', '0xTx2');
+      expect(DocumentModel.addLog).toHaveBeenCalledTimes(sampleDoc.linkedContracts.length);
+      expect(notifyWithAdmins).toHaveBeenCalled();
+      expect(notifyUsers).toHaveBeenCalled();
+      expect(updated).toEqual(sampleDoc);
+    });
 
-    await expect(DocumentService.updateDocument(1, {}, undefined as any, 'mintDocument'))
-      .rejects.toThrow('Address missing or invalid');
+    it('throws if account invalid', async () => {
+      (DocumentModel.getById as jest.Mock).mockResolvedValue(sampleDoc);
+      await expect(DocumentService.updateDocument(1, {}, undefined as any, 'mintDocument')).rejects.toThrow('Address missing or invalid');
+      await expect(DocumentService.updateDocument(1, {}, null as any, 'mintDocument')).rejects.toThrow('Address missing or invalid');
+      await expect(DocumentService.updateDocument(1, {}, '', 'mintDocument')).rejects.toThrow('Address missing or invalid');
+    });
 
-    await expect(DocumentService.updateDocument(1, {}, null as any, 'mintDocument'))
-      .rejects.toThrow('Address missing or invalid');
+    it('defaults txHash to empty string if undefined', async () => {
+      await DocumentService.updateDocument(sampleDoc.tokenId, {}, MOCK_ADDRESS_1, 'reviewDocument', undefined);
+      expect(DocumentModel.addLog).toHaveBeenCalledWith(expect.any(Number), expect.objectContaining({ txHash: '' }));
+    });
 
-    await expect(DocumentService.updateDocument(1, {}, '', 'mintDocument'))
-      .rejects.toThrow('Address missing or invalid');
+    // -------------------- signer logic --------------------
+    it('uses existing.signer if present', async () => {
+      const existingWithSigner = { ...sampleDoc, signer: MOCK_ADDRESS_3 };
+      (DocumentModel.getById as jest.Mock).mockResolvedValue(existingWithSigner);
+
+      await DocumentService.updateDocument(sampleDoc.tokenId, { name: 'Updated' } as any, MOCK_ADDRESS_1, 'reviewDocument');
+
+      expect(DocumentModel.addLog).toHaveBeenCalledWith(
+        sampleDoc.tokenId,
+        expect.objectContaining({ signer: MOCK_ADDRESS_3, account: MOCK_ADDRESS_1 })
+      );
+    });
+
+    it('defaults to normalized account if existing.signer null', async () => {
+      const existingWithoutSigner = { ...sampleDoc, signer: null };
+      (DocumentModel.getById as jest.Mock).mockResolvedValue(existingWithoutSigner);
+
+      await DocumentService.updateDocument(sampleDoc.tokenId, { name: 'Updated' } as any, MOCK_ADDRESS_1, 'reviewDocument');
+
+      expect(DocumentModel.addLog).toHaveBeenCalledWith(
+        sampleDoc.tokenId,
+        expect.objectContaining({ signer: MOCK_ADDRESS_1, account: MOCK_ADDRESS_1 })
+      );
+    });
   });
 
   // -------------------- deleteDocument --------------------
-  it('deleteDocument - returns false when document not found', async () => {
-    (DocumentModel.getById as jest.Mock).mockResolvedValue(null);
-    const res = await DocumentService.deleteDocument(999, MOCK_ADDRESS_1, 'revokeDocument');
-    expect(res).toBe(false);
-  });
+  describe('deleteDocument', () => {
+    it('returns false if document not found', async () => {
+      (DocumentModel.getById as jest.Mock).mockResolvedValue(null);
+      const res = await DocumentService.deleteDocument(999, MOCK_ADDRESS_1, 'revokeDocument');
+      expect(res).toBe(false);
+    });
 
-  it('deleteDocument - returns false when delete fails', async () => {
-    (DocumentModel.getById as jest.Mock).mockResolvedValue(sampleDoc);
-    (DocumentModel.delete as jest.Mock).mockResolvedValue(false);
-    const res = await DocumentService.deleteDocument(sampleDoc.tokenId, MOCK_ADDRESS_1, 'revokeDocument');
-    expect(res).toBe(false);
-  });
+    it('returns false if delete fails', async () => {
+      (DocumentModel.delete as jest.Mock).mockResolvedValue(false);
+      const res = await DocumentService.deleteDocument(sampleDoc.tokenId, MOCK_ADDRESS_1, 'revokeDocument');
+      expect(res).toBe(false);
+    });
 
-  it('deleteDocument - success logs and notifies', async () => {
-    (DocumentModel.getById as jest.Mock).mockResolvedValue(sampleDoc);
-    (DocumentModel.delete as jest.Mock).mockResolvedValue(true);
+    it('logs, notifies, returns true on success', async () => {
+      const res = await DocumentService.deleteDocument(sampleDoc.tokenId, MOCK_ADDRESS_1, 'revokeDocument', '0xTxDel');
+      expect(DocumentModel.addLog).toHaveBeenCalledTimes(sampleDoc.linkedContracts.length);
+      expect(notifyWithAdmins).toHaveBeenCalled();
+      expect(notifyUsers).toHaveBeenCalledWith([], expect.any(Object), expect.any(String));
+      expect(res).toBe(true);
+    });
 
-    const res = await DocumentService.deleteDocument(sampleDoc.tokenId, MOCK_ADDRESS_1, 'revokeDocument', '0xTxDel');
-
-    // addLog called for each linked contract
-    expect(DocumentModel.addLog).toHaveBeenCalledTimes(sampleDoc.linkedContracts.length);
-    // notifyWithAdmins called and notifyUsers called with empty recipient list
-    expect(notifyWithAdmins).toHaveBeenCalled();
-    expect(notifyUsers).toHaveBeenCalledWith([], expect.any(Object), expect.any(String));
-    expect(res).toBe(true);
+    it('defaults txHash to empty string if undefined', async () => {
+      await DocumentService.deleteDocument(sampleDoc.tokenId, MOCK_ADDRESS_1, 'revokeDocument', undefined);
+      expect(DocumentModel.addLog).toHaveBeenCalledWith(expect.any(Number), expect.objectContaining({ txHash: '' }));
+    });
   });
 
   // -------------------- retrieval helpers --------------------
-  it('getAllDocuments - attaches history to each document', async () => {
-    (DocumentModel.getAll as jest.Mock).mockResolvedValue([sampleDoc, { ...sampleDoc, tokenId: 2 }]);
-    (DocumentModel.getLogs as jest.Mock).mockImplementation(async (tokenId: number) => [{ action: `log-${tokenId}` }]);
-    const res = await DocumentService.getAllDocuments();
-    expect(res).toHaveLength(2);
-    expect(res[0]).toHaveProperty('history');
-    expect(res[0].history[0]).toEqual({ action: 'log-1' });
-    expect(res[1].history[0]).toEqual({ action: 'log-2' });
+  describe('retrieval methods', () => {
+    it('getAllDocuments attaches history', async () => {
+      (DocumentModel.getAll as jest.Mock).mockResolvedValue([sampleDoc, { ...sampleDoc, tokenId: 2 }]);
+      (DocumentModel.getLogs as jest.Mock).mockImplementation(async (tokenId: number) => [{ action: `log-${tokenId}` }]);
+      const res = await DocumentService.getAllDocuments();
+      expect(res).toHaveLength(2);
+      expect(res[0].history[0]).toEqual({ action: 'log-1' });
+      expect(res[1].history[0]).toEqual({ action: 'log-2' });
+    });
+
+    it('getDocumentById returns null if missing, doc+history if exists', async () => {
+      (DocumentModel.getById as jest.Mock).mockResolvedValueOnce(null);
+      expect(await DocumentService.getDocumentById(999)).toBeNull();
+
+      (DocumentModel.getById as jest.Mock).mockResolvedValueOnce(sampleDoc);
+      (DocumentModel.getLogs as jest.Mock).mockResolvedValueOnce([{ action: 'a' }]);
+      const found = await DocumentService.getDocumentById(sampleDoc.tokenId);
+      expect(found?.history).toEqual([{ action: 'a' }]);
+    });
+
+    it('getDocumentsByOwner returns documents with history', async () => {
+      (DocumentModel.getLogs as jest.Mock).mockResolvedValue([{ action: 'owner-log' }]);
+      const res = await DocumentService.getDocumentsByOwner(MOCK_ADDRESS_1);
+      expect(res[0].history[0]).toEqual({ action: 'owner-log' });
+    });
+
+    it('getDocumentsByContract returns documents with history', async () => {
+      (DocumentModel.getLogs as jest.Mock).mockResolvedValue([{ action: 'contract-log' }]);
+      const res = await DocumentService.getDocumentsByContract(MOCK_ADDRESS_2);
+      expect(res[0].history[0]).toEqual({ action: 'contract-log' });
+    });
+
+    it('normalizes null/undefined history to null', async () => {
+      (DocumentModel.getLogs as jest.Mock).mockResolvedValueOnce(null);
+      const allDocs = await DocumentService.getAllDocuments();
+      expect(allDocs[0].history).toBeNull();
+    });
   });
 
-  it('getDocumentById - returns null when missing and returns doc+history when exists', async () => {
-    (DocumentModel.getById as jest.Mock).mockResolvedValueOnce(null);
-    const missing = await DocumentService.getDocumentById(999);
-    expect(missing).toBeNull();
+  // -------------------- recipientsToNotify logic --------------------
+  describe('recipientsToNotify', () => {
+    it('createDocument ignores null roles', async () => {
+      (getContractRoles as jest.Mock).mockResolvedValue({ importer: null, exporter: MOCK_ADDRESS_2, logistics: null });
+      await DocumentService.createDocument(
+        { linkedContracts: [MOCK_ADDRESS_4], tokenId: 777, signer: MOCK_ADDRESS_3 } as any,
+        MOCK_ADDRESS_2,
+        'mintDocument'
+      );
+      expect(notifyUsers).toHaveBeenCalledWith([], expect.any(Object), MOCK_ADDRESS_2);
+    });
 
-    (DocumentModel.getById as jest.Mock).mockResolvedValueOnce(sampleDoc);
-    (DocumentModel.getLogs as jest.Mock).mockResolvedValueOnce([{ action: 'a' }]);
-    const found = await DocumentService.getDocumentById(sampleDoc.tokenId);
-    expect(found).not.toBeNull();
-    expect(found?.history).toEqual([{ action: 'a' }]);
-  });
+    it('updateDocument ignores null roles', async () => {
+      (getContractRoles as jest.Mock).mockResolvedValue({ importer: null, exporter: MOCK_ADDRESS_2, logistics: null });
+      await DocumentService.updateDocument(
+        1,
+        { linkedContracts: [MOCK_ADDRESS_4], tokenId: 777 } as any,
+        MOCK_ADDRESS_2,
+        'mintDocument'
+      );
+      expect(notifyUsers).toHaveBeenCalledWith([], expect.any(Object), MOCK_ADDRESS_2);
+    });
 
-  it('getDocumentsByOwner - returns docs with history', async () => {
-    (DocumentModel.getByOwner as jest.Mock).mockResolvedValue([sampleDoc]);
-    (DocumentModel.getLogs as jest.Mock).mockResolvedValue([{ action: 'owner-log' }]);
-    const res = await DocumentService.getDocumentsByOwner(MOCK_ADDRESS_1);
-    expect(res[0].history[0]).toEqual({ action: 'owner-log' });
-  });
+    it('ignores duplicate roles', async () => {
+      (getContractRoles as jest.Mock).mockResolvedValue({ importer: MOCK_ADDRESS_2, exporter: null, logistics: null });
 
-  it('getDocumentsByContract - returns docs with history', async () => {
-    (DocumentModel.getByContract as jest.Mock).mockResolvedValue([sampleDoc]);
-    (DocumentModel.getLogs as jest.Mock).mockResolvedValue([{ action: 'contract-log' }]);
-    const res = await DocumentService.getDocumentsByContract(MOCK_ADDRESS_2);
-    expect(res[0].history[0]).toEqual({ action: 'contract-log' });
+      await DocumentService.createDocument(
+        { linkedContracts: [MOCK_ADDRESS_4], tokenId: 777, signer: MOCK_ADDRESS_3 } as any,
+        MOCK_ADDRESS_2,
+        'mintDocument'
+      );
+
+      expect(notifyUsers).toHaveBeenCalledWith([], expect.any(Object), MOCK_ADDRESS_2);
+    });
+    
+    it('should include logistics in recipientsToNotify on updateDocument', async () => {
+      (getContractRoles as jest.Mock).mockResolvedValue({
+        importer: null,
+        exporter: null,
+        logistics: MOCK_ADDRESS_3,
+      });
+
+      await DocumentService.updateDocument(
+        1,
+        { linkedContracts: [MOCK_ADDRESS_4] } as any,
+        MOCK_ADDRESS_1,
+        'reviewDocument'
+      );
+
+      expect(notifyUsers).toHaveBeenCalledWith(
+        expect.arrayContaining([MOCK_ADDRESS_3]),
+        expect.any(Object),
+        MOCK_ADDRESS_1
+      );
+    });
   });
 });

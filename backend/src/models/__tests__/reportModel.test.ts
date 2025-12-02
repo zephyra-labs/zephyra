@@ -19,12 +19,7 @@ jest.mock("../../config/firebase", () => {
   const makeCollection = () => ({
     get: jest.fn(async () => ({ size: 0 })),
   });
-
-  return {
-    db: {
-      collection: (name: string) => makeCollection(),
-    },
-  };
+  return { db: { collection: () => makeCollection() } };
 });
 
 describe("ReportModel", () => {
@@ -32,12 +27,26 @@ describe("ReportModel", () => {
     jest.clearAllMocks();
   });
 
+  /* -------------------------------------------------------------------------- */
+  /*                          getTradeHistory Tests                              */
+  /* -------------------------------------------------------------------------- */
   describe("getTradeHistory", () => {
-    it("should filter trades by status, date range, user, and paginate", async () => {
+    it("filters trades by status, date range, user, and paginates", async () => {
       const now = Date.now();
       const trades: TradeRecord[] = [
-        { id: "t1", status: "completed", createdAt: now - 1000, updatedAt: now, participants: [{ address: "0x1", kycVerified: true, walletConnected: true }] },
-        { id: "t2", status: "draft", createdAt: now - 500, participants: [{ address: "0x2", kycVerified: true, walletConnected: true }] },
+        {
+          id: "t1",
+          status: "completed",
+          createdAt: now - 1000,
+          updatedAt: now,
+          participants: [{ address: "0x1", kycVerified: true, walletConnected: true }],
+        },
+        {
+          id: "t2",
+          status: "draft",
+          createdAt: now - 500,
+          participants: [{ address: "0x2", kycVerified: true, walletConnected: true }],
+        },
       ];
       (TradeModel.getAllTrades as jest.Mock).mockResolvedValue(trades);
 
@@ -54,7 +63,7 @@ describe("ReportModel", () => {
       expect(result.trades[0].id).toBe("t1");
     });
 
-    it("should return all trades if no filters applied", async () => {
+    it("returns all trades if no filters applied", async () => {
       const trades: TradeRecord[] = [{ id: "t1", status: "draft", createdAt: 0, participants: [] }];
       (TradeModel.getAllTrades as jest.Mock).mockResolvedValue(trades);
 
@@ -64,8 +73,11 @@ describe("ReportModel", () => {
     });
   });
 
+  /* -------------------------------------------------------------------------- */
+  /*                        generateTradeBreakdowns Tests                       */
+  /* -------------------------------------------------------------------------- */
   describe("generateTradeBreakdowns", () => {
-    it("should create breakdowns by status and by user", () => {
+    it("creates breakdowns by status and by user", () => {
       const trades: TradeRecord[] = [
         { id: "t1", status: "draft", participants: [{ address: "u1", kycVerified: true, walletConnected: true }], createdAt: 0 },
         { id: "t2", status: "completed", participants: [{ address: "u1", kycVerified: true, walletConnected: true }, { address: "u2", kycVerified: true, walletConnected: true }], createdAt: 0 },
@@ -80,20 +92,38 @@ describe("ReportModel", () => {
     });
   });
 
+  /* -------------------------------------------------------------------------- */
+  /*                        generateTradeTimeline Tests                          */
+  /* -------------------------------------------------------------------------- */
   describe("generateTradeTimeline", () => {
-    it("should map trades to timeline points", () => {
+    it("maps trades to timeline points", () => {
       const trades: TradeRecord[] = [{ id: "t1", createdAt: 123, participants: [], status: "draft" }];
       const timeline = ReportModel.generateTradeTimeline(trades);
       expect(timeline).toEqual([{ timestamp: 123, count: 1 }]);
     });
   });
 
+  /* -------------------------------------------------------------------------- */
+  /*                        getPerformanceMetrics Tests                         */
+  /* -------------------------------------------------------------------------- */
   describe("getPerformanceMetrics", () => {
-    it("should calculate averages and top participants", async () => {
+    it("calculates averages and top participants", async () => {
       const now = Date.now();
       const trades: TradeRecord[] = [
-        { id: "t1", status: "completed", createdAt: now - 1000, updatedAt: now, currentStage: 2, participants: [{ address: "u1", kycVerified: true, walletConnected: true }] },
-        { id: "t2", status: "cancelled", createdAt: now - 500, participants: [{ address: "u2", kycVerified: true, walletConnected: true }] },
+        {
+          id: "t1",
+          status: "completed",
+          createdAt: now - 1000,
+          updatedAt: now,
+          currentStage: 2,
+          participants: [{ address: "u1", kycVerified: true, walletConnected: true }],
+        },
+        {
+          id: "t2",
+          status: "cancelled",
+          createdAt: now - 500,
+          participants: [{ address: "u2", kycVerified: true, walletConnected: true }],
+        },
       ];
       (ReportModel.getTradeHistory as jest.Mock) = jest.fn().mockResolvedValue({ trades, total: trades.length });
 
@@ -104,13 +134,66 @@ describe("ReportModel", () => {
       expect(metrics.metrics.averageCompletionTimeMs).toBeCloseTo(1000);
       expect(metrics.participants.topUsers[0].address).toBe("u1");
     });
+
+    it("calculates averageCompletionTimeMs and averageStagesPerTrade correctly for completed trades", async () => {
+      const now = Date.now();
+      const trades: TradeRecord[] = [
+        { id: "t1", status: "completed", createdAt: now - 2000, updatedAt: now, currentStage: 2, participants: [{ address: "u1", kycVerified: true, walletConnected: true }] },
+        { id: "t2", status: "completed", createdAt: now - 1000, updatedAt: now, currentStage: 3, participants: [{ address: "u2", kycVerified: true, walletConnected: true }] },
+      ];
+      (ReportModel.getTradeHistory as jest.Mock) = jest.fn().mockResolvedValue({ trades, total: trades.length });
+
+      const metrics = await ReportModel.getPerformanceMetrics();
+
+      expect(metrics.metrics.averageCompletionTimeMs).toBeCloseTo((2000 + 1000) / 2);
+      expect(metrics.metrics.averageStagesPerTrade).toBeCloseTo((2 + 3) / 2);
+    });
+
+    it("returns null for averageCompletionTimeMs if no completed trades", async () => {
+      const trades: TradeRecord[] = [
+        { id: "t1", status: "draft", createdAt: 0, participants: [], currentStage: 1 },
+      ];
+      (ReportModel.getTradeHistory as jest.Mock) = jest.fn().mockResolvedValue({ trades, total: trades.length });
+
+      const metrics = await ReportModel.getPerformanceMetrics();
+
+      expect(metrics.metrics.averageCompletionTimeMs).toBeNull();
+      expect(metrics.metrics.averageStagesPerTrade).toBeCloseTo(1);
+    });
+
+    it("returns null for averageStagesPerTrade if no trades", async () => {
+      (ReportModel.getTradeHistory as jest.Mock) = jest.fn().mockResolvedValue({ trades: [], total: 0 });
+
+      const metrics = await ReportModel.getPerformanceMetrics();
+
+      expect(metrics.metrics.averageCompletionTimeMs).toBeNull();
+      expect(metrics.metrics.averageStagesPerTrade).toBeNull();
+    });
+
+    it("calculates averageCompletionTimeMs using Date.now() if updatedAt is missing", async () => {
+      const now = Date.now();
+      const trades: TradeRecord[] = [
+        { id: "t1", status: "completed", createdAt: now - 1000, currentStage: 1, participants: [{ address: "u1", kycVerified: true, walletConnected: true }] },
+        { id: "t2", status: "completed", createdAt: now - 2000, currentStage: 2, participants: [{ address: "u2", kycVerified: true, walletConnected: true }] },
+      ];
+      (ReportModel.getTradeHistory as jest.Mock) = jest.fn().mockResolvedValue({ trades, total: trades.length });
+
+      const before = Date.now();
+      const metrics = await ReportModel.getPerformanceMetrics();
+      const after = Date.now();
+
+      const avgTime = metrics.metrics.averageCompletionTimeMs!;
+      expect(avgTime).toBeGreaterThanOrEqual(1000);
+      expect(avgTime).toBeLessThanOrEqual(after - (now - 2000));
+    });
   });
 
+  /* -------------------------------------------------------------------------- */
+  /*                             getMainReport Tests                             */
+  /* -------------------------------------------------------------------------- */
   describe("getMainReport", () => {
-    it("should return main report with counts and empty breakdowns", async () => {
-      const trades: TradeRecord[] = [
-        { id: "t1", status: "draft", createdAt: 0, participants: [] },
-      ];
+    it("returns main report with counts and empty breakdowns", async () => {
+      const trades: TradeRecord[] = [{ id: "t1", status: "draft", createdAt: 0, participants: [] }];
       (TradeModel.getAllTrades as jest.Mock).mockResolvedValue(trades);
 
       const report = await ReportModel.getMainReport();

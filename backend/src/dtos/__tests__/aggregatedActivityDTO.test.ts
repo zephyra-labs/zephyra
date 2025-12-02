@@ -105,4 +105,21 @@ describe('AggregatedActivityLog', () => {
     expect(json.onChainInfo).toBeUndefined();
     expect(json.tags).toBeUndefined();
   });
+
+  it('should fallback to Date.now() when timestamp is undefined', () => {
+    const mockNow = 999999999;
+    jest.spyOn(Date, 'now').mockReturnValue(mockNow);
+
+    const dto = new AggregatedActivityLog({
+      type: 'backend',
+      action: 'LOGIN',
+      account: '0xA',
+    } as any);
+
+    const json = dto.toJSON();
+
+    expect(json.timestamp).toBe(mockNow);
+
+    jest.restoreAllMocks();
+  });
 });

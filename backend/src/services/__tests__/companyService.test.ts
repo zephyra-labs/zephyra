@@ -1,6 +1,6 @@
 /**
  * @file companyService.test.ts
- * @description Unit tests for CompanyService using Jest.
+ * @description Unit tests for CompanyService using Jest. Fully type-safe and covering edge cases.
  */
 
 import { CompanyService } from "../companyService";
@@ -14,7 +14,8 @@ jest.mock("../../utils/notificationHelper");
 
 describe("CompanyService", () => {
   const mockExecutor = "user123";
-  const mockCompany: Company = {
+
+  const baseCompany: Company = {
     id: "company1",
     name: "Test Company",
     address: "Test Address",
@@ -41,7 +42,7 @@ describe("CompanyService", () => {
   // ───────────────────────────────────────────────
   describe("createCompany", () => {
     it("should create a company with defaults if partial data provided", async () => {
-      (CompanyModel.create as jest.Mock).mockResolvedValue(mockCompany);
+      (CompanyModel.create as jest.Mock).mockResolvedValue(baseCompany);
 
       const result = await CompanyService.createCompany({ name: "My Company" }, mockExecutor);
 
@@ -50,20 +51,28 @@ describe("CompanyService", () => {
         type: "system",
         title: "Company Created",
       }));
-      expect(result).toEqual(mockCompany);
+      expect(result).toEqual(baseCompany);
+    });
+
+    it("should default company name if missing", async () => {
+      (CompanyModel.create as jest.Mock).mockImplementation(async (data) => data);
+
+      const result = await CompanyService.createCompany({ address: "Some Address" }, mockExecutor);
+
+      expect(result.name).toBe(`Company of ${mockExecutor}`);
     });
   });
 
   // ───────────────────────────────────────────────
   describe("updateCompany", () => {
     it("should update an existing company", async () => {
-      (CompanyModel.getById as jest.Mock).mockResolvedValue(mockCompany);
-      (CompanyModel.update as jest.Mock).mockResolvedValue({ ...mockCompany, name: "Updated Name" });
+      (CompanyModel.getById as jest.Mock).mockResolvedValue(baseCompany);
+      (CompanyModel.update as jest.Mock).mockResolvedValue({ ...baseCompany, name: "Updated Name" });
 
-      const result = await CompanyService.updateCompany(mockCompany.id, { name: "Updated Name" }, mockExecutor);
+      const result = await CompanyService.updateCompany(baseCompany.id, { name: "Updated Name" }, mockExecutor);
 
-      expect(CompanyModel.getById).toHaveBeenCalledWith(mockCompany.id);
-      expect(CompanyModel.update).toHaveBeenCalledWith(mockCompany.id, expect.objectContaining({ name: "Updated Name" }));
+      expect(CompanyModel.getById).toHaveBeenCalledWith(baseCompany.id);
+      expect(CompanyModel.update).toHaveBeenCalledWith(baseCompany.id, expect.objectContaining({ name: "Updated Name" }));
       expect(notifyWithAdmins).toHaveBeenCalledWith(mockExecutor, expect.objectContaining({
         type: "system",
         title: "Company Updated",
@@ -76,17 +85,29 @@ describe("CompanyService", () => {
       await expect(CompanyService.updateCompany("notfound", {}, mockExecutor))
         .rejects.toThrow("Company not found");
     });
+
+    it("should throw if updateCompany returns falsy", async () => {
+      const existingCompany = { ...baseCompany };
+      (CompanyModel.getById as jest.Mock).mockResolvedValue(existingCompany);
+      (CompanyModel.update as jest.Mock).mockResolvedValue(null); // simulate failed update
+
+      await expect(
+        CompanyService.updateCompany("idEdge", { name: "New Name" }, mockExecutor)
+      ).rejects.toThrow("Failed to update company");
+
+      expect(CompanyModel.update).toHaveBeenCalled();
+    });
   });
 
   // ───────────────────────────────────────────────
   describe("deleteCompany", () => {
     it("should delete an existing company", async () => {
-      (CompanyModel.getById as jest.Mock).mockResolvedValue(mockCompany);
+      (CompanyModel.getById as jest.Mock).mockResolvedValue(baseCompany);
       (CompanyModel.delete as jest.Mock).mockResolvedValue(true);
 
-      const result = await CompanyService.deleteCompany(mockCompany.id, mockExecutor);
+      const result = await CompanyService.deleteCompany(baseCompany.id, mockExecutor);
 
-      expect(CompanyModel.delete).toHaveBeenCalledWith(mockCompany.id);
+      expect(CompanyModel.delete).toHaveBeenCalledWith(baseCompany.id);
       expect(notifyWithAdmins).toHaveBeenCalledWith(mockExecutor, expect.objectContaining({
         type: "system",
         title: "Company Deleted",
@@ -104,18 +125,18 @@ describe("CompanyService", () => {
   // ───────────────────────────────────────────────
   describe("getAllCompanies", () => {
     it("should return all companies", async () => {
-      (CompanyModel.getAll as jest.Mock).mockResolvedValue([mockCompany]);
+      (CompanyModel.getAll as jest.Mock).mockResolvedValue([baseCompany]);
       const result = await CompanyService.getAllCompanies();
-      expect(result).toEqual([mockCompany]);
+      expect(result).toEqual([baseCompany]);
     });
   });
 
   // ───────────────────────────────────────────────
   describe("getCompanyById", () => {
     it("should return a company by ID", async () => {
-      (CompanyModel.getById as jest.Mock).mockResolvedValue(mockCompany);
-      const result = await CompanyService.getCompanyById(mockCompany.id);
-      expect(result).toEqual(mockCompany);
+      (CompanyModel.getById as jest.Mock).mockResolvedValue(baseCompany);
+      const result = await CompanyService.getCompanyById(baseCompany.id);
+      expect(result).toEqual(baseCompany);
     });
 
     it("should return null if company not found", async () => {
@@ -128,7 +149,7 @@ describe("CompanyService", () => {
   // ───────────────────────────────────────────────
   describe("createDefaultForUser", () => {
     it("should create a default company for a user", async () => {
-      (CompanyModel.create as jest.Mock).mockResolvedValue(mockCompany);
+      (CompanyModel.create as jest.Mock).mockResolvedValue(baseCompany);
 
       const result = await CompanyService.createDefaultForUser("0xABC123");
 
@@ -137,7 +158,7 @@ describe("CompanyService", () => {
         type: "system",
         title: "Company Created",
       }));
-      expect(result).toEqual(mockCompany);
+      expect(result).toEqual(baseCompany);
     });
   });
 });
